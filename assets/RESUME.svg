@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44.26 11.71">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #666;
+      }
+
+      .cls-1, .cls-2 {
+        letter-spacing: 0em;
+      }
+
+      .cls-3 {
+        font-family: Glitched-Book, Glitched;
+        font-size: 11.07px;
+      }
+
+      .cls-2, .cls-4 {
+        fill: #fbb03b;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <text class="cls-3" transform="translate(0 7.1)"><tspan class="cls-4" x="0" y="0">[</tspan><tspan class="cls-1" x="5.53" y="0">RESUME</tspan><tspan class="cls-2" x="38.73" y="0">]</tspan></text>
+  </g>
+</svg>
