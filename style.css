@@ -1,528 +1,524 @@
 @font-face {
-    font-family: "Glitched";
-    src: url("fonts/Glitched-Light.woff") format("woff");
-    font-weight: 300;
-    font-style: normal;
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
 }
 @font-face {
-    font-family: "Glitched";
-    src: url("fonts/Glitched-Book.woff") format("woff");
-    font-weight: 400;
-    font-style: normal;
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Book.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
 }
 @font-face {
-    font-family: "Glitched";
-    src: url("fonts/Glitched-Medium.woff") format("woff");
-    font-weight: 500;
-    font-style: normal;
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Medium.woff") format("woff");
+  font-weight: 500;
+  font-style: normal;
 }
 @font-face {
-    font-family: "Glitched";
-    src: url("fonts/Glitched-Bold.woff") format("woff");
-    font-weight: 600;
-    font-style: normal;
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Bold.woff") format("woff");
+  font-weight: 600;
+  font-style: normal;
 }
 @font-face {
-    font-family: "Glitched";
-    src: url("fonts/Glitched-Black.woff") format("woff");
-    font-weight: 700;
-    font-style: normal;
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Black.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
 }
 
 body {
-    margin: 0;
-    padding: 0;
+  margin: 0;
+  padding: 0;
 }
 
-
- /*STATIC SECTIONS*/
+/*STATIC SECTIONS*/
 
 .headerbar {
-    position:fixed;
-    width: 100vw;
-    height: 100px;
-    background-color: rgb(29, 29, 29);
-    z-index: 2;
+  position: fixed;
+  width: 100vw;
+  height: 100px;
+  background-color: rgb(29, 29, 29);
+  z-index: 2;
 }
 
 .headerbar-logo {
-    position: absolute;
-    top: 50%;
-    left: 15px;
-    width: 300px;
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  width: 300px;
 }
 
 .sidebar {
-    position: fixed;
-    right: 0;
-    width: 25vw;
-    height: 100vh;
-    background-color: rgb(245, 247, 248)
+  position: fixed;
+  right: 0;
+  width: 25vw;
+  height: 100vh;
+  background-color: rgb(245, 247, 248);
 }
 
 .main-buttons {
-    height: 160px;
-    font-family: Glitched, sans-serif;
-    font-weight: 600;
-    font-size: 10pt;
+  height: 160px;
+  font-family: Glitched, sans-serif;
+  font-weight: 600;
+  font-size: 10pt;
 }
 
 .sidebar-about {
-    height: 13px;
-    width: auto;
-    margin-top: 25px;
-    margin-left: 15px;
+  height: 13px;
+  width: auto;
+  margin-top: 25px;
+  margin-left: 15px;
 }
 
 .sidebar-projects {
-    height: 13px;
-    width: auto;
-    margin-top: 1px;
-    margin-left: 15px;
+  height: 13px;
+  width: auto;
+  margin-top: 1px;
+  margin-left: 15px;
 }
 
 .sidebar-contact {
-    height: 13px;
-    width: auto;
-    margin-top: 1px;
-    margin-left: 15px;
+  height: 13px;
+  width: auto;
+  margin-top: 1px;
+  margin-left: 15px;
 }
 
 .sidebar-resume {
-    height: 13px;
-    width: auto;
-    margin-top: 1px;
-    margin-left: 15px;
+  height: 13px;
+  width: auto;
+  margin-top: 1px;
+  margin-left: 15px;
 }
 
 .home {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
 }
 .next {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
 }
 .previous {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px;
 }
 
 .home-button {
-    height: 50px;
+  height: 50px;
 }
 .next-button {
-    height: 50px;
+  height: 50px;
 }
 
 .prev-button {
-    height: 50px;
+  height: 50px;
 }
-
 
 .filler {
-    height: 100px;
-    background-color: rgb(44, 44, 44);
+  height: 100px;
+  background-color: rgb(44, 44, 44);
 }
-
 
 /*SCROLLABLE SECTION PARENT*/
 #viewport {
-    width: 75vw;
-    height: 100vh;
-    overflow-x: hidden;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+  width: 75vw;
+  height: 100vh;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /*ID SECTION*/
 
 .id-section {
-    display: flex;
-    justify-content: flex-start;
-    align-items: center;
-    border: 1px dashed rgb(131, 131, 131);
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    width: 100%;
-    height: 160px;
-    background-color: rgb(44, 44, 44);
-    margin-bottom: 0px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  border: 1px dashed rgb(131, 131, 131);
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  width: 100%;
+  height: 160px;
+  background-color: rgb(44, 44, 44);
+  margin-bottom: 0px;
 }
 .profile-pic {
-    margin-left: 15px;
-    width: auto;
-    height: 100px;
-    border-radius: 10%;
-    object-fit: cover;
+  margin-left: 15px;
+  width: auto;
+  height: 100px;
+  border-radius: 10%;
+  object-fit: cover;
 }
 .idname {
-    height: 100px;
-    padding: 0;
-    margin-left: 15px;
+  height: 100px;
+  padding: 0;
+  margin-left: 15px;
 }
 
 .idname-text {
-    font-family: Glitched, sans-serif;
-    font-weight: 300;
-    font-size: 10pt;
-    line-height: 1.2;
-    color: rgb(230, 230, 230);
-    margin-top: 0;
+  font-family: Glitched, sans-serif;
+  font-weight: 300;
+  font-size: 10pt;
+  line-height: 1.2;
+  color: rgb(230, 230, 230);
+  margin-top: 0;
 }
-
 
 /*FLEX WRAP PARENT FOR CAROUSEL AND ABOUT SECTIONS*/
-.main { 
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    height: auto;
-    background-color: rgb(255, 255, 255);
-    border: 1px dashed rgb(131, 131, 131);
-    border-top: 0;
-    border-left: 0;
-    border-right: 0;
-    margin-top: 0;
+.main {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  height: auto;
+  background-color: rgb(255, 255, 255);
+  border: 1px dashed rgb(131, 131, 131);
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  margin-top: 0;
 }
-
 
 /*CAROUSEL SECTION*/
 
 .carousel {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    max-width: 500px;
-    aspect-ratio: 4 / 5;
-    /* HEIGHT = WIDTH * (5/4) */
-    height: auto;
-    background-color: rgb(255, 255, 255);
-    margin-bottom: 20px;
-    margin-top: 0;
-    position: relative;
-    user-select: none;
-    -webkit-user-select: none;
-    touch-action: pan-y;
-    overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  aspect-ratio: 4 / 5;
+  /* HEIGHT = WIDTH * (5/4) */
+  height: auto;
+  background-color: rgb(255, 255, 255);
+  margin-bottom: 20px;
+  margin-top: 0;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
+  overflow: hidden;
 }
 
 .carousel-container {
-    width: 90%;
-    height: 90%;
-    overflow: hidden;
-    position: relative;
-    background-color: rgb(255, 255, 255);
-    border-radius: 8px;
+  width: 90%;
+  height: 90%;
+  overflow: hidden;
+  position: relative;
+  background-color: rgb(255, 255, 255);
+  border-radius: 8px;
 }
 
 .carousel-track {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    height: 100%;
-    transition: transform 300ms ease;
-    will-change: transform;
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  transition: transform 300ms ease;
+  will-change: transform;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .slide {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
 .slide img {
-    max-width: 100%;
-    max-height: 100%;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    object-position: center;
-    display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
 }
 
 .carousel-btn {
-    position: absolute;
-    top: 88%;
-    transform: translateY(-50%);
-    width: 20px;
-    height: 30px;
-    border-radius: 5px;
-    border: none;
-    background: rgba(255, 255, 255, 0.8);
-    font-size: 20px;
-    line-height: 20px;
-    text-align: center;
-    cursor: pointer;
-    padding: 0;
-    outline: none;
-    z-index: 1;
+  position: absolute;
+  top: 88%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 30px;
+  border-radius: 5px;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+  font-size: 20px;
+  line-height: 20px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  z-index: 1;
 }
 
 .carousel-btn:hover {
-    background: #fff;
+  background: #fff;
 }
 
 .carousel-btn:focus-visible {
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.3);
 }
 
 .carousel-btn.prev {
-    left: 8%;
+  left: 8%;
 }
 
 .carousel-btn.next {
-    right: 8%;
+  right: 8%;
 }
-
 
 /*ABOUT SECTION*/
 
 .bio {
-    width: 300px;
-    height: auto;
-    background-color: rgba(255, 255, 255, 0.753);
-    margin-top: 35px;
+  width: 300px;
+  height: auto;
+  background-color: rgba(255, 255, 255, 0.753);
+  margin-top: 35px;
 }
 
 .history {
-    width: 300px;
-    height: auto;
-    background-color: rgb(255, 255, 255);
-    margin-bottom: 20px;
-    margin-top: 35px;
+  width: 300px;
+  height: auto;
+  background-color: rgb(255, 255, 255);
+  margin-bottom: 20px;
+  margin-top: 35px;
 }
 
 .about-h2 {
-    font-family: Glitched, sans-serif;
-    font-weight: 500;
-    font-size: 20pt;
-    line-height: .5;
-    color: rgb(100, 100, 100);
-    width: 90%;
-    margin-left: 15px;
-    margin-top: 0;
+  font-family: Glitched, sans-serif;
+  font-weight: 500;
+  font-size: 20pt;
+  line-height: 0.5;
+  color: rgb(100, 100, 100);
+  width: 90%;
+  margin-left: 15px;
+  margin-top: 0;
 }
 .about-p {
-    font-family: Glitched, sans-serif;
-    font-weight: 300;
-    font-size: 10pt;
-    line-height: 1;
-    color: rgb(43, 43, 43);
-    width: 90%;
-    margin-left: 15px;
+  font-family: Glitched, sans-serif;
+  font-weight: 300;
+  font-size: 10pt;
+  line-height: 1;
+  color: rgb(43, 43, 43);
+  width: 90%;
+  margin-left: 15px;
 }
 .history-p {
-    font-family: Glitched, sans-serif;
-    font-weight: 300;
-    font-size: 8pt;
-    line-height: 1.2;
-    color: rgb(43, 43, 43);
-    width: 90%;
-    margin-left: 15px;
+  font-family: Glitched, sans-serif;
+  font-weight: 300;
+  font-size: 8pt;
+  line-height: 1.2;
+  color: rgb(43, 43, 43);
+  width: 90%;
+  margin-left: 15px;
 }
-
 
 /*PROJECTS SECTION*/
 
 /* --- PROJECTS BANNER (CROSSFADE, SAME SIZE/LOOK) --- */
 .projects-banner {
-    position: relative;
-    display: flex;
-    width: 100%;
-    height: 100px;
-    /* PRESERVE CURRENT HEIGHT */
-    background-color: rgb(245, 247, 248);
-    /* PRESERVE CURRENT BACKGROUND */
-    overflow: hidden;
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100px;
+  /* PRESERVE CURRENT HEIGHT */
+  background-color: rgb(245, 247, 248);
+  /* PRESERVE CURRENT BACKGROUND */
+  overflow: hidden;
 }
 
 /* TWO OVERLAPPING IMAGE LAYERS FOR SMOOTH CROSSFADE */
 .projects-banner .banner-image,
 .projects-banner .banner-image-b {
-    position: absolute;
-    inset: 0;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-image: none;
-    /* JS WILL SET THIS */
-    opacity: 0;
-    /* BOTH START HIDDEN */
-    transition: opacity 400ms ease;
-    /* FADE DURATION */
-    will-change: opacity;
-    pointer-events: none;
-    z-index: 0;
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: none;
+  /* JS WILL SET THIS */
+  opacity: 0;
+  /* BOTH START HIDDEN */
+  transition: opacity 400ms ease;
+  /* FADE DURATION */
+  will-change: opacity;
+  pointer-events: none;
+  z-index: 0;
 }
 
 /* YOUR EXISTING TITLE/TEXT OVERLAY — UNCHANGED APART FROM z-INDEX */
 .projectsbanner-text {
-    position: relative;
-    z-index: 1;
-    /* ABOVE BOTH IMAGE LAYERS */
-    font-family: Glitched, sans-serif;
-    /* PRESERVE YOUR TYPOGRAPHY */
-    font-weight: 400;
-    font-size: 10pt;
-    line-height: 1;
-    color: rgb(53, 53, 53);
-    width: 90%;
-    margin-left: 15px;
+  position: relative;
+  z-index: 1;
+  /* ABOVE BOTH IMAGE LAYERS */
+  font-family: Glitched, sans-serif;
+  /* PRESERVE YOUR TYPOGRAPHY */
+  font-weight: 400;
+  font-size: 10pt;
+  line-height: 1;
+  color: rgb(53, 53, 53);
+  width: 90%;
+  margin-left: 15px;
 }
 
 /* POINTER CUE ON INTERACTIVE CELLS */
 .projects-abc [data-banner] {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 /* REDUCED MOTION */
 @media (prefers-reduced-motion: reduce) {
-
-    .projects-banner .banner-image,
-    .projects-banner .banner-image-b {
-        transition: none;
-    }
+  .projects-banner .banner-image,
+  .projects-banner .banner-image-b {
+    transition: none;
+  }
 }
 
-
-
 .projects-abc {
-    display: flex;
-    width: 100%;
-    height: 80px;
-    background-color: rgb(255, 255, 255);
+  display: flex;
+  width: 100%;
+  height: 80px;
+  background-color: rgb(255, 255, 255);
 }
 
 .projects-abc a {
-    border: 1px dashed rgb(131, 131, 131);
-    border-left: 0;
-    border-right: 0;
-    display: flex;
-    /* so it behaves like your old div */
-    align-items: center;
-    justify-content: center;
-    width: 35%;
-    height: 80px;
-    text-decoration: none;
-    color: inherit;
-    background-color: rgb(255, 255, 255);
+  border: 1px dashed rgb(131, 131, 131);
+  border-left: 0;
+  border-right: 0;
+  display: flex;
+  /* so it behaves like your old div */
+  align-items: center;
+  justify-content: center;
+  width: 35%;
+  height: 80px;
+  text-decoration: none;
+  color: inherit;
+  background-color: rgb(255, 255, 255);
 }
 
-.projects-a1, .projects-b1, .projects-c1, .projects-d1 {
-    border: 1px dashed rgb(131, 131, 131);
-    border-left: 0;
-    border-right: 0;
-    display: flex;
-    align-items: center;
-    font-family: Glitched, sans-serif;
-    font-weight: 600;
-    font-size: 8pt;
-    line-height: 1.2;
-    color: rgb(43, 43, 43);
-    width: 20%;
-    height: 80px;
-    background-color: rgb(255, 255, 255);   
-    padding-left: 3vw;
+.projects-a1,
+.projects-b1,
+.projects-c1,
+.projects-d1 {
+  border: 1px dashed rgb(131, 131, 131);
+  border-left: 0;
+  border-right: 0;
+  display: flex;
+  align-items: center;
+  font-family: Glitched, sans-serif;
+  font-weight: 600;
+  font-size: 8pt;
+  line-height: 1.2;
+  color: rgb(43, 43, 43);
+  width: 20%;
+  height: 80px;
+  background-color: rgb(255, 255, 255);
+  padding-left: 3vw;
 }
 
-.projects-a3, .projects-b3, .projects-c3, .projects-d3 {
-    border: 1px dashed rgb(131, 131, 131);
-    border-left: 0;
-    border-right: 0;
-    display: flex;
-    align-items: center;
-    font-family: Glitched, sans-serif;
-    font-weight: 400;
-    font-size: 8pt;
-    line-height: 1.2;
-    color: rgb(43, 43, 43);
-    width: 45%;
-    height: 80px;
-    background-color: rgb(255, 255, 255);
+.projects-a3,
+.projects-b3,
+.projects-c3,
+.projects-d3 {
+  border: 1px dashed rgb(131, 131, 131);
+  border-left: 0;
+  border-right: 0;
+  display: flex;
+  align-items: center;
+  font-family: Glitched, sans-serif;
+  font-weight: 400;
+  font-size: 8pt;
+  line-height: 1.2;
+  color: rgb(43, 43, 43);
+  width: 45%;
+  height: 80px;
+  background-color: rgb(255, 255, 255);
 }
 
 .base-logo {
-    width: 45px;
-    height: auto;
+  width: 45px;
+  height: auto;
 }
 
 .basests-logo {
-    width: 25px;
-    height: auto;
+  width: 25px;
+  height: auto;
 }
 
 .ipm-logo {
-    width: 23px;
-    height: auto;
+  width: 23px;
+  height: auto;
 }
 
 .crudebox-logo {
-    width: 40px;
-    height: auto;
+  width: 40px;
+  height: auto;
 }
 
 .azuli-logo {
-    width: 20px;
-    height: auto;
+  width: 20px;
+  height: auto;
 }
 
 .project-section {
-    border: 1px dashed rgb(131, 131, 131);
-    border-left: 0;
-    border-right: 0;
-    border-bottom: 0;
-    width: 100%;
-    height: 160px;
-    background-color: rgb(44, 44, 44);
-    color: #fff;
-    margin-bottom: 0px;
+  border: 1px dashed rgb(131, 131, 131);
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  width: 100%;
+  height: 160px;
+  background-color: rgb(44, 44, 44);
+  color: #fff;
+  margin-bottom: 0px;
 }
 
 .project-bio {
-    margin: 10px;
-    font-family: Glitched, sans-serif;
-    font-weight: 300;
-    font-size: 8pt;
+  margin: 10px;
+  font-family: Glitched, sans-serif;
+  font-weight: 300;
+  font-size: 8pt;
 }
 
 .base-header {
-    width: 50%;
-    height: auto;
+  width: 50%;
+  height: auto;
 }
 
 .project-main {
-    display: flex;
-    flex-wrap: wrap;
-    width: 100%;
-    height: auto;
-    background-color: rgb(255, 255, 255);
-    margin-top: 0;
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  height: auto;
+  background-color: rgb(255, 255, 255);
+  margin-top: 0;
 }
 
 .slide100 {
-    width: 100%;
-    height: auto;
+  width: 100%;
+  height: auto;
 }
 
 .slide90 {
-    width: 90%;   
-    height: auto;
-    margin: 5%;
+  width: 90%;
+  height: auto;
+  margin: 5%;
 }
