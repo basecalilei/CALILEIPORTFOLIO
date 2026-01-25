@@ -114,16 +114,16 @@ body {
 }
 
 .home-button {
-  height: 50px;
+  height: 65px;
   max-width: 100%;
 }
 .next-button {
-  height: 50px;
+  height: 65px;
   max-width: 100%;
 }
 
 .prev-button {
-  height: 50px;
+  height: 65px;
   max-width: 100%;
 }
 
@@ -435,8 +435,6 @@ body {
   justify-content: center;
   width: 33.3%;
   height: 100%;
-  text-decoration: none;
-  color: inherit;
   background-color: rgb(255, 255, 255);
 }
 
@@ -447,8 +445,6 @@ body {
   justify-content: center;
   width: 33.3%;
   height: 100%;
-  text-decoration: none;
-  color: inherit;
   background-color: rgb(255, 255, 255);
 }
 
@@ -459,13 +455,11 @@ body {
   justify-content: center;
   width: 33.3%;
   height: 100%;
-  text-decoration: none;
-  color: inherit;
   background-color: rgb(255, 255, 255);
 }
 
 .workflowbutton {
-  width: 65%;
+  width: 60%;
   height: auto;
 }
 
