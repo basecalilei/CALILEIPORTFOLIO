@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 149.99 65.12">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #0ea0db;
+      }
+
+      .cls-2 {
+        font-size: 11.4px;
+      }
+
+      .cls-2, .cls-3 {
+        fill: #f2f2f2;
+      }
+
+      .cls-4 {
+        fill: #333;
+        stroke: #333;
+        stroke-miterlimit: 10;
+        stroke-width: .24px;
+      }
+
+      .cls-5 {
+        font-family: Gridnik, Gridnik;
+      }
+
+      .cls-6 {
+        font-family: FoundryGridnik-Bold, FoundryGridnik;
+        font-weight: 700;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect class="cls-1" x=".12" y=".12" width="149.75" height="65" rx="3.2" ry="3.2"/>
+      <path class="cls-4" d="M149.87,34.12H.12V3.32C.12,1.55,1.55.12,3.32.12h143.36c1.76,0,3.2,1.43,3.2,3.2v30.8Z"/>
+      <text class="cls-2" transform="translate(11.16 21)"><tspan class="cls-5" x="0" y="0">[ </tspan><tspan class="cls-6" x="6.42" y="0">FLOWFORM</tspan><tspan class="cls-5" x="72.76" y="0">.DESIGN ]</tspan></text>
+      <g>
+        <g id="BASE">
+          <path class="cls-3" d="M68.08,49.04c0,3.82,3.1,6.92,6.92,6.92s6.92-3.1,6.92-6.92-3.1-6.92-6.92-6.92-6.92,3.1-6.92,6.92ZM80.94,49.04c0,3.28-2.66,5.95-5.94,5.95s-5.95-2.67-5.95-5.95,2.67-5.94,5.95-5.94,5.94,2.66,5.94,5.94Z"/>
+        </g>
+        <path class="cls-3" d="M78.7,49.88l-1.1,1.09-2.59-2.6-2.6,2.6-1.1-1.09,3.7-3.7,3.7,3.7Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

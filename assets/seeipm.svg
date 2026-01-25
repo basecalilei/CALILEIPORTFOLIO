@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150.07 65.32">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #ed1c24;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5 {
+        font-family: FoundryGridnik-Bold, FoundryGridnik;
+        font-weight: 700;
+      }
+
+      .cls-6, .cls-7 {
+        font-family: Gridnik, Gridnik;
+      }
+
+      .cls-6, .cls-3, .cls-4 {
+        fill: #29abe2;
+      }
+
+      .cls-8 {
+        fill: #08ad4b;
+        stroke-width: .32px;
+      }
+
+      .cls-8, .cls-9 {
+        stroke: #333;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-7, .cls-10, .cls-2 {
+        fill: #f2f2f2;
+      }
+
+      .cls-9 {
+        fill: #333;
+        stroke-width: .24px;
+      }
+
+      .cls-11 {
+        font-size: 11.4px;
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        fill: #0ea0db;
+        letter-spacing: 0em;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect class="cls-8" x=".16" y=".16" width="149.75" height="65" rx="3.2" ry="3.2"/>
+      <path class="cls-9" d="M149.91,34.16H.16V3.36C.16,1.59,1.59.16,3.36.16h143.36c1.76,0,3.2,1.43,3.2,3.2v30.8Z"/>
+      <text class="cls-11" transform="translate(46.7 21.04)"><tspan class="cls-7" x="0" y="0">[ </tspan><tspan class="cls-6" x="6.42" y="0"> </tspan><tspan class="cls-3" x="8.42" y="0">I</tspan><tspan class="cls-1" x="13.48" y="0" xml:space="preserve"> .</tspan><tspan class="cls-2" x="20.41" y="0"> </tspan><tspan class="cls-4" x="23.88" y="0">P</tspan><tspan class="cls-1" x="31.5" y="0">.</tspan><tspan class="cls-2" x="34.96" y="0"> </tspan><tspan class="cls-5" x="38.43" y="0">M </tspan><tspan class="cls-7" x="52.25" y="0">]</tspan></text>
+      <g>
+        <g id="BASE">
+          <path class="cls-10" d="M69.65,48.14c0,3.3,2.75,5.98,6.15,5.98s6.15-2.68,6.15-5.98-2.75-5.98-6.15-5.98-6.15,2.68-6.15,5.98ZM81.09,48.14c0,2.84-2.37,5.14-5.29,5.14s-5.29-2.31-5.29-5.14,2.37-5.14,5.29-5.14,5.29,2.3,5.29,5.14Z"/>
+        </g>
+        <path class="cls-10" d="M79.09,48.86l-.98.94-2.31-2.25-2.31,2.25-.98-.94,3.29-3.2,3.29,3.2Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

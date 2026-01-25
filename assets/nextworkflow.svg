@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 165.7 55.32">
+  <defs>
+    <style>
+      .cls-1 {
+        font-family: Gridnik, Gridnik;
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4 {
+        fill: #f2f2f2;
+      }
+
+      .cls-5, .cls-3 {
+        font-family: FoundryGridnik-Bold, FoundryGridnik;
+        font-weight: 700;
+      }
+
+      .cls-5, .cls-6 {
+        fill: #08ad4b;
+      }
+
+      .cls-7 {
+        font-size: 11.4px;
+      }
+
+      .cls-4 {
+        font-family: MyriadPro-Regular, 'Myriad Pro';
+      }
+
+      .cls-8 {
+        fill: #333;
+        stroke: #333;
+        stroke-miterlimit: 10;
+        stroke-width: .32px;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect class="cls-8" x=".16" y=".16" width="165.38" height="55" rx=".95" ry=".95"/>
+      <path class="cls-6" d="M1.11.16h24.43v55H1.11c-.52,0-.95-.42-.95-.95V1.11C.16.59.59.16,1.11.16Z"/>
+      <text class="cls-7" transform="translate(69.8 30.58)"><tspan class="cls-5" x="0" y="0">NEXT</tspan><tspan class="cls-3" x="29.01" y="0">.</tspan><tspan class="cls-1" x="32.48" y="0">workflow</tspan><tspan class="cls-4" x="81.96" y="0">\</tspan></text>
+      <g>
+        <g id="BASE">
+          <path class="cls-2" d="M6.12,27.66c0,3.82,3.1,6.92,6.92,6.92s6.92-3.1,6.92-6.92-3.1-6.92-6.92-6.92-6.92,3.1-6.92,6.92ZM18.98,27.66c0,3.28-2.66,5.95-5.94,5.95s-5.95-2.67-5.95-5.95,2.67-5.94,5.95-5.94,5.94,2.66,5.94,5.94Z"/>
+        </g>
+        <path class="cls-2" d="M16.74,28.5l-1.1,1.09-2.59-2.6-2.6,2.6-1.1-1.09,3.7-3.7,3.7,3.7Z"/>
+      </g>
+    </g>
+  </g>
+</svg>
