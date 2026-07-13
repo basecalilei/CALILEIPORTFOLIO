@@ -107,7 +107,7 @@ const PANELS = [
   {
     type: "turn",
     scene: { type: "turn", fullscreen: true },
-    file: "models/baseLogoMark.glb",
+    file: "assets/models/baseLogoMark.glb",
     modelScale: 0.7, 
     enter: "grow",
     exit:  "both",
@@ -317,7 +317,7 @@ const PANELS = [
 {
     type: "turn",
     scene: { type: "turn", fullscreen: true },
-    file: "models/crudeLogoMark.glb",
+    file: "assets/models/crudeLogoMark.glb",
     modelScale: 0.6, 
     enter: "grow",
     exit:  "both",
@@ -534,7 +534,7 @@ const PANELS = [
   {
     type: "turn",
     scene: { type: "turn", fullscreen: true },
-    file: "models/azuliLogoMark.glb",
+    file: "assets/models/azuliLogoMark.glb",
     modelScale: 0.6, 
     enter: "grow",
     exit:  "both",
