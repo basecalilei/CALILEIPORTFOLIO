@@ -1,0 +1,60 @@
+/* =============================================================================
+   sidebarHomeStyles.css — styles for the "home" sidebar view
+   -----------------------------------------------------------------------------
+   Owns the kicker label and the vertical button list. The .sidebar-view base
+   (in sidebarStyles.css) handles positioning and opacity transitions.
+
+   CLASSES EMITTED
+     .sidebar-view-home        — the view root
+     .sidebar-home-kicker      — small label above the list ("EXPLORE")
+     .sidebar-home-list        — the vertical button group
+     .sidebar-home-item        — one navigation button
+
+   COUPLED WITH sidebarHome.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+
+.sidebar-home-kicker {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+  margin-bottom: 2.2rem;
+}
+
+.sidebar-home-list {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.sidebar-home-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.2rem 0;
+  background: transparent;
+  border: none;
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  font-family: "Foundry Gridnik", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2rem, 1vw, 2.6rem);
+  letter-spacing: 0.05em;
+  line-height: 1.50;
+  color: var(--ink-dim);
+
+  transition: color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.sidebar-home-item:hover {
+  /* --hover-color is set inline by sidebarHome.js on each mouseenter to a
+     random brand-color var(...) reference; falls back to --brand-blue
+     before the listener has fired once (e.g. server-rendered preview). */
+  color: var(--hover-color, var(--brand-blue));
+  transform: translateX(4px);
+}

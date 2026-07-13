@@ -1,0 +1,474 @@
+/* =============================================================================
+   gridStyles.css — styles for the grid MODAL
+   -----------------------------------------------------------------------------
+   Two layers:
+     1. The outer grid modal — a frosted sheet that slides up from the
+        bottom, same animation pattern as turnPanel's info modal. Holds
+        the grid surface inside.
+     2. The grid surface itself — the pannable image grid, scoped to live
+        inside the modal sheet rather than fullscreen on the page.
+
+   And one more (separate from those two):
+     3. The per-image detail modal — opens when a square is clicked, grows
+        from the source square to fill most of the screen. z:11, above the
+        outer grid modal (z:10).
+
+   CLASSES EMITTED
+     .grid-modal-scrim          — full-screen scrim, z:10
+     .grid-modal-sheet          — frosted glass sheet, slides up from bottom
+     .grid-modal-close          — × button, pinned to the sheet
+     .grid-surface              — the pannable layer inside the sheet
+     .grid-world                — translated layer for drag/lazy-follow
+     .grid-square               — outer positioning frame
+     .grid-square-inner         — visual layer, hover scale
+     .grid-detail-scrim         — per-image detail modal scrim, z:11
+     .grid-detail-window        — per-image detail modal sheet
+     .grid-detail-close, .grid-detail-image-wrap,
+     .grid-detail-image, .grid-detail-caption — detail modal contents
+     .grid-detail-nav (--prev/--next) — cycle arrows in the detail modal;
+     hidden via .is-lone on the scrim for single-entry sets
+
+   COUPLED WITH gridModal.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   THE OUTER GRID MODAL — slide-up sheet, same pattern as turn-info
+   ========================================================================== */
+
+.grid-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  display: none;     /* JS adds .is-visible to flip display:block, then     */
+                     /* .is-open one frame later to trigger the transitions */
+}
+
+.grid-modal-scrim.is-visible {
+  display: block;
+}
+
+/* The dim layer behind the sheet — opacity-animated, sits in ::before so the
+   sheet's backdrop-filter samples the page directly (same architectural
+   reason as turn-info-scrim::before). */
+.grid-modal-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  transition: opacity 0.55s var(--ease);
+  will-change: opacity;
+  pointer-events: none;
+}
+.grid-modal-scrim.is-open::before {
+  opacity: 1;
+}
+.grid-modal-scrim.is-open {
+  pointer-events: auto;
+}
+
+/* The sheet — fills most of the viewport with margins on all sides. Starts
+   translated off-screen (110%) and slides to 0 when .is-open.
+
+   Larger than the info modal (which left more margin at the top). The grid
+   needs the room — too small and the grid feels cramped at high pool
+   densities. */
+.grid-modal-sheet {
+  position: absolute;
+  left: clamp(1rem, 4vw, 3rem);
+  right: clamp(1rem, 4vw, 3rem);
+  bottom: clamp(1rem, 4vw, 3rem);
+  top: clamp(1rem, 4vw, 3rem);    /* equal margin all around */
+
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  overflow: hidden;        /* clip surface to rounded corners */
+  box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.22);
+
+  transform: translateY(110%);
+  transition: transform 0.55s var(--ease);
+}
+.grid-modal-scrim.is-open .grid-modal-sheet { transform: translateY(0); }
+
+.grid-modal-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below so it
+                                     can be dead-centered; the text remains
+                                     for the accessible name */
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;             /* slightly-beveled square (was a circle) */
+  cursor: none; --cursor: pointer;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.grid-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The X — two hairline bars on currentColor, absolutely centered, so the
+   glyph is geometrically dead-center (a text × sits wherever the font's
+   metrics happen to put it) and follows the button's color transitions for
+   free. Same treatment on all four close buttons (.sidebar-close,
+   .grid-modal-close, .grid-detail-close, .project-modal-close) — keep in
+   sync when restyling. */
+.grid-modal-close::before,
+.grid-modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.grid-modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* =============================================================================
+   THE GRID SURFACE — lives inside the sheet
+   -----------------------------------------------------------------------------
+   No longer fixed-position or z-stacked against the page; just fills the
+   sheet's interior. pointer-events:auto unconditionally — the modal being
+   open IS the affordance for interaction. (The previous .is-active gating
+   was needed when the surface lived at body level and had to play nice
+   with the panel system.)
+   ========================================================================== */
+
+.grid-surface {
+  position: absolute;
+  inset: 0;
+  /* Native hand replaced: cursor.js draws the inverting drag crosshair
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;        /* clip squares to the sheet's interior */
+}
+.grid-surface.is-dragging {
+  cursor: none; --cursor: grabbing;
+}
+
+/* The world layer — translated by drag + lazy-follow each frame. ONE
+   transform per frame regardless of pool size; the 112 squares come along
+   as a unit. */
+.grid-world {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;     /* squares opt back in below */
+  will-change: transform;
+}
+
+/* The squares — pool of recycled outer + inner elements. */
+.grid-square {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--grid-square-size, 64px);
+  height: var(--grid-square-size, 64px);
+  pointer-events: auto;     /* always interactive while in the open modal */
+}
+
+.grid-square-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 14%;
+  background-color: var(--line);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transform: scale(1);
+  transition: transform 0.32s var(--ease);
+}
+
+.grid-surface:not(.is-dragging) .grid-square:hover {
+  z-index: 1;
+}
+.grid-surface:not(.is-dragging) .grid-square:hover {
+  z-index: 1;
+}
+.grid-surface:not(.is-dragging) .grid-square:hover .grid-square-inner {
+  transform: scale(1.12);
+}
+
+/* During drag, disable square-level pointer events so the cursor sweeping
+   across them doesn't trigger per-square :hover invalidations. */
+.grid-surface.is-dragging .grid-square,
+.grid-surface.is-dragging .grid-square-inner {
+  pointer-events: none;
+}
+
+/* =============================================================================
+   THE PER-IMAGE DETAIL MODAL
+   -----------------------------------------------------------------------------
+   Opens when a square is clicked. Grows from the clicked square's current
+   position to fill most of the viewport (NOT the grid sheet — the detail
+   modal is at body level, full-viewport, above the grid modal).
+
+   The split: the orientation-aware layout (image right, caption left on
+   landscape; image bottom, caption top on portrait) is preserved from the
+   previous grid implementation.
+
+   Same animation principles as before: cubic-bezier with slight overshoot
+   for the open/close transform.
+   ========================================================================== */
+
+.grid-detail-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  display: none;
+}
+
+.grid-detail-scrim.is-visible {
+  display: block;
+}
+
+.grid-detail-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.4s var(--ease);
+  will-change: opacity;
+  pointer-events: none;
+}
+.grid-detail-scrim.is-open::before {
+  opacity: 1;
+}
+.grid-detail-scrim.is-open {
+  pointer-events: auto;
+}
+
+.grid-detail-window {
+  position: absolute;
+  top: 5vh;
+  left: 5vw;
+  width: 90vw;
+  height: 90vh;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 18px;
+  overflow: hidden;
+  /* Default: vertical split (portrait viewports). Caption on top, image
+     below. Landscape rule below switches to horizontal. */
+  display: flex;
+  flex-direction: column-reverse;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  transform-origin: center center;
+
+  /* Two transitions:
+       transform 0.45s — the FLIP grow/shrink (JS-driven; CSS animates
+                         the recovery when the inline transform is
+                         cleared). Overshoot easing is intentional for
+                         this gesture's feel.
+       opacity   0.32s — fades the window so it doesn't "blink out" at
+                         the end of close. Shorter than the transform
+                         on purpose: the fade resolves before the
+                         shrink reaches the thumb, hiding the abrupt
+                         disappearance. var(--ease) for the opacity
+                         (the overshoot is for geometric motion, not
+                         brightness). */
+  opacity: 0;
+  transition: transform 0.45s cubic-bezier(0.34, 1.15, 0.64, 1),
+              opacity   0.32s var(--ease);
+  will-change: transform, opacity;
+}
+.grid-detail-scrim.is-open .grid-detail-window {
+  opacity: 1;
+}
+
+.grid-detail-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below so it
+                                     can be dead-centered; the text remains
+                                     for the accessible name */
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;             /* slightly-beveled square (was a circle) */
+  cursor: none; --cursor: pointer;
+  transition: background 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.grid-detail-close:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+/* The X — two hairline bars on currentColor, absolutely centered, so the
+   glyph is geometrically dead-center (a text × sits wherever the font's
+   metrics happen to put it) and follows the button's color transitions for
+   free. Same treatment on all four close buttons (.sidebar-close,
+   .grid-modal-close, .grid-detail-close, .project-modal-close) — keep in
+   sync when restyling. */
+.grid-detail-close::before,
+.grid-detail-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.grid-detail-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* Cycle arrows — prev/next through the image set (gridModal.js stepDetail).
+   Same chip as .grid-detail-close (size, fill, hairline, bevel, accent
+   hover); the chevrons are the ×'s hairline-bar language bent to a point.
+   Vertically centered on the IMAGE AREA's edges (the chips live inside
+   .grid-detail-image-wrap, so they never sit over the caption column in
+   landscape; z:2, same rung as the close chip). Hidden when the set has a single
+   entry — .is-lone is set on the scrim by openDetail. */
+.grid-detail-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.6rem;
+  height: 2.6rem;
+  font-size: 0;                   /* no glyph — the chevron is the bars below;
+                                     the aria-label carries the name */
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  cursor: none; --cursor: pointer;
+  transition: background 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.grid-detail-nav:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.grid-detail-nav--prev { left: 1.4rem; }
+.grid-detail-nav--next { right: 1.4rem; }
+
+/* The chevrons: two 11px hairline bars rotated ±45°, vertically offset by
+   3.5px (slightly less than the 3.9px the geometry says) so they OVERLAP
+   at the apex — a clean joint instead of a gap pixel. The ±1px horizontal
+   shift is an optical nudge toward the apex; tune by eye if the glyph
+   reads off-center. */
+.grid-detail-nav::before,
+.grid-detail-nav::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 11px;
+  height: 1px;
+  background: currentColor;
+}
+.grid-detail-nav--prev::before { transform: translate(calc(-50% - 1px), calc(-50% - 3.5px)) rotate(-45deg); }
+.grid-detail-nav--prev::after  { transform: translate(calc(-50% - 1px), calc(-50% + 3.5px)) rotate(45deg); }
+.grid-detail-nav--next::before { transform: translate(calc(-50% + 1px), calc(-50% - 3.5px)) rotate(45deg); }
+.grid-detail-nav--next::after  { transform: translate(calc(-50% + 1px), calc(-50% + 3.5px)) rotate(-45deg); }
+
+/* Single-entry sets: nothing to cycle, no chrome. */
+.grid-detail-scrim.is-lone .grid-detail-nav { display: none; }
+
+.grid-detail-image-wrap {
+  position: relative;   /* anchors the .grid-detail-nav chips to the IMAGE
+                           area, not the window — see the nav block below */
+  flex: 1 1 70%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.grid-detail-image,
+.grid-detail-video {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+}
+
+.grid-detail-caption {
+  flex: 0 0 auto;
+  max-height: 30%;
+  overflow-y: auto;
+  padding: clamp(1.2rem, 3vw, 2rem) clamp(1.6rem, 4vw, 3rem) clamp(1.6rem, 4vw, 3rem);
+  color: #f4f1ec;
+  line-height: 1.65;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  /* Soft separator between caption (top) and image (below) in portrait.
+     Landscape override below replaces this with border-right. */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+.grid-detail-caption::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+.grid-detail-caption h2 {
+  font-family: "Glitched", sans-serif;
+  font-weight: 300;
+  font-size: clamp(1.7rem, 3vw, 2.6rem);
+  line-height: 1.04;
+  letter-spacing: -0.005em;
+  margin-bottom: 0.6em;
+  color: #ffffff;
+}
+.grid-detail-caption p {
+  font-size: clamp(0.85rem, 1.4vw, 0.98rem);
+  margin-bottom: 0.7em;
+  color: #d8d3c8;
+}
+.grid-detail-caption p:last-child { margin-bottom: 0; }
+.grid-detail-caption a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.grid-detail-caption strong { color: #ffffff; }
+
+/* LANDSCAPE LAYOUT — caption on the left, image on the right. */
+@media (orientation: landscape) {
+  .grid-detail-window {
+    flex-direction: row-reverse;
+  }
+  .grid-detail-caption {
+    max-height: none;
+    max-width: 30%;
+    border-bottom: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .grid-detail-image-wrap {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+}

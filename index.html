@@ -1,120 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CALILEI</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
+<head>
+<meta charset="UTF-8" />
+<!-- maximum-scale/user-scalable lock zoom so the full-screen scroll experience
+     isn't disturbed by pinch-zoom on touch devices. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Calilei</title>
 
-  <body>
+<!-- Typography. fonts.css declares the Glitched family from local .woff2
+     files in /fonts/. It MUST load first so subsequent stylesheets can
+     reference "Glitched" / "Glitched Book" by name. -->
+<link rel="stylesheet" href="fonts.css" />
 
+<!-- Stylesheets. The core's styles load next so panel-type stylesheets can
+     rely on the theme variables and the .infinite-overlay base. The scene
+     system's styles are minimal (one canvas rule); panel-type stylesheets
+     follow. Each new module gets its own stylesheet linked here. -->
 
-
-    <div class="headerbar">
-      <a href="index.html">
-        <img
-          class="headerbar-logo"
-          src="assets/CALILEICR.svg"
-          alt="CALILEI Logo"
-        />
-      </a>
-    </div>
-
-
-
-
-    <div class="sidebar">
-      <div class="filler"></div>
-      <div class="main-buttons">
-      </div>
-
-      <div class="home">
-        <a href="base.html">
-          <img class="prev-button" src="assets/seeprojects.svg" alt="" />
-        </a>
-      </div>
-      <div class="home">
-        <a href="patternmaking.html">
-          <img class="prev-button" src="assets/seeworkflows.svg" alt="" />
-        </a>
-      </div>
-      <div class="home">
-        <a href="about.html">
-          <img class="prev-button" src="assets/aboutme.svg" alt="" />
-        </a>
-      </div>
-      
-    </div>
-
-
-
-    <div id="viewport">
-      <div class="filler"></div>
-
-      <div class="id-section">
-        <img
-          class="profile-pic"
-          src="assets/HEADSHOT4.jpg"
-          alt="Profile Picture"
-        />
-        <div class="idname">
-          <h1 class="idname-text">
-           ////// DESIGNER<br />DENVER.COLORADO<br /><br />EMAIL:<br />kaminoko.jp(at)proton.me
-          </h1>
-        </div>
-      </div>
+<link rel="stylesheet" href="infiniteStyles.css" />
+<link rel="stylesheet" href="cursorStyles.css" />
+<link rel="stylesheet" href="musicPlayerStyles.css">
+<link rel="stylesheet" href="threeStyles.css" />
+<link rel="stylesheet" href="sidebarStyles.css" />
+<link rel="stylesheet" href="scrollIndicatorStyles.css" />
+<link rel="stylesheet" href="sidebarHomeStyles.css" />
+<link rel="stylesheet" href="sidebarAboutStyles.css" />
+<link rel="stylesheet" href="sidebarProjectsStyles.css" />
+<link rel="stylesheet" href="sidebarEthosStyles.css" />
+<link rel="stylesheet" href="sidebarTestStyles.css" />
+<link rel="stylesheet" href="sidebarProcessStyles.css" />
+<link rel="stylesheet" href="sidebarShopStyles.css" />
+<link rel="stylesheet" href="sidebarContactStyles.css" />
+<link rel="stylesheet" href="sidebarShopGateStyles.css" />
+<link rel="stylesheet" href="projectModalStyles.css" />
+<link rel="stylesheet" href="processModalStyles.css" />
+<link rel="stylesheet" href="pdfModalStyles.css" />
+<link rel="stylesheet" href="dotsStyles.css" />
+<link rel="stylesheet" href="turnStyles.css" />
+<link rel="stylesheet" href="gridStyles.css" />
+<link rel="stylesheet" href="wallStyles.css" />
+<link rel="stylesheet" href="gameStyles.css" />
+<link rel="stylesheet" href="desktopStyles.css" />
+<link rel="stylesheet" href="desktopTaskbarStyles.css" />
+<link rel="stylesheet" href="desktopImageStyles.css" />
+<link rel="stylesheet" href="desktopNoteStyles.css" />
+<link rel="stylesheet" href="desktopAudioStyles.css" />
+<link rel="stylesheet" href="desktopVideoStyles.css" />
+<link rel="stylesheet" href="desktopMdStyles.css" />
 
 
 
-      
+</head>
+<body>
+  <!-- =========================================================================
+       LAYER STACK (z-index set in each module's stylesheet):
+         #three-canvas      z1 — shared WebGL canvas for the scene system
+                                 (threeArray.js creates and inserts it at
+                                 page load; it lives as the first child of
+                                 <body>, behind the scroller and overlays.)
+         #infinite-scroller z2 — the ONLY scrolling element (holds spacers)
+         #infinite-overlays z3 — fixed content overlays, positioned per-frame
 
-      <div class="main">
+       The #infinite-scroller and #infinite-overlays elements are intentionally
+       EMPTY here. The core generates panel spacers and the panel-type
+       modules generate the overlays at load. The ids are referenced by
+       getElementById in infiniteScroll.js — renaming either id breaks the
+       core. #three-canvas is created by JS, not by HTML.
+       ========================================================================= -->
 
+  <!-- Scroll viewport. The core appends one empty <section class="infinite-panel">
+       spacer per panel, then injects clone spacers around them. This is the
+       only element the browser scrolls. -->
+  <main id="infinite-scroller" aria-label="Scrollable showcase"></main>
 
+  <!-- Fixed overlay layer. The core (and the panel-type modules) appends one
+       overlay per panel here. It's a sibling of #infinite-scroller (not
+       inside it) and is positioned every frame from activeFloat, so it stays
+       glued to the scroll across the loop seam. pointer-events are off here
+       except on the active overlay's interactive bits (a panel-type-level
+       concern, gated by .is-active in CSS). -->
+  <div id="infinite-overlays" aria-live="polite"></div>
 
+  <!-- Import map: lets modules use the bare specifier "three" with no build
+       step. THIS is where the three.js version is pinned — bump it here,
+       not in any JS module. addons (loaders, controls, post-processing)
+       come from "three/addons/" when needed. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
 
-        <img class="slide100" src="assets2/index/index1.jpg" />
-        
-        <img class="slide100" src="assets2/index/index2.jpg" />
-        <div class="fill"></div>
-        <img class="slide100" src="assets2/index/index3.jpg" />
-        <img class="slide100" src="assets2/index/index21.jpg" />
-        <img class="slide100" src="assets2/index/index4.jpg" />
-        <img class="slide100" src="assets2/index/index5.jpg" />
-        <img class="slide100" src="assets2/index/index6.jpg" />
-        <div class="fill"></div>
-        <img class="slide100" src="assets2/index/index7.jpg" />
-        <div class="fill"></div>
-        <img class="slide100" src="assets2/index/index8.jpg" />
-        <img class="slide100" src="assets2/index/index9.jpg" />
-        
-        <img class="slide100" src="assets2/index/index10.jpg" />
-        <div class="fill"></div>
-        <img class="slide100" src="assets2/index/index20.jpg" />
-        <img class="slide100" src="assets2/index/index11.jpg" />
-        <img class="slide100" src="assets2/index/index12.jpg" />
-        <img class="slide100" src="assets2/index/index13.jpg" />
-
-        
-      </div>
-
-
-
-
-    
-
-
-
-
-
-      
-
-
-
-
-
-    </div>
-    <script type="module" src="scroll.js"></script>
-  </body>
+  <!-- The entry point. type="module" enables ES imports (no build step
+       required). main.js imports the panel-type modules and the scene-type
+       modules (side-effect: they register themselves), then calls start(). -->
+  <script type="module" src="main.js"></script>
+</body>
 </html>

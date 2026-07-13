@@ -1,0 +1,766 @@
+/* =============================================================================
+   desktopStyles.css — styles for the "desktop" PANEL TYPE
+   -----------------------------------------------------------------------------
+   Two concerns in one stylesheet:
+
+     1. The DESKTOP — full-viewport overlay with a warm light-grey surface
+        ("paper" / "blueprint" feel), faint technical grid, and a thin
+        dark wireframe border that doubles as the entry/exit animation.
+     2. The WINDOWS — light frosted-glass shells with thin dark hairlines,
+        sitting on the light desktop like sheets of paper inside a frame.
+
+   The desktop sits at full viewport; the .infinite-overlay base in
+   infiniteStyles.css handles vertical centering + --shift + opacity. We
+   override left/width/height to fill the viewport and re-include the
+   translateY(calc(-50% + var(--shift))) so the scroll-link still works.
+
+   THE WIREFRAME BORDER
+     Four dark hairline elements (top, bottom, left, right) live inside
+     .desktop-screen. desktopPanel.js writes two custom properties on
+     the screen — --x-scale (horizontal extent) and --y-split (vertical
+     separation of top + bottom from centre). The four lines read those
+     to position + size themselves; at rest (xScale=1, ySplit=1) they
+     form a perfect rectangle outline that is the screen's permanent
+     border. During the entry animation they assemble from a dot.
+
+     The surface inside uses clip-path inset() with the same parameters,
+     so its visible region is always exactly the rectangle bounded by
+     the four lines — the frame literally outlines the visible content
+     as it draws itself.
+
+   INTERACTION GATE
+     The overlay starts pointer-events: none (from the base), which
+     inherits down to the surface and everything inside. The .is-clear
+     class (set by desktopPanel.js when grow crosses INTERACT_THRESHOLD)
+     re-enables pointer-events ONLY on the interactive children: icons
+     and open windows. The surface itself stays permanently click-through
+     so wheel events over empty desktop areas fall through to the
+     #infinite-scroller below and the page can still scroll past the
+     panel.
+
+   CLASSES THIS FILE EMITS
+     .desktop-overlay          — full-viewport, --shift hook, opacity target
+     .desktop-html-overlay     — scroll-tracking horizontal line behind screen
+     .desktop-screen           — 90vw × 90vh fixed-centered, holds the frame
+     .desktop-frame--top/--bottom/--left/--right — the four wireframe lines
+     .desktop-surface          — the desktop background + interaction gate
+     .desktop-icon             — icon outer wrapper, positioning + drag state
+     .desktop-icon--folder     — folder-specific tweaks (inner glyph)
+     .desktop-icon--<type>     — file-type-specific tweaks via state attr
+     .desktop-icon-inner       — wrapper for the type's authored glyph/thumbnail
+     .desktop-icon-label       — the filename label below the glyph
+     .desktop-folder-glyph     — sizing for the built-in folder SVG
+     .is-drop-candidate        — drag-over visual on folder icons + windows
+     .desktop-window           — light frosted-glass window shell
+     .desktop-window-header    — drag handle / title / close button row
+     .desktop-window-title     — window title typography
+     .desktop-window-close     — × button
+     .desktop-window-content   — interior content area (where children mount)
+     .desktop-window-resize-handle — invisible drag zones for window resize
+
+   COUPLED WITH desktopPanel.js (emits these classes) and infiniteStyles.css
+   (provides .infinite-overlay base + theme vars).
+   ========================================================================== */
+
+/* =============================================================================
+   THREE-ELEMENT STRUCTURE
+   -----------------------------------------------------------------------------
+   The desktop panel's overlay splits its responsibilities across three
+   nested elements so scroll-tracking and the screen's fixed position can
+   coexist:
+
+     .desktop-overlay      — full viewport, the core's --shift target. Holds
+                              opacity for the whole panel. Does NOT transform
+                              with scroll itself (override of the base).
+       .desktop-html-overlay  — consumes --shift; the visible scroll
+                                 indicator (a 1px line for now). Painted
+                                 first so the screen hides it where they
+                                 overlap.
+       .desktop-screen        — 90vw × 90vh, fixed-centered in viewport.
+                                 The four .desktop-frame lines + the
+                                 .desktop-surface live here. The screen
+                                 does NOT move with scroll — it stays put,
+                                 the line behind it slides past on scroll.
+
+   Layout map at rest:
+     overlay  ████████████████████████████  (full viewport)
+       html      ━━━━━━━━━━━━━━━━━━━━━━━━   (line at centre, full width)
+       screen        ┌──────────────┐         (90% × 90%, centered, the four
+                     │  desktop     │           frame lines outline this rect,
+                     │  contents    │           hiding the line where they
+                     └──────────────┘           overlap)
+   ========================================================================== */
+
+/* =============================================================================
+   THE OVERLAY — full viewport, fixed-positioned (no scroll travel)
+   ========================================================================== */
+
+.desktop-overlay {
+  /* Full viewport. NO --shift in transform — the overlay itself doesn't
+     move; its children decide whether they scroll-track. The base's
+     translateY(calc(-50% + var(--shift))) is REPLACED with a static
+     translateY(-50%) so the overlay's box stays where the base centred
+     it without sliding. */
+  left: 0;
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  transform: translateY(-50%);
+}
+
+/* =============================================================================
+   THE HTML OVERLAY — the scroll indicator
+   -----------------------------------------------------------------------------
+   A 1px horizontal line at viewport centre, full width, consuming --shift
+   in its own transform so it slides up/down as the user scrolls.
+
+   Where the line is visible at any given moment depends on two layers:
+     - The .desktop-screen below has background: var(--bg), so wherever
+       the line overlaps the screen rectangle, the screen occludes it.
+     - Inside the wireframe rectangle, .desktop-surface::before paints
+       a separate blurred copy of the line — that's what the user sees
+       inside the screen (the "blob behind the glass" effect).
+
+   Net result: crisp full-width line wherever the line is *outside* the
+   screen rectangle (left/right of it at rest, above/below as the scroll
+   moves it past); soft blurred band wherever the line crosses *inside*
+   the screen rectangle.
+
+   Opacity is driven from desktopPanel.js's tick() (gradual fade with
+   grow, turnPanel-style). The base alpha is 1 here; tick reduces it.
+   ========================================================================== */
+
+.desktop-html-overlay {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #000;          /* literal black, as requested. Swap for
+                                var(--ink) (#1c1813) if the warmer tone
+                                fits the surrounding aesthetic better.
+                                Match .desktop-surface::before below if
+                                you change this. */
+  transform: translateY(calc(-50% + var(--shift)));
+  pointer-events: none;
+}
+
+/* =============================================================================
+   THE SCREEN — 90vw × 90vh, fixed-centered, hosts the frame + surface
+   -----------------------------------------------------------------------------
+   The screen is a positioning + clipping container AND the occluder for
+   the scroll-indicator line. The four .desktop-frame children outline
+   it; the .desktop-surface fills the rectangle inside.
+
+   We keep overflow: hidden so dragged windows can't escape the 90% area,
+   and we declare the custom property defaults here because they need to
+   inherit only to the screen subtree (NOT to the html-overlay sibling).
+
+   On the background: the screen carries `background: var(--bg)` so that
+   wherever the .desktop-html-overlay (the page-level scroll-indicator
+   line) crosses the screen's rectangle, the screen visually hides it.
+   Since var(--bg) is also the page background, the screen blends with
+   the page invisibly — there's no visible "screen rectangle" outside
+   the wireframe, just an occluder of the line. This is what restores
+   the original "line is hidden where the monitor is" behaviour after
+   the .desktop-surface inside the screen was made translucent (it can
+   no longer occlude on its own).
+
+   Caveat: if the page background ever changes from var(--bg), this
+   rectangle will become visible. So will it be if another panel's
+   scene appears behind the desktop mid-transition. Acceptable for
+   now — same caveat applied to the original opaque vignette.
+   ========================================================================== */
+
+.desktop-screen {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 90vw;
+  width: 90dvw;
+  height: 90vh;
+  height: 90dvh;
+  transform: translate(-50%, -50%);
+
+  overflow: hidden;          /* clip the surface + windows to 90% bounds */
+
+  /* Matches the page background so this rectangle is invisible against
+     the page while still occluding the scroll-line where they overlap.
+     See the block comment above for the full story. */
+  background: var(--bg);
+
+  /* Custom property defaults — driven by desktopPanel.js's tick():
+       --x-scale  : 0..1   horizontal extent of the assembled frame
+       --y-split  : 0..1   vertical separation of top + bottom lines
+     These are scoped to the screen subtree — the html-overlay sibling
+     doesn't inherit them and stays unaffected by the assembly. */
+  --x-scale: 0;
+  --y-split: 0;
+}
+
+/* =============================================================================
+   THE WIREFRAME — four dark hairlines that animate into the screen's border
+   -----------------------------------------------------------------------------
+   The two horizontal lines (top + bottom) and two vertical lines (left +
+   right) read --x-scale and --y-split from the screen and compute their
+   own position + size. Driven entirely by CSS; no per-frame JS writes.
+
+   Geometry:
+     top    line: at y = (1 - ySplit) × 50% of screen height, width = xScale × 100%
+     bottom line: at y = (1 - ySplit) × 50% from bottom,      width = xScale × 100%
+     left   line: at x = 0, top = (1 - ySplit) × 50% of screen height,
+                  height = ySplit × 100%
+     right  line: at x = right edge (same y + height as left)
+
+   At ySplit = 0 the top + bottom lines are coincident at centre,
+   so during the horizontal sweep (phase 1) they read as a single line.
+
+   All four are 1px and pure dark ink (var(--ink)). z-index 1000 keeps
+   them above icons + windows so the frame reads as the screen's chrome
+   on top of contents.
+   ========================================================================== */
+
+.desktop-frame {
+  position: absolute;
+  background: var(--ink);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.desktop-frame--top {
+  left: 50%;
+  top: calc((1 - var(--y-split)) * 50%);
+  width: calc(var(--x-scale) * 100%);
+  height: 1px;
+  transform: translateX(-50%);
+}
+
+.desktop-frame--bottom {
+  left: 50%;
+  bottom: calc((1 - var(--y-split)) * 50%);
+  width: calc(var(--x-scale) * 100%);
+  height: 1px;
+  transform: translateX(-50%);
+}
+
+.desktop-frame--left {
+  left: 0;
+  top: calc((1 - var(--y-split)) * 50%);
+  width: 1px;
+  height: calc(var(--y-split) * 100%);
+}
+
+.desktop-frame--right {
+  right: 0;
+  top: calc((1 - var(--y-split)) * 50%);
+  width: 1px;
+  height: calc(var(--y-split) * 100%);
+}
+
+/* =============================================================================
+   THE SURFACE — fills the screen; visible region clipped to the frame rect
+   ========================================================================== */
+
+.desktop-surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;             /* clip windows that drift past edges */
+  pointer-events: none;
+
+  /* Clip the visible region to the rectangle bounded by the four frame
+     lines. inset(top right bottom left) — all four insets shrink the
+     visible region inward from the screen edges. At xScale = 0, ySplit = 0
+     the inset is 50% on all sides, so nothing visible. At xScale = 1,
+     ySplit = 1 the inset is 0, so the whole surface is visible. During
+     the animation the visible region grows in lockstep with the frame. */
+  clip-path: inset(
+    calc((1 - var(--y-split)) * 50%)
+    calc((1 - var(--x-scale)) * 50%)
+    calc((1 - var(--y-split)) * 50%)
+    calc((1 - var(--x-scale)) * 50%)
+  );
+  will-change: clip-path;
+
+  /* Translucent dark-cool tint. The surface used to attempt true frosted
+     glass via backdrop-filter, but that was a no-op: the clip-path on
+     this element makes it a backdrop-root, so backdrop-filter sampled
+     from inside its own (empty) root. Instead the surface just tints
+     what's behind it, and we draw a blurred copy of the scroll-line
+     inside it (.desktop-surface::before below) so it shows through the
+     tint as a soft horizontal band — the visual "blob behind the glass"
+     analogue to the cube model showing through turnPanel's info sheet.
+
+     The tint is a cool dark grey at low alpha — enough darkness to read
+     as a present surface (slightly darker than the page bg), with a
+     cool tilt that nods to the original "cool drafting paper" character
+     the vignette had. Push the alpha up for a more present / opaque
+     surface; drop it for a thinner, more transparent feel. */
+  background: rgba(224, 228, 231, 0.22);
+}
+
+/* The blurred copy of the scroll-indicator line, drawn INSIDE the
+   surface. Together with .desktop-html-overlay::before/::after outside
+   the screen, this draws the scroll line in two pieces: crisp outside,
+   soft inside.
+
+   Why a duplicate line and not backdrop-filter sampling the outer one:
+   the surface's clip-path makes it a backdrop-root, so a backdrop-filter
+   here would sample from inside the (empty) root rather than from the
+   outer line — see the comment above.
+
+   Geometry: the surface fills the 90vw × 90vh .desktop-screen, which
+   is centered in the viewport. So `top: 50%` on this pseudo-element is
+   at the surface's vertical centre, which equals viewport centre — the
+   same y position as the outer .desktop-html-overlay shell. With the
+   same translateY(calc(-50% + var(--shift))) formula, both pieces track
+   scroll identically and stay aligned at the screen's left/right edges.
+
+   --shift inherits down through .desktop-overlay → .desktop-screen →
+   .desktop-surface to here via the custom-property cascade — no JS
+   plumbing needed to drive this second line.
+
+   The 20px blur halo extends past the line on all sides, but is clipped
+   to the screen rectangle by the surface's clip-path. So the soft band
+   appears and disappears with the wireframe assembly: as the rectangle
+   grows in phases 1 + 2, the band becomes visible inside it. */
+.desktop-surface::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #000;          /* match the outer segments above */
+  transform: translateY(calc(-50% + var(--shift)));
+  pointer-events: none;
+  filter: blur(20px);
+}
+
+/* INTERACTION GATING
+   The base .infinite-overlay is pointer-events: none, which inherits down
+   to the screen, surface, and everything inside. We re-enable hit-testing
+   only on the things the user is meant to interact with directly:
+   individual icons and open windows. Crucially we do NOT re-enable it on
+   the surface itself — if the surface caught events, wheel scrolling over
+   the desktop's empty space would stop reaching #infinite-scroller below
+   and the page wouldn't scroll past the panel. */
+.desktop-overlay.is-clear .desktop-icon,
+.desktop-overlay.is-clear .desktop-window {
+  pointer-events: auto;
+}
+
+/* =============================================================================
+   ICONS — folder + file (shared chrome, type-specific glyph)
+   ========================================================================== */
+
+/* The outer wrapper. JS sets width/height inline from ICON_W/ICON_H so the
+   hit-target matches the auto-layout grid. transform is written every
+   frame of a drag by JS; we set will-change to keep it on its own
+   compositor layer (cheap GPU op, avoids layout thrashing). */
+.desktop-icon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 8px 4px 4px;
+
+  /* Native hand replaced: cursor.js draws the inverting drag crosshair
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+
+  will-change: transform;
+  transition:
+    box-shadow 0.18s var(--ease),
+    background 0.18s var(--ease);
+
+  /* Square corners with a hint of fill on hover — keeps the "technical"
+     read distinct from the "rounded chrome" of the windows. */
+  border-radius: 4px;
+}
+
+.desktop-icon:hover {
+  background: rgba(28, 24, 19, 0.05);     /* dark ink at low alpha */
+}
+
+/* Mid-drag: lift visually (z above siblings, soft shadow, slight scale up),
+   and switch cursor. JS adds/removes .is-dragging on drag start/end. */
+.desktop-icon.is-dragging {
+  cursor: none; --cursor: grabbing;
+  z-index: 1000;
+  background: rgba(28, 24, 19, 0.08);
+  box-shadow:
+    0 8px 24px rgba(28, 24, 19, 0.18),
+    0 0 0 1px rgba(28, 24, 19, 0.12);
+  transform-origin: center;
+}
+
+/* The inner content slot — folder gets the built-in folder glyph; a file
+   type fills this with whatever its buildIcon returns (typically a
+   thumbnail or a simple SVG). Fixed dimensions keep the label aligned
+   regardless of what the glyph is.
+
+   COLOUR TINT (PER-ICON KNOBS)
+   Two parallel custom properties control glyph appearance:
+
+     --icon-line   default: var(--ink)
+                   Controls stroke / outline. SVG glyphs that use
+                   stroke="currentColor" inherit this via the `color`
+                   property below.
+
+     --icon-fill   default: rgba(255, 255, 255, 0.06)
+                   Controls fill / interior. SVG glyph paths with
+                   class="desktop-glyph-fill" use this via the rule
+                   below. Paths without that class continue to inherit
+                   fill="none" from the SVG root and stay unfilled
+                   (e.g. the folder's tab-fold line, the note's text
+                   lines).
+
+   The panel's buildIconEl sets either or both on the outer icon
+   element when the author has provided `lineColor` and/or `fillColor`
+   on the entry; otherwise the fallbacks above apply.
+
+   File-types that render raster images (e.g. the `image` type, which
+   uses <img>) ignore both — there's nothing for currentColor or fill
+   to propagate into. Authoring `lineColor`/`fillColor` on an image
+   entry is a silent no-op.
+
+   Authoring example:
+     { type: "folder", name: "Documents",
+       lineColor: "#3a7bd5", fillColor: "#3a7bd5", ... }
+     { type: "note",   name: "thoughts",
+       lineColor: "#c2185b", fillColor: "#c2185b", ... } */
+.desktop-icon-inner {
+  width: 56px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--icon-line, var(--ink));     /* tint SVG strokes via currentColor */
+  pointer-events: none;                    /* clicks pass through to the wrapper */
+}
+
+/* Glyph fill. Applies to paths in any built-in or registered SVG glyph
+   that opt in via class="desktop-glyph-fill". Defaults to the original
+   barely-there white so entries without an authored fillColor look
+   exactly as they did before this knob existed. */
+.desktop-icon-inner .desktop-glyph-fill {
+  fill: var(--icon-fill, rgba(255, 255, 255, 0.06));
+}
+
+/* The label below the glyph. Glitched font matches the project's voice;
+   small + tight letter-spacing reads as "technical caption" rather than
+   "rich text." Two-line clamp prevents long filenames from breaking the
+   grid. */
+.desktop-icon-label {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: rgba(28, 24, 19, 0.85);       /* dark ink, slightly softer than --ink */
+  text-align: center;
+  max-width: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+/* =============================================================================
+   FOLDER GLYPH — built-in SVG, sized to fit .desktop-icon-inner
+   -----------------------------------------------------------------------------
+   Folder is the only built-in icon type (image/note/etc are registered
+   via registerFileType — folder is core to the panel because of its
+   drop-target semantics). Its glyph uses currentColor on the strokes
+   and class="desktop-glyph-fill" on the body path, so per-folder
+   tinting via the authored `lineColor` and `fillColor` fields flows
+   through the generic --icon-line / --icon-fill mechanism documented
+   above on .desktop-icon-inner. No folder-specific colour rule needed.
+
+   The drop-candidate state still overrides the line colour via
+   var(--accent) at a more specific selector — the orange "drop me
+   here" feedback works regardless of the base colour.
+   ========================================================================== */
+
+.desktop-folder-glyph {
+  width: 48px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-folder-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   DROP-CANDIDATE — visual feedback while a file is dragged over a folder
+   -----------------------------------------------------------------------------
+   When the user is mid-drag and the hit-test resolves to a folder, the
+   panel adds .is-drop-candidate to either the folder's icon OR its open
+   window (whichever the pointer is actually over). The visualisation is
+   deliberately MORE assertive than the passive :hover state.
+
+   --accent (warm orange) works on both light and dark, so the colour
+   tokens stay the same; we just bump the alpha a touch for visibility
+   against the lighter background.
+
+   Class management happens in JS (wireIconInteraction's onDrag); the
+   class is removed in onDragEnd before the drop completes.
+   ========================================================================== */
+
+.desktop-icon--folder.is-drop-candidate {
+  background: rgba(199, 93, 52, 0.14);   /* --accent at low alpha */
+}
+
+.desktop-icon--folder.is-drop-candidate .desktop-icon-inner {
+  color: var(--accent);
+  transform: scale(1.1);
+  transition: transform 0.18s var(--ease), color 0.18s var(--ease);
+}
+
+.desktop-icon--folder.is-drop-candidate .desktop-icon-label {
+  color: var(--accent);
+  transition: color 0.18s var(--ease);
+}
+
+.desktop-window--folder.is-drop-candidate .desktop-window-content {
+  background: rgba(199, 93, 52, 0.10);
+  box-shadow: inset 0 0 0 2px rgba(199, 93, 52, 0.5);
+  transition: background 0.18s var(--ease), box-shadow 0.18s var(--ease);
+}
+
+/* =============================================================================
+   WINDOWS — light frosted-glass shells over the light desktop
+   -----------------------------------------------------------------------------
+   Inverted from the dark version: white-alpha tint + blur, with a thin
+   dark hairline border and a soft dark drop shadow for elevation. Reads
+   as "translucent paper" against the light grey desktop.
+   ========================================================================== */
+
+.desktop-window {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+
+  /* Light frosted glass — white tint + blur, dark hairline edge. */
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(28, 24, 19, 0.18);
+  border-radius: 12px;
+  overflow: hidden;                       /* clip content to rounded corners */
+
+  /* Elevation: a soft dark shadow that puts the window distinctly above
+     the desktop. Slightly stronger near the bottom for grounded look. */
+  box-shadow:
+    0 18px 50px rgba(28, 24, 19, 0.12),
+    0 2px 6px rgba(28, 24, 19, 0.08);
+
+  will-change: transform;
+  transition: box-shadow 0.2s var(--ease);
+}
+
+.desktop-window.is-dragging {
+  box-shadow:
+    0 28px 70px rgba(28, 24, 19, 0.20),
+    0 4px 12px rgba(28, 24, 19, 0.12);
+}
+
+/* The header — drag handle, title, close button. Height matches HEADER_H
+   in desktopPanel.js (36px). Slight darker tint against the body so the
+   handle is visually distinct. */
+.desktop-window-header {
+  flex: 0 0 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.6rem 0 1rem;
+  cursor: none; --cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+
+  background: rgba(28, 24, 19, 0.04);
+  border-bottom: 1px solid rgba(28, 24, 19, 0.10);
+}
+
+.desktop-window.is-dragging .desktop-window-header { cursor: none; --cursor: grabbing; }
+
+.desktop-window-title {
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  pointer-events: none;     /* clicks on the title pass through to the header */
+}
+
+.desktop-window-close {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(28, 24, 19, 0.7);
+  background: transparent;
+  border: 1px solid rgba(28, 24, 19, 0.22);
+  border-radius: 50%;
+  cursor: none; --cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    color 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.desktop-window-close:hover {
+  color: #fff;
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* Minimize button — visually paired with the close button (same size,
+   shape, and rest-state border so they read as a button cluster) but
+   with a deliberately different hover. Close hovers to the accent
+   orange because it's destructive — that's the "heads up, this dismisses
+   the window" signal. Minimize is reversible (one taskbar click brings
+   it back), so it gets a neutral ink-tint hover that says "interactive"
+   without saying "warning." Sits just left of close in the header. */
+.desktop-window-minimize {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  margin-right: 0.3rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  color: rgba(28, 24, 19, 0.7);
+  background: transparent;
+  border: 1px solid rgba(28, 24, 19, 0.22);
+  border-radius: 50%;
+  cursor: none; --cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    color 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease);
+}
+
+.desktop-window-minimize:hover {
+  color: rgba(28, 24, 19, 1);
+  border-color: rgba(28, 24, 19, 0.45);
+  background: rgba(28, 24, 19, 0.06);
+}
+
+/* Minimized state: visibility: hidden preserves geometry (so restore
+   puts the window back exactly where it was) while removing paint and
+   pointer events. Not display:none because we want the layout snapshot
+   preserved and because if minimize ever grows an animation, the
+   transition needs a positioned element to interpolate from. */
+.desktop-window.is-minimized {
+  visibility: hidden;
+}
+
+/* The content area — fills the remainder of the window. Position relative
+   so absolutely-positioned icons inside (in folder windows) are
+   coordinate-anchored to it. Overflow hidden contains drag-portal
+   reparenting and clipping during transitions. */
+.desktop-window-content {
+  flex: 1 1 auto;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Folder windows show their child icons; surface tone is very slightly
+   darker than the chrome so the icons read against a calm background. */
+.desktop-window--folder .desktop-window-content {
+  background: rgba(28, 24, 19, 0.035);
+}
+
+/* =============================================================================
+   RESIZE HANDLES — invisible drag zones at corners and edges
+   -----------------------------------------------------------------------------
+   Eight handles per window: 4 corners (NW, NE, SE, SW) and 4 edges
+   (N, S, E, W). The corners are 12×12 squares; the edges are thin strips
+   between them. They overlap with the header at the top, with the content
+   area along the sides and bottom — but only by a few px, so most pointer
+   activity on those elements still reaches them.
+
+   The handles render NO ink — only a cursor change. That keeps the window
+   chrome clean while still giving the user a clear affordance via the
+   mouse cursor at the edges.
+   ========================================================================== */
+
+.desktop-window-resize-handle {
+  position: absolute;
+  background: transparent;
+  z-index: 10;          /* above content + header; below the close button */
+}
+
+/* Corners — 12×12 squares at each corner of the window box. */
+.desktop-window-resize-handle--nw {
+  top: 0; left: 0; width: 12px; height: 12px;
+  cursor: nwse-resize;
+}
+.desktop-window-resize-handle--ne {
+  top: 0; right: 0; width: 12px; height: 12px;
+  cursor: nesw-resize;
+}
+.desktop-window-resize-handle--se {
+  bottom: 0; right: 0; width: 12px; height: 12px;
+  cursor: nwse-resize;
+}
+.desktop-window-resize-handle--sw {
+  bottom: 0; left: 0; width: 12px; height: 12px;
+  cursor: nesw-resize;
+}
+
+/* Edges — thin strips between corners. 5px wide, inset by 12px on each
+   end so they don't overlap the corner handles. */
+.desktop-window-resize-handle--n {
+  top: 0; left: 12px; right: 12px; height: 5px;
+  cursor: ns-resize;
+}
+.desktop-window-resize-handle--s {
+  bottom: 0; left: 12px; right: 12px; height: 5px;
+  cursor: ns-resize;
+}
+.desktop-window-resize-handle--w {
+  top: 12px; bottom: 12px; left: 0; width: 5px;
+  cursor: ew-resize;
+}
+.desktop-window-resize-handle--e {
+  top: 12px; bottom: 12px; right: 0; width: 5px;
+  cursor: ew-resize;
+}
+
+/* During an active resize, freeze the box-shadow transition so the
+   window doesn't visibly "react" to its own shadow during drag (subtle
+   but noticeable). */
+.desktop-window.is-resizing {
+  transition: none;
+}

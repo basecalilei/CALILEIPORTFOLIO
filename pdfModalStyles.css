@@ -1,0 +1,479 @@
+/* =============================================================================
+   pdfModalStyles.css — styles for the PDF READER modal + the document card
+   -----------------------------------------------------------------------------
+   Owns two things:
+     1. THE READER — scrim, reading sheet, header (kicker/title/meta,
+        RAW link, close), and the scrollable page column pdfModal.js
+        renders canvases into.
+     2. THE DOCUMENT CARD (.pdf-card) — the bordered trigger object authored
+        anywhere on the site (project media stacks, sidebar views, desktop
+        windows). The card's styles live here, not with any host module, so
+        every card on the site reads identically and deleting the pdf-modal
+        feature removes the whole visual system in one file.
+
+   Z-INDEX
+     z:12 — .pdf-modal-scrim
+     z:13 — .pdf-modal-sheet
+     Above the project modal (z:10–11) because cards live inside project
+     media stacks; the reader opens OVER the project sheet and closing
+     returns to it. The cursor (z:10000) stays above everything.
+
+   ANIMATION
+     Same FLIP + fade choreography as the project modal — transform 0.45s,
+     opacity 0.32s, dim/blur on the scrim's ::before. The shorter opacity
+     hides the aspect-mismatch squish near the card-sized endpoint of the
+     FLIP; see projectModalStyles.css's header for the full rationale.
+     Durations MUST stay in sync with MODAL_ANIM_MS in pdfModal.js.
+
+   CLASSES EMITTED
+     .pdf-modal-scrim / .is-visible / .is-open   — backdrop layer + states
+     .pdf-modal-sheet                            — the centered reading window
+     .pdf-modal-header                           — pinned header bar
+     .pdf-modal-header-text                      — kicker/title/meta column
+     .pdf-modal-kicker                           — "DOCUMENT" eyebrow
+     .pdf-modal-title                            — document title (scrambled in)
+     .pdf-modal-meta                             — authors/venue + page count
+     .pdf-modal-raw                              — "RAW ↗" native-viewer link
+     .pdf-modal-close                            — × button (house treatment)
+     .pdf-modal-pages                            — scrollable page column
+     .pdf-modal-page                             — one rendered page canvas
+     .pdf-modal-status / .is-error               — loading / failure line
+     .pdf-card                                   — the document-card trigger
+     .pdf-card-poster                            — optional first-page image
+     .pdf-card-kicker / -title / -meta / -open   — card text rows
+
+   COUPLED WITH pdfModal.js (emits these classes) and infiniteStyles.css
+   (theme vars + --ease). fonts.css provides "Glitched" / "Glitched Book".
+   ========================================================================== */
+
+/* =============================================================================
+   THE SCRIM — full-viewport backdrop
+   -----------------------------------------------------------------------------
+   Identical construction to the project modal's scrim: display flips on
+   .is-visible, the dim + blur transition lives on ::before so the display
+   toggle can't fight the fade.
+   ========================================================================== */
+
+.pdf-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  display: none;                    /* shown via .is-visible */
+  align-items: center;
+  justify-content: center;
+}
+.pdf-modal-scrim.is-visible {
+  display: flex;
+}
+.pdf-modal-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.42);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  opacity: 0;
+  transition: opacity 0.32s var(--ease);
+  pointer-events: none;
+}
+.pdf-modal-scrim.is-open::before {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE SHEET — the reading window
+   -----------------------------------------------------------------------------
+   Narrower than the project modal's 80vw: a paper wants a reading column,
+   not a gallery. 920px caps the measure on large screens; 88vh gives the
+   page column room. The sheet is a flex column — pinned header on top, the
+   page column owning the scroll beneath — so the header (and its close
+   button) never scrolls away mid-paper.
+   ========================================================================== */
+
+.pdf-modal-sheet {
+  position: relative;
+  z-index: 13;
+
+  display: flex;
+  flex-direction: column;
+
+  width:  min(920px, 88vw);
+  height: 88vh;
+
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+
+  overflow: hidden;                 /* corners; the page column owns scroll */
+  transform-origin: center center;
+
+  opacity: 0;                       /* visible only when scrim is .is-open */
+  transition: transform 0.45s var(--ease),
+              opacity   0.32s var(--ease);
+  will-change: transform, opacity;
+}
+.pdf-modal-scrim.is-open .pdf-modal-sheet {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE HEADER — kicker / title / meta, RAW link, close
+   -----------------------------------------------------------------------------
+   A pinned identity strip, hairline-separated from the pages. Grid, not
+   flex: the text column takes the free space, RAW and × sit in fixed
+   trailing tracks, and a long title wraps without shoving the controls.
+   ========================================================================== */
+
+.pdf-modal-header {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 1.2rem;
+
+  padding: 1.4rem 1.6rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+
+.pdf-modal-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;                     /* let the title ellipsis/wrap in-grid */
+}
+
+.pdf-modal-kicker {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.pdf-modal-title {
+  font-family: "Glitched", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: var(--ink-strong);
+  margin: 0;
+  /* textScramble injects spans here — no overflow:hidden (it would clip). */
+}
+
+.pdf-modal-meta {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* RAW ↗ — the always-available native path (new tab / download / print).
+   Styled as a quiet bordered chip so it reads as a control, not prose. */
+.pdf-modal-raw {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+
+  cursor: none; --cursor: pointer;  /* cursor.js protocol */
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.pdf-modal-raw:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.pdf-modal-raw:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The close button — house treatment: beveled square, hairline X drawn by
+   pseudo-element bars. Same visuals as .sidebar-close, .grid-modal-close,
+   .grid-detail-close and .project-modal-close; keep all of them in sync
+   when restyling. Unlike the project modal's (absolutely positioned over a
+   scroll region), this one sits in the header grid — the header is pinned,
+   so no overlay tricks are needed. */
+.pdf-modal-close {
+  position: relative;
+
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                     /* hide the &times; glyph; bars draw the X,
+                                       the text remains the accessible name */
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: none; --cursor: pointer;  /* cursor.js protocol */
+
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.pdf-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+.pdf-modal-close:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.pdf-modal-close::before,
+.pdf-modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.pdf-modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* =============================================================================
+   THE PAGE COLUMN — where the canvases land
+   -----------------------------------------------------------------------------
+   Owns the scroll. Pages are full-column-width canvases with the same
+   hairline treatment authored media gets in the project modal, on the
+   frosted --sheet-bg so unrendered space reads as "page loading" rather
+   than a hole. Thin scrollbar matches the project modal's content region.
+   ========================================================================== */
+
+.pdf-modal-pages {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: 1.6rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.pdf-modal-pages::-webkit-scrollbar {
+  width: 6px;
+}
+.pdf-modal-pages::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.pdf-modal-pages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pdf-modal-page {
+  display: block;
+  width: 100%;                      /* bitmap is supersampled; CSS pins layout */
+  height: auto;
+  background: var(--sheet-bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+/* Loading / error line. Pulses gently while the first page renders; the
+   .is-error state drops the pulse and switches to the warn color
+   (visualLanguage.md: red = warn). */
+.pdf-modal-status {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-align: center;
+  padding: 3rem 1rem;
+  animation: pdf-status-pulse 1.6s ease-in-out infinite;
+}
+.pdf-modal-status.is-error {
+  color: var(--brand-red);
+  animation: none;
+  max-width: 46ch;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+@keyframes pdf-status-pulse {
+  0%, 100% { opacity: 1;    }
+  50%      { opacity: 0.35; }
+}
+
+/* =============================================================================
+   THE DOCUMENT CARD — .pdf-card
+   -----------------------------------------------------------------------------
+   The trigger object, authored anywhere as an <a> with data-pdf-* attributes
+   (see pdfModal.js's header for the contract). Designed as a paper artifact:
+   a bordered white card with a folded top-right corner (the dog-ear is the
+   one decorative move — it says "document" before any label is read), a
+   kicker / title / meta text stack, and an OPEN READER action row.
+
+   Sized as an object (~30rem cap), not a banner — in a project media stack
+   it sits among full-bleed images and reads as a distinct, pickable thing.
+   The optional .pdf-card-poster (a first-page render exported as an image)
+   slots above the text when a project wants the visual weight.
+
+   HOVER: border sharpens to ink, the action row takes the accent, and the
+   dog-ear fold deepens — the same "quiet until addressed" behavior as the
+   site's close buttons. No lift/scale: the card is paper on a desk, not a
+   button.
+   ========================================================================== */
+
+.pdf-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 30rem;
+
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  overflow: hidden;                 /* poster corners; the fold sits inside */
+
+  cursor: none; --cursor: pointer;  /* cursor.js protocol */
+  transition: border-color 0.3s var(--ease);
+}
+.pdf-card:hover {
+  border-color: var(--ink);
+}
+.pdf-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* The dog-ear — a folded top-right corner drawn with the border trick: a
+   right-triangle of ink-tone occupying the corner. Deepens on hover. Sits
+   above the poster if one is present (the fold is on the card, not the
+   page image). */
+.pdf-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  border-style: solid;
+  border-width: 0 18px 18px 0;
+  border-color: transparent rgba(28, 24, 19, 0.14) transparent transparent;
+  transition: border-color 0.3s var(--ease);
+}
+.pdf-card:hover::after {
+  border-color: transparent rgba(28, 24, 19, 0.32) transparent transparent;
+}
+
+/* Optional poster — a first-page image exported alongside the PDF. Fixed
+   aspect crop so cards align regardless of the source page's ratio. */
+.pdf-card-poster {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: top;
+  border-bottom: 1px solid var(--line);
+  background: var(--sheet-bg);
+}
+
+.pdf-card-kicker {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 1rem 1.2rem 0;
+}
+
+.pdf-card-title {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.45;
+  color: var(--ink-strong);
+  padding: 0.45rem 1.2rem 0;
+}
+
+.pdf-card-meta {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  padding: 0.35rem 1.2rem 0;
+}
+
+/* The action row — hairline-separated footer, arrow drawn in text so it
+   inherits the color transition. Reads as the card's single affordance. */
+.pdf-card-open {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+
+  margin-top: 1rem;
+  padding: 0.8rem 1.2rem;
+  border-top: 1px solid var(--line);
+
+  transition: color 0.3s var(--ease);
+}
+.pdf-card-open::after {
+  content: " →";
+}
+.pdf-card:hover .pdf-card-open {
+  color: var(--accent);
+}
+
+/* =============================================================================
+   RESPONSIVE + MOTION
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .pdf-modal-sheet {
+    width:  94vw;
+    height: 92vh;
+  }
+  .pdf-modal-header {
+    /* Meta and RAW both want the width; drop RAW to its own implicit row
+       is overkill — just tighten. The title wraps; the controls stay. */
+    gap: 0.8rem;
+    padding: 1.1rem 1.1rem 0.9rem;
+  }
+  .pdf-modal-pages {
+    padding: 1rem;
+    gap: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdf-modal-sheet,
+  .pdf-modal-scrim::before {
+    transition-duration: 0.01ms;    /* modal still opens; the FLIP doesn't play */
+  }
+  .pdf-modal-status {
+    animation: none;
+  }
+}

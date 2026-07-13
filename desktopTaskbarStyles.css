@@ -1,0 +1,207 @@
+/* =============================================================================
+   desktopTaskbarStyles.css — styles for the bottom taskbar
+   -----------------------------------------------------------------------------
+   The bar lives at the bottom of .desktop-screen as a sibling of
+   .desktop-surface and .desktop-frame--*. It's NOT inside the surface,
+   so the wireframe's clip-path doesn't reveal it as part of the
+   assembly — instead the bar uses the .desktop-overlay.is-clear class
+   (same gate that re-enables pointer-events on icons + windows) to fade
+   itself in once the panel is "ready." This avoids the bar appearing
+   from the wireframe dot, which would look strange given its bottom-
+   anchored geometry.
+
+   The .desktop-frame--bottom hairline (z-index: 1000) paints on top of
+   the bar's bottom edge — that 1px line reads as the bar's own border,
+   so we don't draw a separate one.
+
+   CLASSES
+     .desktop-taskbar           — outer bar, bottom of screen
+     .desktop-taskbar-list      — slot row container (flex row)
+     .desktop-taskbar-slot      — one slot per open window (a <button>)
+     .desktop-taskbar-slot-label
+     .desktop-taskbar-slot--focused   — applied to the top-z VISIBLE window's slot
+     .desktop-taskbar-slot--minimized — applied to slots whose window is hidden
+     .desktop-taskbar-clock     — right-side time/date readout
+     .desktop-taskbar-clock-time, .desktop-taskbar-clock-date
+
+   COUPLED WITH desktopTaskbar.js (emits these classes) and desktopStyles.css
+   (owns .desktop-screen / .desktop-overlay.is-clear).
+   ========================================================================== */
+
+/* =============================================================================
+   THE BAR — anchored to bottom of the screen, full width
+   ========================================================================== */
+
+.desktop-taskbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40px;
+
+  /* Subtle frosted strip — same colour family as the surface tint but
+     a touch more opaque so the bar reads as a distinct surface that
+     belongs to the screen's chrome. Sits above the surface in DOM
+     order so it's not affected by the surface's clip-path. */
+  background: rgba(0, 0, 0, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+
+  /* Hidden until the panel is ready (mirrors the .is-clear gate that
+     re-enables interaction on icons + windows). The transition makes
+     the bar fade in alongside the wireframe-settled state instead of
+     snapping. pointer-events stays off until visible so the bar can't
+     intercept clicks during the assembly animation. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+
+.desktop-overlay.is-clear .desktop-taskbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* =============================================================================
+   THE SLOT LIST — flex row of buttons
+   ========================================================================== */
+
+.desktop-taskbar-list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  overflow: hidden;          /* clip overflow if many windows are open;
+                                a future iteration can add scrolling. */
+}
+
+/* =============================================================================
+   A SLOT — one open window
+   -----------------------------------------------------------------------------
+   Native <button> for click + a11y. Reset the default chrome and style
+   it as a small horizontal pill with a soft hover state and a stronger
+   focused state for the top-z window.
+   ========================================================================== */
+
+.desktop-taskbar-slot {
+  /* Reset native button chrome. font-family is inherited via the global
+     button rule in infiniteStyles.css; we override font-size + weight
+     here for the taskbar context. */
+  appearance: none;
+  border: 0;
+  background: transparent;
+
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: rgba(245, 245, 248, 0.78);
+
+  cursor: pointer;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+
+.desktop-taskbar-slot:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(245, 245, 248, 1.0);
+}
+
+/* The currently-focused window's slot. A faint accent stripe at the
+   bottom is a stronger affordance than just colour-shift — it reads
+   as "this is the active tab" without needing the user to compare
+   colours. Combined with a slight brightness lift on the text. */
+.desktop-taskbar-slot--focused {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 245, 248, 1.0);
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+
+.desktop-taskbar-slot--focused:hover {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Minimized slot: the window is hidden but still tracked. Dimmer text
+   reads as "off-screen but still here." Italic is a second visual
+   signal that doesn't compete with the accent-underline used by
+   focused — together they make the three states (background / focused
+   / minimized) all visually distinct without colour alone. Hover
+   brightens to make it feel clickable, since clicking a minimized
+   slot is the primary way to bring its window back. */
+.desktop-taskbar-slot--minimized {
+  color: rgba(245, 245, 248, 0.42);
+  font-style: italic;
+}
+
+.desktop-taskbar-slot--minimized:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(245, 245, 248, 0.85);
+}
+
+.desktop-taskbar-slot-label {
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =============================================================================
+   THE CLOCK — right-side time + date readout
+   -----------------------------------------------------------------------------
+   Two stacked lines, right-aligned. Echoes the slots' typography (Glitched,
+   same letterspacing family) so the bar reads as one cohesive surface, but
+   pointer-events: none — the clock is ambient info, not interactive.
+
+   A subtle vertical border on the left separates it from the slot list, same
+   tone as the bar's top border so the divider belongs to the same visual
+   system. tabular-nums keeps the digits monospaced even though Glitched is
+   proportional, so the minute tick doesn't shift the column horizontally.
+   ========================================================================== */
+
+.desktop-taskbar-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+
+  height: 100%;
+  padding: 0 4px 0 12px;
+  margin-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+
+  font-family: "Glitched", sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.desktop-taskbar-clock-time {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(245, 245, 248, 0.95);
+  line-height: 1.15;
+}
+
+.desktop-taskbar-clock-date {
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: rgba(245, 245, 248, 0.55);
+  line-height: 1.15;
+}

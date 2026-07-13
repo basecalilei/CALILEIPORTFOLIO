@@ -1,0 +1,465 @@
+/* =============================================================================
+   turnStyles.css — styles for the "turn" PANEL TYPE
+   -----------------------------------------------------------------------------
+   Two concerns in one stylesheet:
+     1. The turn overlay — a LEFT-PINNED, no-card text block over the 3D scene.
+        (NOT a centered frosted card; the model is the visual anchor, text
+        sits in front of it.)
+     2. The info modal — a frosted sheet that SLIDES UP from the bottom of the
+        viewport, with its own internal scroll and a pinned × close button.
+
+   The .infinite-overlay base in infiniteStyles.css handles vertical centering
+   + --shift + opacity; we set left:0, give the block a width: max-content, and
+   override transform to drop the horizontal -50% (because we're not centering
+   horizontally — we're pinning left).
+
+   CLASSES THIS FILE EMITS
+     .turn-overlay          — left-pinned positioning over .infinite-overlay base
+     .turn-card             — padding container for the text block (NO chrome)
+     .turn-kicker           — small-caps kicker label (Hornet Display)
+     .turn-title            — display heading (Foundry Gridnik Bold)
+     .turn-body             — body copy, narrow column
+     .turn-controls         — kicker-width column of buttons (see sizer below)
+     .turn-controls-sizer   — invisible kicker clone that sets the stack width
+                              (cloned in by turnPanel.js buildDOM)
+     .turn-btn              — the buttons (Turn, Info, future)
+     .turn-btn--ghost       — variant with transparent background
+     .turn-btn--minor       — shorter button (secondary action: Open Info)
+     .turn-btn--major       — taller, larger-type, blue-outlined (primary: View Grid)
+     .turn-info-scrim       — full-screen modal scrim
+     .turn-info-sheet       — the frosted-glass sheet, slides up from bottom
+     .turn-info-scroll      — internal scrolling region of the sheet
+     .turn-info-close       — the × button, pinned to the sheet
+     .turn-info-body        — author's HTML container inside the scroll region
+     .turn-info-kicker      — typography for use inside infoHtml (matches old build)
+     .turn-info-heading     — typography for use inside infoHtml
+     .turn-info-text        — typography for use inside infoHtml
+
+   COUPLED WITH turnPanel.js (emits these classes) and infiniteStyles.css
+   (provides .infinite-overlay base + theme vars).
+   ========================================================================== */
+
+/* ---------- positioning ----------
+   Left-pinned text block. Width is max-content so the block shrinks to its
+   text; the body's own max-width (set on .turn-body) controls the wrap.
+   Transform re-includes calc(-50% + var(--shift)) on Y for the scroll-link;
+   no horizontal translate because we're pinning left, not centering. */
+.turn-overlay {
+  left: 0;
+  width: max-content;
+  max-width: 90vw;
+  transform: translateY(calc(-50% + var(--shift)));
+  text-align: left;
+}
+
+/* ---------- the container ----------
+   NO frosted card — the previous build's levitate panel intentionally had no
+   chrome around the text, so the 3D model behind it is the visual anchor.
+   .turn-card here is just a padding box that gives the text breathing room
+   from the viewport edge. */
+.turn-card {
+  padding: clamp(1.4rem, 4vw, 3.2rem);
+  /* Promote to its own compositor layer. Without this, when the info
+     modal slides up, the modal's backdrop-filter triggers a repaint of
+     everything behind it, including the card's text — and the timing of
+     that repaint vs. the slide animation can cause visible flicker on
+     the title and body. Forcing a layer here means the card composites
+     (a cheap GPU op) instead of repainting (a CPU op that races the
+     animation). transform: translateZ(0) is the standard idiom; equivalent
+     to will-change: transform but more widely-supported across browsers
+     for this specific GPU-layer-promotion behavior. */
+  transform: translateZ(0);
+}
+
+/* ---------- typography (turn-prefixed; not shared with other types) ---------- */
+.turn-kicker {
+  font-family: "Hornet Display", sans-serif;     /* Tier 3 — instrument readout */
+  font-weight: bold;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brand-green);
+  margin-bottom: 1.1rem;
+}
+.turn-title {
+  font-family: "Hornet Display", sans-serif;    /* Tier 1 — display, brand "shout" */
+  font-weight: bold;
+  font-size: clamp(2.6rem, 3vw, 5.4rem);
+  line-height: 0.94;
+  letter-spacing: 0.20em;                             /* Gridnik is geometric; no negative tracking */
+  color: var(--ink-strong);
+  margin-bottom: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.turn-body {
+  font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+  line-height: 1.7;
+  color: var(--ink-dim);
+  margin-bottom: 1.8rem;
+  max-width: 34ch;          /* narrow column reads better over imagery */
+}
+
+/* ---------- controls stack ----------
+   Sits tight under the body — the body's own margin-bottom provides the gap.
+   A COLUMN of two buttons, sized to the kicker: turnPanel.js clones the
+   kicker into the stack as an invisible sizer (.turn-controls-sizer), so
+   max-content width here = the kicker's rendered width, and the stretched
+   buttons match it exactly. max-width guards the 90vw overlay squeeze. */
+.turn-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 0.4rem;
+}
+
+/* The invisible width-setter (see turnPanel.js buildDOM). Keeps the
+   .turn-kicker typography — that's what makes its intrinsic width the
+   kicker's — but contributes no height, spacing, or interaction. The
+   descendant selector out-specifies .turn-kicker's own margin rule. */
+.turn-controls .turn-controls-sizer {
+  visibility: hidden;
+  height: 0;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- buttons ----------
+   Squared corners (2px radius), small-caps, with a barely-there translucent
+   ink fill that sits over the 3D scene nicely. The translucent backdrop-blur
+   gives the buttons a subtle frosted lift without imposing a full card. */
+.turn-btn {
+  pointer-events: none;                  /* gated by .is-active on the overlay */
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(28, 24, 19, 0.04);    /* = --ink, barely there            */
+  border: 1px solid var(--line);
+  padding: 0.78em 1.3em;
+  border-radius: 6px;                    /* slightly beveled — matches the close buttons */
+  cursor: none; --cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition:
+    background 0.35s var(--ease),
+    border-color 0.35s var(--ease),
+    color 0.35s var(--ease),
+    transform 0.2s var(--ease);
+}
+.turn-btn:hover  { background: var(--brand-blue); border-color: var(--brand-blue); color: #fff; }
+.turn-btn:active { transform: translateY(1px) scale(0.98); }
+.turn-btn:focus-visible {
+  outline: 2px solid var(--brand-blue);
+  outline-offset: 2px;
+}
+
+/* Ghost variant — fully transparent. Used to differentiate secondary actions
+   (the Info button) from the primary action (Turn). */
+.turn-btn--ghost { background: transparent; }
+
+/* Height variants for the stacked pair: same width (both stretch to the
+   kicker-sized stack), different presence. --major is the primary action
+   (View Grid): larger type AND taller. Its padding is em-based, so it
+   already scales with the bigger font — the block value below is tuned
+   against that (1.05em at 0.92rem ≈ more absolute height than the old
+   1.2em at 0.7rem, without ballooning). */
+.turn-btn--minor { padding-block: 0.55em; }
+.turn-btn--major {
+  font-size: 0.92rem;                  /* base .turn-btn is 0.7rem */
+  padding-block: 1.05em;
+  border-color: var(--brand-blue);     /* resting CTA signal — hover then
+                                          FILLS with the same blue and the
+                                          label flips to white, so outline +
+                                          blue label read as its preview */
+  color: var(--brand-blue);
+}
+
+/* The overlay's .is-clear class (set by turnPanel.js when grow crosses
+   INTERACT_THRESHOLD) is what re-enables button clicks. Distinct from
+   .is-active: the core sets .is-active on only the most-centered panel,
+   which leaves a one-tick gap right after the panel crosses the seam
+   where buttons are visible but unclickable. .is-clear gates on the
+   panel's own visibility instead, so buttons enable as soon as the
+   panel is sufficiently visible regardless of relative centering. */
+.infinite-overlay.is-clear .turn-btn { pointer-events: auto; }
+
+/* =============================================================================
+   DRAG SURFACE — click-and-drag to rotate the scene's model on the Y axis
+   -----------------------------------------------------------------------------
+   Sibling of .turn-overlay inside #infinite-overlays (not a child — the
+   overlay is width:max-content / left-pinned, and a child wouldn't cover
+   the model area, which sits center-viewport).
+
+   SIZED BY THE SCENE.
+     The scene knows the model's bounding box (post-autoFit) and the camera
+     projection, so it computes the drag area's pixel size and writes it
+     into --drag-w / --drag-h on this element. Rewritten on model swap
+     (fallback → GLB) and on canvas resize. See bindDragSurface in
+     turnScene.js for the handshake.
+
+     The 60vmin fallback below covers two cases:
+       1. The brief moment between page load and the first tick that binds
+          the surface to the scene.
+       2. Any future turn panel whose scene type doesn't expose
+          bindDragSurface — the panel→scene contract self-guards via
+          invokeSceneAction, and the drag surface stays usable at a
+          generic size.
+
+   pointer-events: none until turnPanel.js mirrors .is-clear here (in
+   lockstep with the overlay's gate). touch-action: none so a touch drag
+   on this region isn't hijacked by the browser's native scroll handling —
+   the touch is ours from the moment it lands here. Touches OUTSIDE this
+   region scroll the page normally.
+
+   STACKING (no z-index needed). turnPanel.js inserts this element BEFORE
+   the overlay in DOM, so the overlay's stacking context paints above the
+   drag surface. That means buttons inside the overlay catch their own
+   clicks even when the drag rectangle visually overlaps them (common on
+   narrow viewports where the responsive model and the left-pinned
+   text+buttons share screen real estate). Text inside the overlay is
+   pointer-events:none and falls through to the drag surface below —
+   dragging from the text area still starts a rotation, which is the
+   intended "drag from anywhere over the model" feel. Wheel events follow
+   the same layering, with turnPanel.js attaching a wheel listener on the
+   overlay too so button-region wheels enter the same forwarding pipeline
+   as drag-surface-region wheels.
+   ========================================================================= */
+.turn-drag-surface {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--drag-w, 60vmin);
+  height: var(--drag-h, 60vmin);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  touch-action: none;
+  /* Native hand replaced: cursor.js draws the inverting drag crosshair
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: grab;
+}
+.turn-drag-surface.is-clear {
+  pointer-events: auto;
+}
+.turn-drag-surface.is-dragging {
+  cursor: none; --cursor: grabbing;
+}
+
+/* =============================================================================
+   THE INFO MODAL — slides up from the bottom
+   -----------------------------------------------------------------------------
+   A modal layer ABOVE everything (z:10, above #infinite-overlays at z:3 and
+   #three-canvas at z:1). NOT part of the infinite scroll — it scrolls
+   natively inside itself.
+
+   FROSTED GLASS APPROACH (context-independent)
+   The sheet uses backdrop-filter for the blur and a low-opacity neutral
+   overlay for the surface tint, so the glass effect reads correctly on any
+   background — light, dark, photographic, or video — without baking in a
+   white-card look. The shadow under the sheet (light directional shadow
+   above, since it slides up from below) gives it a clear "elevated above"
+   spatial position.
+   ========================================================================== */
+
+.turn-info-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+
+  /* The scrim itself is a fully-transparent positioning container. It
+     holds two things at z-stacked positions inside it:
+       ::before — the dim layer (an opacity-animated black overlay)
+       .turn-info-sheet (child) — the frosted glass modal
+     The two are sibling stacking contexts. This is load-bearing for the
+     frosted glass: the sheet's backdrop-filter samples the page pixels
+     directly behind the scrim. If the sheet were INSIDE an opacity-
+     animated parent, backdrop-filter would isolate the parent's subtree
+     into its own buffer and the blur would sample from that (empty)
+     buffer instead — making the sheet look transparent. Keeping the dim
+     in ::before and the sheet as a regular child sidesteps that. */
+}
+
+/* The dim layer. Sits behind the sheet (lower z within the scrim), fades
+   in/out via OPACITY (not background-color) so the transition is a
+   compositor-only alpha multiply rather than a per-pixel repaint — see
+   commentary on the title-flicker fix this addresses. */
+.turn-info-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+  will-change: opacity;
+  pointer-events: none;
+}
+.turn-info-scrim.is-open::before {
+  opacity: 1;
+}
+.turn-info-scrim.is-open {
+  pointer-events: auto;
+}
+
+/* The sheet: a frosted shell that fills the lower portion of the viewport,
+   leaving a margin at the top so the user can see what's behind. Starts
+   translated fully off-screen (110%) and slides to 0 when .is-open. */
+.turn-info-sheet {
+  position: absolute;
+  left: clamp(1rem, 4vw, 3rem);
+  right: clamp(1rem, 4vw, 3rem);
+  bottom: clamp(1rem, 4vw, 3rem);
+  top: clamp(4rem, 12vh, 9rem);
+
+  /* The frosted glass — context-independent. The blur is what creates the
+     glass; the light neutral overlay is barely there, so it doesn't force a
+     white-card look on dark or colored backgrounds. */
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  overflow: hidden;                       /* clip inner scroller to corners */
+  box-shadow: 0 -24px 70px rgba(0, 0, 0, 0.22);
+
+  transform: translateY(110%);
+  transition: transform 0.55s var(--ease);
+}
+.turn-info-scrim.is-open .turn-info-sheet { transform: translateY(0); }
+
+/* Inner scroller — native scroll, native bar hidden. */
+.turn-info-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: clamp(1.8rem, 5vw, 4rem);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.turn-info-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+.turn-info-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below so it
+                                     can be dead-centered; the text remains
+                                     for the accessible name */
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;             /* slightly-beveled square (was a circle) */
+  cursor: none; --cursor: pointer;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.turn-info-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The X — two hairline bars on currentColor, absolutely centered, so the
+   glyph is geometrically dead-center (a text × sits wherever the font's
+   metrics happen to put it) and follows the button's color transitions for
+   free. Same treatment on all five close buttons (.turn-info-close,
+   .sidebar-close, .grid-modal-close, .grid-detail-close, .project-modal-close)
+   — keep in sync when restyling. */
+.turn-info-close::before,
+.turn-info-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.turn-info-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* The .turn-info-body div is emitted by turnPanel.js as the wrapper around
+   the panel author's HTML. It deliberately has no styles of its own — the
+   typography classes below (.turn-info-kicker / -heading / -text) are what
+   the author uses to style content inside it. The wrapper exists purely
+   for structural purposes (a single insertion point in the modal DOM). */
+
+.turn-info-kicker {
+  font-family: "Hornet Display", sans-serif;     /* Tier 3 — instrument readout */
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+.turn-info-heading {
+  font-family: "Foundry Gridnik", sans-serif;    /* Tier 1 — display */
+  font-weight: bold;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  line-height: 1;
+  letter-spacing: 0;
+  margin-bottom: 1.6rem;
+  color: var(--ink-strong);
+}
+.turn-info-text {
+  max-width: 60ch;
+  font-size: clamp(0.85rem, 1.5vw, 1rem);
+  line-height: 1.85;
+  color: var(--ink-dim);
+}
+.turn-info-text p              { margin-bottom: 1.1rem; }
+.turn-info-text p:last-child   { margin-bottom: 0; }
+.turn-info-text a              { color: var(--accent); }
+.turn-info-text code {
+  /* Inline code uses a system monospace stack rather than Glitched, because
+     Glitched isn't a monospace family — and inline code reads more clearly
+     when its glyphs are equally spaced. If a future design wants Glitched
+     here too, change to "Glitched" with font-weight: 500 (Medium reads
+     distinctly enough from the surrounding body to signal "code"). */
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+  background: rgba(28, 24, 19, 0.06);
+  padding: 0.1em 0.4em;
+  border-radius: 3px;
+}
+/* ---------- title lamp ----------
+   The title as instrument lighting: a slow luminance breathe, as if the
+   panel's lamp supply ripples. CARRIER motion per visualLanguage.md —
+   floored (never off), slow period, driven-lamp envelope: fast-ish
+   attack, brief peak, long release. Retuned from the shop gate's glow
+   for display scale — a big surface wants a soft ~400ms attack, where
+   the gate's small glyph takes a sharp one; a hard snap-on at title
+   size reads as a flicker fault, not a lamp. 4.1s period is deliberately
+   incommensurate with the gate's 2.2s and the register's 3.2s.
+
+   NOTE second CSS consumer of the driven-lamp envelope (the gate's />
+   glow is the first) — a deliberate COPY per the project's rule-of-three.
+   A third looping-glow consumer should lift the family into a shared
+   carrier stylesheet instead of copying again.
+
+   Runs unconditionally (no play-state gate): one opacity-only animation
+   on one element costs nothing even while the overlay is faded out. */
+.turn-title {
+  animation: turn-title-lamp 3.1s infinite;
+}
+@keyframes turn-title-lamp {
+  0%   { opacity: 0.3; animation-timing-function: ease-out; }  /* attack ~410ms */
+  10%  { opacity: 0.9;    animation-timing-function: linear;   }  /* peak ~250ms */
+  16%  { opacity: 0.8;    animation-timing-function: cubic-bezier(0.2, 0.55, 0.35, 1); } /* release ~3.4s */
+  100% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .turn-title { animation: none; }
+}

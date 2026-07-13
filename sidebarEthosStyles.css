@@ -1,0 +1,37 @@
+/* =============================================================================
+   sidebarEthosStyles.css — styles for the "ethos" sidebar view
+   -----------------------------------------------------------------------------
+   Owns the title and body typography for the Ethos view. The .sidebar-view
+   base (in sidebarStyles.css) handles positioning and opacity transitions.
+
+   CLASSES EMITTED
+     .sidebar-view-ethos      — the view root
+     .sidebar-ethos-title     — display heading
+     .sidebar-ethos-body      — body copy container (paragraphs etc.)
+
+   COUPLED WITH sidebarEthos.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+.sidebar-ethos-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.4rem;
+}
+
+.sidebar-ethos-body {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.sidebar-ethos-body p {
+  margin-bottom: 1rem;
+}
+.sidebar-ethos-body p:last-child {
+  margin-bottom: 0;
+}

@@ -1,0 +1,179 @@
+/* =============================================================================
+   dotsStyles.css — styles for the "dots" PANEL TYPE
+   -----------------------------------------------------------------------------
+   The dots overlay is TOP-LEFT pinned (not centered) — the particle field is
+   the visual subject, the text "introduces" it from the corner rather than
+   sitting on top of it. This is a deliberate departure from emptyPanel's
+   centered card and turnPanel's left-pinned-but-vertically-centered block.
+
+   THE .infinite-overlay BASE CONTRACT
+     The base rule (in infiniteStyles.css) sets:
+       top: 50%;
+       transform: translateY(calc(-50% + var(--shift)));
+     We override BOTH:
+       - `top` becomes a clamp from the viewport edge.
+       - The `transform` keeps the var(--shift) Y term so the overlay still
+         slides with scroll across the loop seam — but drops the -50% center
+         offset (we're not vertically centering, we're top-pinning).
+     Per the base contract, a type that overrides `transform` MUST re-include
+     the var(--shift) Y term. We do.
+
+   CLASSES THIS FILE EMITS
+     .dots-overlay     — top-left positioning over .infinite-overlay base
+     .dots-card        — padding container for the text block
+     .dots-static      — display:contents hover-animation root (no layout
+                         box). Optional — scopes which text dotsPanel.js
+                         feeds to the marker-highlight primitive.
+     .dots-kicker      — small-caps kicker label
+     .dots-title       — display heading
+     .dots-body        — body copy, narrow column
+     .dots-meta        — terminal-style status line ("LOCAL // 14:23:08",
+                         "[SESSION]  0xXXXX"). Optional — appears only if
+                         main.js authored a line with this class.
+
+   CLASS HOOKS (no styling, just JS targets)
+     .dots-time        — populated by dotsPanel.js with HH:MM:SS, refreshed
+                         once per second. Lives inside a .dots-meta line.
+     .dots-session     — populated by dotsPanel.js with a 4-hex-digit
+                         session ID, once at init. Lives inside a .dots-meta
+                         line.
+
+   COUPLED WITH dotsPanel.js (emits these classes) and infiniteStyles.css
+   (provides .infinite-overlay base + theme vars).
+   ========================================================================== */
+
+/* ---------- positioning ----------
+   Top-left pin. width: max-content lets the block shrink to its text; the
+   body's own max-width controls the wrap. We keep the var(--shift) Y term
+   on transform so the overlay slides with scroll like every other panel
+   overlay; we drop the -50% horizontal/vertical centering that the base
+   rule uses (because we're not centering — we're pinning a corner). */
+.dots-overlay {
+  top:  clamp(1.5rem, 4vw, 3rem);
+  left: clamp(1.5rem, 4vw, 3rem);
+  width: max-content;
+  max-width: 90vw;
+  transform: translateY(var(--shift));
+  text-align: left;
+}
+
+/* ---------- container ---------- */
+.dots-card {
+  /* Promote to its own compositor layer. Same rationale as turnStyles.css:
+     keep the fade transition a cheap GPU composite instead of CPU repaints
+     over the moving particle field below. translateZ(0) is the standard
+     idiom for forcing layer promotion across browsers. */
+  transform: translateZ(0);
+}
+
+/* ---------- hover-animation root ----------
+   Wraps the text that dotsPanel.js hands to startMarkerHighlight. display:
+   contents generates NO box — the children lay out exactly as if the wrapper
+   weren't there — so this class changes nothing visually; its whole job is
+   scoping which text nodes the animation walks. The highlight backgrounds
+   ride the primitive's per-character spans, not this element, which is why
+   a boxless host works (same mechanism as wallPanel's zones — see the ZONE
+   ROUTING section of wallPanel.js).
+
+   What sits OUTSIDE the wrapper does so on purpose:
+     - .dots-kicker  — excluded by design choice (no highlight on the label).
+     - .dots-meta    — excluded for CORRECTNESS: dotsPanel.js rewrites
+                       .dots-time's textContent every second, and rewriting
+                       text a span-owning primitive has claimed corrupts its
+                       bookkeeping (textAnimation.md, "when not to use").
+
+   Boxlessness also means this element can't be hit-tested — overlayHover.js
+   hit-tests the cursor against .dots-card on the panel's behalf and
+   dispatches synthetic events here. Don't give this rule visual properties;
+   a background or padding on a display:contents element is silently ignored
+   anyway. */
+.dots-static {
+  display: contents;
+}
+
+/* ---------- typography (dots-prefixed; not shared with other types) ---------- */
+.dots-kicker {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brand-green);
+  margin-bottom: 1.1rem;
+}
+
+.dots-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: 1.62rem;
+  line-height: 0.92;
+  letter-spacing: 0.16em;
+  color: var(--ink-strong);
+  margin-bottom: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.dots-body {
+  font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+  line-height: 1.7;
+  color: var(--ink-dim);
+  max-width: 34ch;
+}
+
+.dots-nameplate {
+  font-family: "Glitched", sans-serif;
+  font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+  font-weight: 400;
+  line-height: 1.7;
+  color: var(--ink-dim);
+  max-width: 34ch;
+}
+
+/* ---------- meta lines (live clock + session id) ----------
+   Terminal-style status readout for live system info. Smaller and dimmer
+   than .dots-body — these are output, not content. Uppercase + wide
+   tracking gives the "machine readout" feel; tabular-nums forces the
+   HH:MM:SS digits to occupy equal width so the timestamp doesn't visibly
+   shift as seconds tick over.
+
+   Two adjacent .dots-meta lines (sibling combinator) get a tighter gap so
+   they read as a paired status block beneath the body, rather than as two
+   independent paragraphs.
+
+   The live <span> children (.dots-time, .dots-session) inherit all type
+   from this rule — they're populated by dotsPanel.js (see SESSION_ID and
+   formatTime). */
+.dots-meta {
+  font-family: "Glitched Book", ui-monospace, monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 1.6rem;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.dots-meta + .dots-meta {
+  margin-top: 0.4rem;
+}
+
+/* ---------- update afterglow ----------
+   dotsPanel.js re-triggers .is-fresh on .dots-time at each minute rollover
+   (and on the first paint); the fresh write flashes the write color and
+   decays back to the readout's own ink. `from`-only keyframe: the end
+   state is simply the element's computed color, so this rule needs no
+   knowledge of what ink the readout normally inherits from .dots-meta.
+   Blue = information write (visualLanguage.md color semantics); the decay
+   curve matches the phosphor-style release used by the shop gate's glow
+   (steep off the peak, long tail).
+
+   NOTE this keyframe is deliberately a per-module COPY (its twin lives in
+   scrollIndicatorStyles.css) — second consumer copies, third lifts, per
+   the project's rule-of-three. If a third stylesheet ever needs it, lift
+   the pattern into a shared carrier stylesheet instead of copying again. */
+.dots-time.is-fresh {
+  animation: dots-afterglow 0.9s cubic-bezier(0.2, 0.55, 0.35, 1) 1;
+}
+@keyframes dots-afterglow {
+  from { color: var(--brand-blue); }
+}

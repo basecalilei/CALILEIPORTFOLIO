@@ -1,0 +1,146 @@
+/* =============================================================================
+   gameStyles.css — styles for the "game" PANEL TYPE
+   -----------------------------------------------------------------------------
+   COUPLED WITH gamePanel.js: emits .game-overlay, .game-scroll-line,
+   .game-stack, .game-card (+ helper classes), .game-frame, .game-canvas,
+   and the .game-debug-live pointer gate
+   that gamePanel.js toggles while the debug overlay is enabled.
+
+   THE SCALING CONTRACT
+     The canvas backing store is native 960×540 — the renderer, stage
+     geometry, and blast zones all live in that coordinate space and
+     gamePanel.js sets the width/height ATTRIBUTES. This stylesheet only
+     scales the ELEMENT: .game-frame picks the display size (16:9 locked),
+     the canvas fills it, image-rendering keeps the game's pixels honest.
+     Never size the game by changing the canvas attributes.
+
+   THE POINTER CONTRACT
+     Everything here stays pointer-events: none (inherited from the base
+     overlay). The overlay layer and #infinite-scroller are SIBLING fixed
+     layers — events don't bubble between them — so a pointer-enabled
+     element this large would be a dead zone the wheel can't scroll past.
+     The game is keyboard-driven; the canvas needs no pointer. The single
+     exception is .game-debug-live (set by gamePanel.js while the debug
+     overlay is up) so the color editor can receive the mouse.
+
+   Replaces, for the embedded build, the game repo's styles.css: the
+   pixelated rendering and dark field carry over; the standalone page-
+   centering rules are superseded by the overlay contract.
+   ========================================================================== */
+
+/* ---------- the overlay ----------
+   Full viewport, FADE-ONLY. The base .infinite-overlay transform is
+   translateY(calc(-50% + var(--shift))) — the --shift term is what makes an
+   overlay scroll-track. Here we REPLACE it with a static translateY(-50%):
+   the box stays centered in the viewport and only its opacity animates
+   (written per-frame by gamePanel.js). Its children decide what moves — the
+   frame stays pinned, the hairline scroll-tracks. Same split as desktopPanel.
+   With top:50% (from base) + height:100vh + translateY(-50%) the box fills
+   the viewport; flex centers the content stack within it. */
+.game-overlay {
+  left: 0;
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- the scroll-tracking hairline ----------
+   A 1px full-width line at viewport center that consumes --shift in its own
+   transform, so it slides up/down with the page scroll while the frame holds
+   still — the cue that the page is still scrolling behind the game. It's the
+   FIRST child and position:absolute; .game-stack below is the second child
+   and positioned, so among positioned siblings the stack paints LATER (tree
+   order) and therefore IN FRONT. The frame's opaque #111 background then
+   occludes the hairline wherever they cross — the same occlusion model as
+   desktopPanel's screen-over-line. The line stays visible left/right of the
+   frame and above/below it as the scroll carries it past. Fades with
+   everything else (opacity lives on the overlay). var(--ink) is the near-
+   black token; swap to var(--ink-dim) for a quieter line. */
+.game-scroll-line {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink);
+  transform: translateY(calc(-50% + var(--shift)));
+  pointer-events: none;
+}
+
+/* ---------- the content stack ----------
+   Holds the optional authored card above the screen. position:relative is
+   load-bearing, not cosmetic: it makes the stack a positioned sibling so it
+   paints in front of the absolutely-positioned hairline. Without it the
+   static stack paints BEHIND the positioned line and the hairline draws on
+   top of the frame. */
+.game-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+/* ---------- optional authored card ----------
+   Filled from the PANELS entry's `html` field (same authoring convention
+   as the dots/turn panels). The helpers below are offered, not required —
+   any markup works. */
+.game-card {
+  text-align: center;
+  color: var(--ink);
+}
+
+.game-kicker {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.game-hint {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+/* ---------- the screen ----------
+   Display size: fit the viewport with breathing room, never exceed a
+   tasteful cap, always 16:9 (the native aspect — the frame may scale the
+   game but must not letterbox or stretch it). The vh line is the fallback
+   for the dvh line below it, same pattern as .infinite-panel. The dark
+   background matches the renderer's clear color (#111111) so the beat
+   before the first render — and the fade-in — show the game's own field,
+   not a flash of page white. Hairline border = the site's chrome language;
+   the game's pixels are the loud part. */
+.game-frame {
+  width: min(88vw, calc(78vh * (16 / 9)), 1100px);
+  width: min(88vw, calc(78dvh * (16 / 9)), 1100px);
+  aspect-ratio: 16 / 9;
+  background: #111111;
+  border: 1px solid var(--line);
+}
+
+/* The canvas fills the frame; the browser scales the native 960×540
+   backing store to the display size. Pixelated sampling keeps the game's
+   crisp rectangles crisp at any scale. */
+.game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+
+/* ---------- debug pointer gate ----------
+   Toggled by gamePanel.js while the vendored debug overlay is enabled, so
+   the color editor's canvas-scoped mouse handlers can fire. Side effect,
+   accepted for debugging sessions only: while this class is on, the wheel
+   over the canvas no longer reaches the scroller (sibling layers — see
+   header). Toggle the overlay off (backtick) to scroll past again. */
+.game-canvas.game-debug-live {
+  pointer-events: auto;
+}

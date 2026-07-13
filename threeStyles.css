@@ -1,0 +1,42 @@
+/* =============================================================================
+   threeStyles.css — shared styles for the THREE.JS MULTI-SCENE SYSTEM
+   -----------------------------------------------------------------------------
+   This file is small on purpose. The scene system owns exactly one DOM
+   element on the page: a single shared canvas. Everything else (the scene
+   graphs, the cameras, the meshes) lives in WebGL, where CSS can't touch it.
+
+   COUPLED WITH threeArray.js (which creates the canvas with id="three-canvas"
+   and inserts it as the first child of <body>). Renaming the id requires
+   updating the JS too.
+
+   PER-SCENE STYLING goes in the scene type's own stylesheet, if it has one —
+   e.g. a scene type whose anchor element needs custom dimensions, padding,
+   or backdrop styles. The shared canvas itself never needs per-type styles.
+   ========================================================================== */
+
+#three-canvas {
+  position: fixed;
+  inset: 0;
+  /* Force the canvas's CSS box to match the viewport. inset:0 is normally
+     enough for a fixed-positioned element, but <canvas> is a REPLACED
+     element with intrinsic dimensions: when threeArray.js calls
+     renderer.setSize(w, h, false) it sets the canvas's `width`/`height`
+     HTML attributes to w*DPR x h*DPR for the hi-DPI buffer, WITHOUT
+     setting matching CSS sizes. On high-DPR displays, that intrinsic size
+     can win over inset:0 and the canvas overflows the viewport by exactly
+     a factor of DPR — pushing the scene's content off-center. Explicit
+     100% width/height makes the CSS sizing unambiguous and always wins
+     over the intrinsic size. DPR=1 doesn't expose the bug because intrinsic
+     == viewport in that case. */
+  width: 100%;
+  height: 100%;
+  z-index: 1;                /* below #infinite-scroller (z:2) and the */
+                             /* #infinite-overlays layer (z:3), above the */
+                             /* page background. Overlay content renders */
+                             /* in front of WebGL. */
+  pointer-events: none;      /* clicks pass through. A scene that needs */
+                             /* interactivity should capture pointer events */
+                             /* on its anchor element, not on the canvas. */
+  display: block;            /* avoid the default inline-baseline gap */
+  background: transparent;   /* renderer is alpha:true with clearAlpha=0 */
+}

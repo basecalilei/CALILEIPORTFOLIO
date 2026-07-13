@@ -1,0 +1,523 @@
+/* =============================================================================
+   sidebarAboutStyles.css — styles for the "about" sidebar view
+   -----------------------------------------------------------------------------
+   The condensed single-column About page: framed portrait + nameplate,
+   opening statement bracketed by head images, full-bleed section band,
+   narrative interleaved with cross-marked photo figures, the dark "today"
+   block with the principle cascade, and a full-bleed hero closing the
+   view. The .sidebar-view base (in sidebarStyles.css) handles
+   positioning and the opacity cross-fade.
+
+   FULL-BLEED CONVENTION
+     .sidebar-view pads content 1.6rem 1.8rem 2rem. Full-bleed elements
+     (band, dark block, hero) undo the horizontal padding with
+     margin: … -1.8rem and re-add it as their own padding, so they span the
+     sheet edge-to-edge while their text stays on the column grid. The hero
+     additionally carries margin-bottom: -2rem to cancel the view's bottom
+     padding and sit flush against the scroll end. If the shell's padding
+     values ever change, these margins change with them.
+
+   CLASSES EMITTED
+     .sidebar-view-about        — the view root
+     .sidebar-about-head        — kicker + statement wrapper
+     .sidebar-about-kicker      — Hornet eyebrow above the statement
+     .sidebar-about-statement   — the three-line slash statement (h2)
+     .sidebar-about-line        — one statement line
+                                  (.is-step-2/-3 = indent, .is-strong = last)
+     .sidebar-about-portrait    — head portrait figure (frame + nameplate)
+     .sidebar-about-nameplate   — the "> CAL.CALILEI" figcaption lines
+     .sidebar-about-nameplate-line — one nameplate line (authored class)
+     .sidebar-about-photo       — single full-width image inside a frame
+     .sidebar-about-stack       — the portrait's two-layer cell
+                                  (.is-drawing under .is-photograph)
+     .sidebar-about-band        — full-bleed section band (+ -prefix span)
+     .sidebar-about-body        — narrative copy container
+     .sidebar-about-figure      — photo figure (frame + caption)
+     .sidebar-about-frame       — bordered plate; hosts registration crosses
+     .sidebar-about-marks       — helper for the bottom pair of crosses
+     .sidebar-about-photos      — image grid (.is-pair = 2-up, .is-grid = 2x2)
+     .sidebar-about-figcap      — Hornet fiducial caption, right-aligned
+     .sidebar-about-dark        — full-bleed near-black block
+     .sidebar-about-principles  — the indented slash cascade
+                                  (+ color and .is-step-* mods per <li>)
+     .sidebar-about-slash       — the dim leading slash inside a cascade row
+     .sidebar-about-credo       — the closing plaque container
+     .sidebar-about-credo-line  — one plaque line (authored class — never
+                                  style bare spans inside animated targets)
+     .sidebar-about-hero        — full-bleed closing image
+     .is-pending / .is-developing — reveal-sequence state classes, applied
+                                  and removed by sidebarAbout.js (see the
+                                  REVEAL SEQUENCE STATE section)
+
+   COUPLED WITH sidebarAbout.js (emits these classes), sidebarStyles.css
+   (view padding the full-bleed margins mirror), and infiniteStyles.css
+   (theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   OPENING STATEMENT
+   -----------------------------------------------------------------------------
+   Kicker per the brand pattern (Hornet, uppercase, brand-red), then the
+   three slash lines stepping rightward — the last line is the view's one
+   display moment: heaviest weight, full ink.
+   ========================================================================== */
+   
+
+.sidebar-about-kicker {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand-blue);
+  margin-bottom: 0.9rem;
+}
+
+.sidebar-about-statement {
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  line-height: 1.6;
+  color: var(--ink-dim);
+  margin: 1.2rem 0 1.5rem;
+}
+
+.sidebar-about-line {
+  display: block;
+}
+/* The rightward step ladder — each line indents one step deeper. Steps are
+   explicit classes, NOT :nth-child: the statement is a text-animation
+   target, and the animation primitives wrap every text node (including the
+   whitespace between the line spans) in classless spans, which shifts
+   child indices for as long as the view is open. */
+.sidebar-about-line.is-step-2 { padding-left: 0.9em; }
+.sidebar-about-line.is-step-3 { padding-left: 1.8em; }
+
+.sidebar-about-line.is-strong {
+  font-weight: 900;
+  /* vw-tracked size: the sheet is 26vw in its fluid range, so this keeps
+     the long "ALTITUDE\" line on one line down to narrow sheets. */
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  letter-spacing: 0.08em;
+  color: var(--ink);
+  margin-top: 0.15em;
+}
+
+/* =============================================================================
+   HEAD FIGURES — the portrait nameplate and the altitude image
+   -----------------------------------------------------------------------------
+   Two single-image figures bracket the statement: a framed portrait with a
+   ">"-prefixed nameplate right after the kicker, and a second framed image
+   between the statement and the section band. Both reuse the
+   .sidebar-about-frame plate + registration crosses defined in the PHOTO
+   FIGURES section below.
+   ========================================================================== */
+
+.sidebar-about-portrait {
+  /* Bottom margin ≈ three lines of body copy (3 × ~1.5rem) — the authored
+     pause between the nameplate and the start of the story. */
+}
+
+.sidebar-about-nameplate {
+  margin-top: 0.7rem;
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-dim);
+}
+/* Authored class per the animated-subtree rule — the nameplate is a
+   text-animation target, so its lines can't be styled as bare spans. */
+.sidebar-about-nameplate-line {
+  display: block;
+  line-height: 1.9;
+}
+
+/* Single full-width image inside a frame plate, at its NATURAL aspect —
+   height follows the source file; the frame + crosses wrap whatever height
+   results. (The grid figures below DO impose aspects because mixed sources
+   must share even rows; a lone image has no such constraint.) */
+.sidebar-about-photo {
+  display: block;
+  width: 100%;
+}
+
+/* The portrait's two-layer plate — FIG.01 is a line drawing with the
+   photograph developing over it. Both images occupy one grid cell: the
+   drawing stays in flow and sets the plate's height, so the natural-aspect
+   rule above still holds (the two sources are both 1:1, so they agree);
+   the photograph covers it exactly.
+
+   The frame's registration crosses are unaffected — they and the .marks
+   helper are position:absolute, hence out of flow, so the pseudo-elements-
+   of-a-grid-container hazard flagged in PHOTO FIGURES doesn't reach them.
+   (The stack is a separate element from the frame anyway.) */
+.sidebar-about-stack {
+  display: grid;
+}
+.sidebar-about-stack > img {
+  grid-area: 1 / 1;
+}
+
+/* =============================================================================
+   SECTION BAND — full bleed
+   -----------------------------------------------------------------------------
+   A translucent ink wash between hairlines, spanning the sheet edge-to-edge.
+   Text padding re-adds the view's horizontal padding so the label sits on
+   the column grid.
+   ========================================================================== */
+
+.sidebar-about-band {
+  margin: 1.6rem -1.8rem 1.5rem;
+  padding: 0.55rem 1.8rem;
+  background: rgba(28, 24, 19, 0.06);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-dimmer);
+}
+
+.sidebar-about-band-prefix {
+  font-weight: 500;
+  color: var(--ink-dim);
+  margin-right: 0.6em;
+}
+
+/* =============================================================================
+   NARRATIVE COPY
+   -----------------------------------------------------------------------------
+   Glitched Book body. <strong> switches family to "Glitched" 700 because
+   Glitched Book ships only normal + italic — a bare font-weight would
+   faux-bold.
+   ========================================================================== */
+
+.sidebar-about-body p {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+.sidebar-about-body p:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-about-body strong,
+.sidebar-about-dark strong {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+}
+
+/* =============================================================================
+   PHOTO FIGURES — plate, registration crosses, fiducial caption
+   -----------------------------------------------------------------------------
+   Each figure is a bordered plate with a small + drawn at each corner —
+   the brand's registration-cross mark. Crosses are pseudo-elements: the
+   frame's own ::before/::after take the top corners; the empty
+   .sidebar-about-marks helper (inset: 0) contributes its pair for the
+   bottom corners. Pseudos can't go on .sidebar-about-photos itself —
+   pseudo-elements of a grid container become grid items.
+
+   Cross geometry: frame padding is 8px; each 9px cross is offset 3px from
+   the frame edge, centering it (3 + 4.5 = 7.5px) on the photo block's
+   corner — a registration mark, not a corner ornament.
+   ========================================================================== */
+
+.sidebar-about-figure {
+  margin: 1.3rem 0 1.5rem;
+}
+
+.sidebar-about-frame {
+  position: relative;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--line);
+}
+
+.sidebar-about-marks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* One element per cross: the + is two hairline bars composited from a pair
+   of currentColor gradients, so a single pseudo draws the whole mark. */
+.sidebar-about-frame::before,
+.sidebar-about-frame::after,
+.sidebar-about-marks::before,
+.sidebar-about-marks::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  color: var(--ink-dim);
+  background:
+    linear-gradient(currentColor, currentColor) center / 1px 100% no-repeat,
+    linear-gradient(currentColor, currentColor) center / 100% 1px no-repeat;
+}
+.sidebar-about-frame::before { top: 3px;    left: 3px;  }
+.sidebar-about-frame::after  { top: 3px;    right: 3px; }
+.sidebar-about-marks::before { bottom: 3px; left: 3px;  }
+.sidebar-about-marks::after  { bottom: 3px; right: 3px; }
+
+.sidebar-about-photos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.sidebar-about-photos img {
+  display: block;
+  width: 100%;
+  object-fit: cover;
+}
+/* Fixed aspects keep rows even with mixed source dimensions:
+   portrait for the archive pair, landscape for the fleet grid. */
+.sidebar-about-photos.is-pair img { aspect-ratio: 4 / 5; }
+.sidebar-about-photos.is-grid img { aspect-ratio: 4 / 3; }
+
+.sidebar-about-figcap {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.6rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  text-align: right;
+}
+
+/* =============================================================================
+   THE DARK BLOCK — full bleed
+   -----------------------------------------------------------------------------
+   The "then → now" pivot. Surface is var(--ink) — the brand's near-black is
+   a first-class surface, not just a text color. On-dark text colors are
+   authored locally (the ink ramp is a light-surface ramp; there's no dark
+   counterpart tokenized yet).
+   ========================================================================== */
+
+.sidebar-about-dark {
+  /* Bottom margin is 0 by design: the dark block butts flush against the
+     hero below it. Both this and .sidebar-about-hero's top margin must
+     stay 0 — adjacent vertical margins collapse to the larger, so a
+     nonzero value on either reopens the gap. */
+  margin: 1.8rem -1.8rem 0;
+  padding: 1.7rem 1.8rem 1.6rem;
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sidebar-about-dark p {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+
+.sidebar-about-dark strong {
+  color: #ffffff;
+}
+
+/* --- the principle cascade ------------------------------------------------
+   Six rows stepping rightward, continuing the statement's ladder language.
+   The four named rows carry the brand primaries; the canonical values are
+   calibrated to read on near-black without adjustment. */
+
+.sidebar-about-principles {
+  list-style: none;
+  /* Bottom margin is the sole control for the gap before the credo — the
+     credo has no top margin (relies on the reset), so widen it here, not
+     across two rules. */
+  margin: 1.2rem 0 3.2rem;
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+}
+
+.sidebar-about-principles li {
+  line-height: 1.9;
+}
+/* Explicit step classes, NOT :nth-child — the list is a typewriter target
+   now, and the primitives wrap the whitespace between <li>s in classless
+   spans, shifting element child indices while the view is open (same rule
+   as the statement ladder above). */
+.sidebar-about-principles li.is-step-1 { padding-left: 0.8em; }
+.sidebar-about-principles li.is-step-2 { padding-left: 1.6em; }
+.sidebar-about-principles li.is-step-3 { padding-left: 2.4em; }
+.sidebar-about-principles li.is-step-4 { padding-left: 3.2em; }
+.sidebar-about-principles li.is-step-5 { padding-left: 4.0em; }
+.sidebar-about-principles li.is-step-6 { padding-left: 4.8em; }
+
+.sidebar-about-slash {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-about-principles .is-yellow { color: var(--brand-yellow); }
+.sidebar-about-principles .is-red    { color: var(--brand-red);    }
+.sidebar-about-principles .is-blue   { color: var(--brand-blue);   }
+.sidebar-about-principles .is-green  { color: var(--brand-green);  }
+
+/* --- the closing credo ------------------------------------------------------
+   Two right-aligned plaque lines. width: max-content + margin-left: auto
+   shrink-wraps each line's wash to its text while keeping the right edge
+   on the column grid.
+
+   Targeted by authored class, never bare `span`: the credo is a
+   text-animation target, and the primitives' classless per-character spans
+   would each match a bare-span selector — every letter becoming its own
+   block plaque, stacked vertically (the exact bug this class replaced). */
+
+.sidebar-about-credo {
+  margin-bottom: 0;
+  text-align: right;
+}
+.sidebar-about-credo-line {
+  display: block;
+  width: max-content;
+  margin-left: auto;
+  margin-top: 0.4em;
+  padding: 0.4em 0.6em;
+  background: rgba(255, 255, 255, 0.08);
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: #ffffff;
+}
+
+/* =============================================================================
+   THE HERO — full bleed, flush to the scroll end
+   -----------------------------------------------------------------------------
+   The closing image. Negative bottom margin cancels the view's 2rem bottom
+   padding so the photo ends exactly where the scroll ends. Caption sits
+   above the image (a caption below would float in the cancelled padding).
+   ========================================================================== */
+
+.sidebar-about-hero {
+  /* Top margin 0: flush against the dark block above (see the collapse
+     note there). Bottom -2rem cancels the view's bottom padding. */
+  margin: 0 -1.8rem -2rem;
+}
+
+.sidebar-about-hero .sidebar-about-figcap {
+  margin: 0 0 0.5rem;
+  padding: 0 1.8rem;
+}
+
+.sidebar-about-hero img {
+  display: block;
+  width: 100%;
+}
+
+/* =============================================================================
+   REVEAL SEQUENCE STATE — driven by sidebarAbout.js
+   -----------------------------------------------------------------------------
+   The view reveals piece by piece (see the ANIMATION section of
+   sidebarAbout.js's header): the sequencer marks every step .is-pending up
+   front and removes it when the step's turn comes. visibility (not
+   display) preserves layout — the page holds its final shape from t=0 and
+   content reveals in place, which also keeps the typewriter's
+   no-layout-shift property intact. A child carrying .is-pending stays
+   hidden inside an already-revealed ancestor (the nameplate inside the
+   portrait figure relies on this).
+
+   Figure steps additionally pass through .is-developing: the plate,
+   crosses, and caption appear with the photos held transparent, then the
+   class drops and the photos fade up on the transition below — frame
+   first, photo second.
+   ========================================================================== */
+
+.sidebar-view-about .is-pending {
+  visibility: hidden;
+}
+
+/* COUPLED WITH FIGURE_REVEAL_MS in sidebarAbout.js: delay + duration must
+   finish inside that window — the sequencer advances on a timer, not on
+   transitionend. */
+.sidebar-about-portrait img,
+.sidebar-about-figure img,
+.sidebar-about-hero img {
+  transition: opacity 640ms var(--ease) 240ms;
+}
+
+.sidebar-view-about .is-developing img {
+  opacity: 0;
+  /* Snap transparent instantly when the state is applied — the transition
+     belongs to the reveal (state removal), never to the hide. */
+  transition: none;
+}
+
+/* THE PORTRAIT'S TWO-BEAT DEVELOP
+   Both layers snap transparent under .is-developing above (that rule wins
+   on specificity), then each beat runs when the class drops:
+
+     beat 1 — the drawing resolves on the shared figure timing. Restated
+              here rather than inherited, so the two beats read as one
+              composition instead of one default and one override.
+     beat 2 — the photograph WIPES in over the drawing, top to bottom,
+              behind a hard horizontal edge.
+
+   WHY A WIPE, AND WHY A HARD EDGE
+   The drawing is ink on white; the photograph is dark. Cross-dissolving
+   them averages the two everywhere at once, so the whole plate passes
+   through a milky, low-contrast middle. A wipe never averages globally:
+   every pixel is either drawing or photograph. A SOFT-edged wipe brings
+   the averaging back inside the moving band — which on line art reads as
+   blur, not as resolution. So the edge is hard: at every instant the plate
+   is exactly two states meeting on a line, and the line moves.
+
+   The edge is a clip, not a mask. clip-path is geometric — nothing to
+   rasterize, no gradient stop to land on a subpixel, and inset() at the
+   two endpoints interpolates directly:
+
+     inset(0 0 100% 0)  → bottom inset eats the whole box → photo hidden
+     inset(0 0   0% 0)  → nothing clipped                 → photo shown
+
+   Interpolating the bottom inset from 100% to 0% walks the edge from the
+   top of the plate to the bottom, with no wasted travel at either end.
+
+   Timing is LINEAR on purpose: a scan head moves at constant speed, and
+   easing it in and out makes it read as organic drift instead. Swap in
+   var(--ease) if you want the softer, more photographic feel.
+
+   THE TWO BEATS ARE TUNED AS ONE. Beat 1 runs quicker than the shared
+   figure timing (420/120 rather than 640/240) so the drawing is fully
+   resolved by 540ms — which is the FLOOR for beat 2. The wipe can't
+   start before that without eating a half-faded sketch. It starts at
+   580ms: the drawing lands, holds for a beat you feel rather than read,
+   and the edge is already moving. Travel is 1100ms, so beat 2 finishes
+   at 1680ms. Shortening beat 1 is what buys the wipe its early start —
+   dropping the delay alone would just spend the hold.
+
+   Opacity isn't in the transition list, so the photograph snaps to 1 the
+   instant .is-developing drops — invisible anyway, because it's fully
+   clipped through the delay. The clip does all the hiding.
+
+   The drawing is never removed: it stays at full opacity beneath, so a
+   failed photo load degrades to the drawing instead of to an empty plate.
+
+   COUPLED WITH data-reveal-ms="1800" on the figure in sidebarAbout.js —
+   beat 2 finishes at 580 + 1100 = 1680ms, inside that window. */
+.sidebar-about-portrait .is-drawing {
+  transition: opacity 420ms var(--ease) 120ms;
+}
+
+.sidebar-about-portrait .is-photograph {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 1100ms linear 580ms;
+}
+
+/* The clipped state. Snaps (transition: none, from the .is-developing rule
+   above), so the edge is parked at the top of the plate before the beat
+   begins. */
+.sidebar-view-about .is-developing .is-photograph {
+  clip-path: inset(0 0 100% 0);
+}

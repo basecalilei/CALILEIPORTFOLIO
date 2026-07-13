@@ -1,0 +1,462 @@
+/* =============================================================================
+   projectModalStyles.css — styles for the per-project detail MODAL
+   -----------------------------------------------------------------------------
+   Owns the scrim (full-viewport backdrop), the centered 80vw × 80vh sheet,
+   the close button, the title, the expanded data block, and the media
+   stack defaults.
+
+   Z-INDEX
+     z:10  — .project-modal-scrim (full viewport, dim/blur backdrop)
+     z:11  — .project-modal-sheet (inside the scrim, centered)
+     The sidebar lives at z:9, so opening this modal correctly covers it
+     without forcing the sidebar to close. Closing returns the user to
+     the same sidebar state they left.
+
+   ANIMATION
+     The scrim's backdrop dim+blur is driven by a transition on its
+     ::before pseudo-element, NOT on the scrim itself, so the visibility
+     toggle (display:none → flex) doesn't conflict with the fade. The
+     sheet's grow-from-thumbnail is a transition on transform — JS sets
+     the transform during open/close, CSS animates the recovery.
+
+     The sheet ALSO has an opacity transition (0.32s, shorter than the
+     0.45s transform). Reason: the thumb (4:3) and the modal sheet (wider
+     aspect) have different aspect ratios, so the FLIP transform
+     non-uniformly scales the box at endpoints — content visibly squishes
+     during the squished/small portion of the animation. Fading the sheet
+     over the shorter duration means the worst squish frames (near the
+     thumb endpoint) play while the sheet is already transparent. On
+     open, the fade-in finishes ~130ms before the FLIP settles; on close,
+     the fade-out finishes ~130ms before the shrink reaches the thumb.
+     Both directions hide the squish without hiding the FLIP motion the
+     user is meant to see.
+
+   CLASSES EMITTED
+     .project-modal-scrim                 — backdrop layer, full viewport
+     .project-modal-scrim.is-visible      — display:flex (mounted)
+     .project-modal-scrim.is-open         — fully faded in
+     .project-modal-sheet                 — the 80% sheet, centered in scrim
+     .project-modal-close                 — × in the sheet's top-right
+     .project-modal-nav / -prev / -next   — prev/next cycle buttons, mid-edge
+     .project-modal-content               — scrollable content container
+     .project-modal-title                 — display heading
+     .project-modal-data                  — 2-col grid of label / value
+     .project-modal-data-label            — uppercase Glitched label cell
+     .project-modal-data-value            — text cell, wraps freely
+     .project-modal-media                 — flex column of media items
+     .project-modal-media > img, video    — default sizing for authored media
+     .project-modal-media .media-grid-2   — opt-in 2-col grid for a media cluster
+
+   COUPLED WITH projectModal.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   THE SCRIM — full-viewport backdrop
+   -----------------------------------------------------------------------------
+   display:none until mounted (.is-visible), then flex-centered so the sheet
+   sits in the middle of the viewport. The dim + blur live on a ::before
+   pseudo-element so the scrim itself can flip display without re-triggering
+   the visual transition.
+   ========================================================================== */
+
+.project-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: none;                    /* shown via .is-visible */
+  align-items: center;
+  justify-content: center;
+}
+.project-modal-scrim.is-visible {
+  display: flex;
+}
+.project-modal-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.42);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  opacity: 0;
+  transition: opacity 0.32s var(--ease);
+  pointer-events: none;
+}
+.project-modal-scrim.is-open::before {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE SHEET — 80vw × 80vh centered window
+   -----------------------------------------------------------------------------
+   Fixed size relative to the viewport. Inner content scrolls; the sheet
+   itself doesn't, so the close button (positioned absolute on the sheet)
+   stays pinned even as the user scrolls deep into a long project's media.
+
+   Two transitions:
+     transform 0.45s — the FLIP grow/shrink (JS-driven; CSS animates the
+                       recovery when the inline transform is cleared).
+     opacity   0.32s — hides the aspect-mismatch squish during the
+                       small-end portion of the FLIP. Shorter than the
+                       transform on purpose: fade resolves before the
+                       worst squish frames near the thumb endpoint, on
+                       both open and close. See ANIMATION in the file
+                       header for the full rationale.
+
+   transform-origin defaults to center, which the translate+scale
+   formula in JS assumes — the sheet shrinks/grows around its center.
+   ========================================================================== */
+
+.project-modal-sheet {
+  position: relative;
+  z-index: 11;
+
+  width:  80vw;
+  height: 80vh;
+
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+
+  overflow: hidden;                 /* corners; inner content owns scroll */
+  transform-origin: center center;
+
+  opacity: 0;                       /* visible only when scrim is .is-open */
+  transition: transform 0.45s var(--ease),
+              opacity   0.32s var(--ease);
+  will-change: transform, opacity;
+}
+.project-modal-scrim.is-open .project-modal-sheet {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE CLOSE BUTTON — pinned top-right of the sheet
+   -----------------------------------------------------------------------------
+   Same visual treatment as the sidebar's close button — slightly-beveled
+   square, frosted, ink-dim → ink on hover, X drawn from centered hairline
+   bars. Positioned absolute so it stays put while
+   the content scrolls beneath.
+   ========================================================================== */
+
+.project-modal-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below so it
+                                     can be dead-centered; the text remains
+                                     for the accessible name */
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;             /* slightly-beveled square (was a circle) */
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.project-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The X — two hairline bars on currentColor, absolutely centered, so the
+   glyph is geometrically dead-center (a text × sits wherever the font's
+   metrics happen to put it) and follows the button's color transitions for
+   free. Same treatment on all five close buttons (.sidebar-close,
+   .grid-modal-close, .grid-detail-close, .project-modal-close,
+   .pdf-modal-close) — keep in sync when restyling. */
+.project-modal-close::before,
+.project-modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.project-modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* =============================================================================
+   THE NAV BUTTONS — prev / next, pinned mid-height on the sheet's edges
+   -----------------------------------------------------------------------------
+   Same family as the close button — frosted square, hairline border,
+   glyph drawn by a pseudo-element in currentColor. The chevron is a
+   bordered square rotated 45°, which keeps it geometrically centered and
+   hairline-weight (a text ‹ › would sit wherever the font's metrics put
+   it). Same treatment as .process-modal-nav in processModalStyles.css —
+   keep the two in sync when restyling, the way the five close buttons
+   are kept in sync.
+
+   They sit over the content's side gutters and, when scrolled, over the
+   media stack; the frosted background keeps them legible on any surface.
+   Hidden by JS when the list has one entry.
+   ========================================================================== */
+
+.project-modal-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+
+  width: 2.4rem;
+  height: 2.4rem;
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.project-modal-nav-prev {
+  left: 1.1rem;
+  transform: translateY(-50%);
+}
+.project-modal-nav-next {
+  right: 1.1rem;
+  transform: translateY(-50%);
+}
+.project-modal-nav:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The chevron — two sides of a small square, rotated. The translate
+   offsets differ per direction so the arrow's visual mass (not its
+   bounding box) sits centered in the button. */
+.project-modal-nav::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+.project-modal-nav-prev::before {
+  transform: translate(-30%, -50%) rotate(45deg);     /* points left */
+}
+.project-modal-nav-next::before {
+  transform: translate(-70%, -50%) rotate(-135deg);   /* points right */
+}
+
+/* =============================================================================
+   THE CONTENT CONTAINER — scrollable column
+   -----------------------------------------------------------------------------
+   Fills the sheet; scrolls vertically when its contents exceed the sheet's
+   80vh. Padding gives the title and data block breathing room from the
+   sheet's edges. The close button sits on top of this scroll region
+   (positioned absolute on the parent sheet), but its 2.4rem size + 1.2rem
+   top offset are well within the 4rem top padding so it doesn't overlap
+   the title.
+   ========================================================================== */
+
+.project-modal-content {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4rem 4.5rem 4.5rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.project-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.project-modal-content::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.project-modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* =============================================================================
+   THE TITLE
+   ========================================================================== */
+
+.project-modal-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  letter-spacing: 0.1em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.8rem;
+  /* The textScramble effect injects spans inside this element — overflow
+     hidden would clip them. Leave default overflow. */
+}
+
+/* =============================================================================
+   THE EXPANDED DATA BLOCK
+   -----------------------------------------------------------------------------
+   Two-column grid. Label column auto-sized so all labels share a width
+   (their longest determines it — TOOLS or TITLE typically). Value column
+   takes the remaining space and wraps freely.
+
+   All rows are full-width — no split DATE | TYPE row like the sidebar's
+   data block. The modal has room, and the cleaner single-column read is
+   better for an "identity card" presentation. Labels are top-aligned
+   instead of baseline-aligned so the NOTE row's long wrapped value pairs
+   with its label correctly.
+   ========================================================================== */
+
+.project-modal-data {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  border-top: 1px solid var(--line);
+  font-family: "Glitched", sans-serif;
+  margin-bottom: 2.4rem;
+}
+
+.project-modal-data-label,
+.project-modal-data-value {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.project-modal-data-label {
+  border-right: 1px solid var(--line);
+
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  white-space: nowrap;
+  /* top-align so multi-line values keep their label up top */
+  align-self: start;
+}
+
+.project-modal-data-value {
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  line-height: 1.55;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+  align-self: start;
+}
+
+/* =============================================================================
+   THE MEDIA STACK
+   -----------------------------------------------------------------------------
+   The user-authored region. Direct children get default sizing — full
+   content width for images and videos, readable column width for paragraphs.
+   Gap-based vertical rhythm so the user doesn't need to add margins to each
+   element they author.
+
+   Any element the user adds inside gets reasonable defaults, but they
+   remain free to override per-element (e.g. inline style) or to group a
+   cluster two-up with the .media-grid-2 wrapper (defined at the end of
+   this section).
+   ========================================================================== */
+
+.project-modal-media {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.project-modal-media > img,
+.project-modal-media > video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+.project-modal-media > p {
+  max-width: 80ch;                  /* readable measure for prose */
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.project-modal-media > h3 {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  margin-top: 0.5rem;               /* slight extra breath before a section */
+}
+
+/* -----------------------------------------------------------------------------
+   MEDIA GRID HELPER — .media-grid-2
+   -----------------------------------------------------------------------------
+   Opt-in two-column layout for a cluster of media inside the stack — e.g. a
+   row of turnaround clips or a contact sheet of stills. Authored as a single
+   wrapper the user drops into the media block:
+
+     <div class="media-grid-2"> <video…> <video…> … </div>
+
+   WHY A CLASS (not inline styles per item)
+     The stack's default img/video sizing is a DIRECT-CHILD selector
+     (.project-modal-media > video), so media nested inside a wrapper falls
+     out of its scope and loses the sizing. Rather than re-declare
+     width/border inline on every clip, this helper re-applies the same
+     treatment to its own children and lays them out on a grid. One wrapper,
+     any number of items, reusable across projects.
+
+     The children are styled here (not by the parent's `>` selector)
+     precisely because they are no longer direct children of
+     .project-modal-media — so there's no selector collision with the
+     full-width rule above; each rule matches a disjoint set of elements.
+
+   RHYTHM
+     The parent flex column's 2rem gap separates this block from the items
+     above and below it; the 1rem inner gap reads as a tighter, related
+     cluster rather than more full-width stack items. Collapses to a single
+     column on narrow sheets, where two-up would be too small to read.
+   --------------------------------------------------------------------------- */
+
+.project-modal-media .media-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.project-modal-media .media-grid-2 > img,
+.project-modal-media .media-grid-2 > video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .project-modal-media .media-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,39 @@
+/* =============================================================================
+   sidebarTestStyles.css — styles for the "test" sandbox view
+   -----------------------------------------------------------------------------
+   Mirrors the typography of sidebarAboutStyles / sidebarEthosStyles so
+   experiments running here reflect the same visual context as the
+   production views — a primitive that looks right here will look right
+   when promoted to a real view.
+
+   CLASSES EMITTED
+     .sidebar-view-test       — the view root
+     .sidebar-test-title      — display heading
+     .sidebar-test-body       — body copy container (paragraphs etc.)
+
+   COUPLED WITH sidebarTest.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+.sidebar-test-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.4rem;
+}
+
+.sidebar-test-body {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.sidebar-test-body p {
+  margin-bottom: 1rem;
+}
+.sidebar-test-body p:last-child {
+  margin-bottom: 0;
+}

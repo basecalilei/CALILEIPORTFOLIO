@@ -1,0 +1,280 @@
+/* =============================================================================
+   sidebarStyles.css — styles for the SIDEBAR shell
+   -----------------------------------------------------------------------------
+   Owns the trigger button, the sliding sheet, the close button, and the view
+   container. INDIVIDUAL VIEWS bring their own stylesheet for their internal
+   styling; this file only provides the shared shell.
+
+   z:9 — below modals (z:10+), above the page layers (z:1-3). A modal opened
+   from a button inside the sidebar will visually cover the sidebar, which is
+   the correct behavior: modals are focused interactions, the sidebar is
+   ambient.
+
+   CLASSES EMITTED
+     .sidebar-trigger              — fixed top-right open button
+     .sidebar-trigger-icon         — the icon grid inside the trigger
+     .sidebar-trigger-label        — the "MENU" text inside the trigger
+     .sidebar-sheet                — the sliding panel (slides from the right)
+     .sidebar-sheet.is-on-home     — modifier set when the home view is active
+     .sidebar-back                 — "← MENU" pinned top-left of the sheet;
+                                     hidden when .is-on-home is set
+     .sidebar-close                — × inside the sheet (top-right)
+     .sidebar-view-container       — holds all view DOM, stacks views
+     .sidebar-view                 — base for any view (added by sidebar.js)
+
+   COUPLED WITH sidebar.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   PUBLISHED DIMENSIONS — the sidebar's shared-geometry contract
+   -----------------------------------------------------------------------------
+   These tokens are the sidebar's public geometry. Consumed here AND by
+   modules that align to the sidebar (scrollIndicatorStyles.css uses both:
+   the sheet width for its open-dodge, the trigger width to lock its column
+   to the MENU button). One value, one owner; consumers must fall back
+   gracefully (var(--token, fallback)).
+   ========================================================================== */
+:root {
+  /* Width of the open sheet. */
+  --sidebar-width: clamp(270px, 26vw, 370px);
+
+  /* Width of the trigger button. Its natural (content-driven) width is
+     ~83px — border 2 + padding 29.6 + icon 12 + gap 10.4 + "MENU" in
+     Glitched 700 at 0.78rem/0.08em ≈ 29 — pinned at 84px so the dimension
+     is designed, not font fallout. If the label text or type ever changes,
+     re-derive and bump this token; alignment consumers follow for free. */
+  --sidebar-trigger-width: 84px;
+}
+
+/* =============================================================================
+   THE TRIGGER BUTTON
+   -----------------------------------------------------------------------------
+   Always visible, fixed in the top-right corner. When the sheet opens it
+   slides in from the right and visually covers the trigger; no explicit
+   hide needed.
+   ========================================================================== */
+
+.sidebar-trigger {
+  position: fixed;
+  top: 1.4rem;
+  right: 1.4rem;
+  z-index: 9;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 1.0rem 0.65rem 0.85rem;
+  /* Pinned to the published token (see PUBLISHED DIMENSIONS above) — equal
+     to the natural content width, so nothing visibly changes here; it just
+     makes the width a contract other modules can align to. */
+  width: var(--sidebar-trigger-width);
+
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink);
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+
+  transition: background 0.25s var(--ease), border-color 0.25s var(--ease),
+              color 0.25s var(--ease);
+}
+.sidebar-trigger:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #ffffff;
+}
+
+/* 2×2 dot grid inside the trigger — picks up `currentColor` so it inverts
+   with the hover state automatically. Pure CSS, no SVG required. */
+.sidebar-trigger-icon {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 2px;
+  width: 12px;
+  height: 12px;
+}
+.sidebar-trigger-icon span {
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* =============================================================================
+   THE SHEET — slides in from the right
+   -----------------------------------------------------------------------------
+   Permanently in the DOM, transformed off-screen when closed. Slides in via
+   a CSS transition on transform when .is-open is added. pointer-events
+   disabled when closed so the off-screen sheet can't block anything
+   underneath.
+   ========================================================================== */
+
+.sidebar-sheet {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+
+  width: var(--sidebar-width);
+
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  /* No drop shadow — per visualLanguage.md ("almost no shadow"), the sheet's
+     separation from the page comes from the frosted-glass fill plus this
+     hairline left edge, not a cast shadow. */
+  border-left: 1px solid var(--line);
+
+  transform: translateX(110%);
+  pointer-events: none;
+  transition: transform 0.45s var(--ease);
+
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-sheet.is-open {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.sidebar-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below so it
+                                     can be dead-centered; the text remains
+                                     for the accessible name */
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;             /* slightly-beveled square (was a circle) */
+  cursor: none; --cursor: pointer;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.sidebar-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The X — two hairline bars on currentColor, absolutely centered, so the
+   glyph is geometrically dead-center (a text × sits wherever the font's
+   metrics happen to put it) and follows the button's color transitions for
+   free. Same treatment on all four close buttons (.sidebar-close,
+   .grid-modal-close, .grid-detail-close, .project-modal-close) — keep in
+   sync when restyling. */
+.sidebar-close::before,
+.sidebar-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.sidebar-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* =============================================================================
+   THE BACK BUTTON — pinned top-left of the sheet
+   -----------------------------------------------------------------------------
+   Mirrors the close button's vertical position (top: 1.2rem) but is text
+   rather than a glyph, so we give the wrapper the same 2.4rem height as the
+   close circle and flex-center the text within it — that aligns the back
+   button's optical centerline with the close button's centerline without
+   needing pixel-tuned offsets.
+
+   Hidden via opacity (not display) when on the home view, so the fade
+   matches the view cross-fade timing — the chrome leaves the screen at the
+   same rhythm as the content beneath it. pointer-events: none on the same
+   rule prevents stray clicks while the button is fading or fully hidden.
+   ========================================================================== */
+
+.sidebar-back {
+  position: absolute;
+  top: 1.2rem;
+  left: 1.4rem;
+  z-index: 2;
+  height: 2.4rem;
+
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: none; --cursor: pointer;
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-dim);
+
+  transition: color 0.2s var(--ease), transform 0.2s var(--ease),
+              opacity 0.22s var(--ease);
+}
+.sidebar-back:hover {
+  color: var(--ink);
+  transform: translateX(-3px);
+}
+
+.sidebar-sheet.is-on-home .sidebar-back {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   THE VIEW CONTAINER
+   -----------------------------------------------------------------------------
+   Fills the sheet below the close button. All registered views are mounted
+   as children of this element, stacked at the same rectangle
+   (position:absolute, inset:0). At any moment exactly one is visible
+   (opacity:1, pointer-events:auto); others are transparent and
+   non-interactive.
+
+   The cross-fade is just CSS opacity transitions on each view — sidebar.js
+   sets opacity/pointer-events imperatively when switching, but the easing
+   is owned here.
+   ========================================================================== */
+
+.sidebar-view-container {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 4.4rem;          /* clear space above for the close button */
+  overflow: hidden;
+}
+
+.sidebar-view {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 1.6rem 1.8rem 2rem;
+  transition: opacity 0.22s var(--ease);
+  /* opacity + pointer-events are set imperatively by sidebar.js per view. */
+}
+.sidebar-view::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}

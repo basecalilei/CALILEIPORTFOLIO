@@ -1,0 +1,143 @@
+/* =============================================================================
+   fonts.css — typography source declarations
+   -----------------------------------------------------------------------------
+   Declares the project's two type families ("Glitched Book" and "Glitched")
+   from the .woff2 files in /fonts/. Every other stylesheet in the project
+   uses these by name; this file is the only place they're declared.
+
+   This stylesheet must be linked FIRST in index.html (before any other
+   stylesheet that uses these families), so the @font-face rules are parsed
+   before any rule that names them.
+
+   FAMILY ORGANIZATION
+     "Glitched Book"   — the BODY face. Used on html/body as the default.
+                         Two weights only: normal + italic.
+     "Glitched"        — the DISPLAY face. Used for headings, buttons, kickers.
+                         Five weights × two styles: 300/500/700/900 + italics.
+
+   The split into two named families mirrors the upstream foundry's
+   organization (the Book face is its own family; everything else is
+   "Glitched" with weight variants). Keeping that split lets us write
+   `font-family: "Glitched Book"` for body and `font-family: "Glitched"` for
+   display without weight collisions.
+
+   FORMAT
+     Only .woff2 is declared. Every browser that runs ES modules supports
+     woff2, and woff2 has the smallest file size. If older format support
+     is ever needed, add additional `url(...) format(...)` lines to each
+     src list — the order matters (browser uses the first format it
+     recognizes).
+
+   COUPLED WITH
+     - The actual font files in /fonts/. Renaming a file or moving the
+       folder requires updating the url() paths here.
+     - index.html: this file must be the first stylesheet linked.
+     - Every other stylesheet: each uses "Glitched Book" or "Glitched" by
+       name. Renaming a family here requires renaming it everywhere it's
+       used.
+   ========================================================================== */
+
+/* ---------- Glitched Book (body face) ---------- */
+@font-face {
+  font-family: "Glitched Book";
+  src: url("fonts/Glitched-Book.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Glitched Book";
+  src: url("fonts/Glitched-BookItalic.woff2") format("woff2");
+  font-weight: normal;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Glitched (display face) — Light 300 ---------- */
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-LightItalic.woff2") format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Glitched — Medium 500 ---------- */
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-MediumItalic.woff2") format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Glitched — Bold 700 ---------- */
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-BoldItalic.woff2") format("woff2");
+  font-weight: bold;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Glitched — Black 900 ---------- */
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-Black.woff2") format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Glitched";
+  src: url("fonts/Glitched-BlackItalic.woff2") format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Hornet Display ---------- */
+@font-face {
+  font-family: "Hornet Display";
+  src: url("fonts/HornetDisplay-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Hornet Display";
+  src: url("fonts/HornetDisplay-Bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Foundry Gridnik ---------- */
+@font-face {
+  font-family: "Foundry Gridnik";
+  src: url("fonts/FoundryGridnik-Bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}

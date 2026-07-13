@@ -1,0 +1,234 @@
+/* =============================================================================
+   sidebarShopGateStyles.css — the Shop "access key" soft gate
+   -----------------------------------------------------------------------------
+   The prompt that unfolds beneath the .SHOP menu item. Built to read as a
+   working instrument readout, per visualLanguage.md: a Hornet kicker label, a
+   /> syntax prompt, a hairline data-rule with an ambient scanner sweep, and
+   brand-color status semantics (blue = info, green = go, red = warn).
+
+   OPEN/CLOSE is a grid-template-rows 0fr→1fr unfold — it animates to the
+   content's natural height with no magic pixel value — plus opacity and a
+   small settle. AMBIENT motion (the rule's activity register + prompt glow)
+   only runs while .is-open; it's paused otherwise, so a folded gate costs
+   nothing.
+
+   CLASSES
+     .shop-gate         wrapper / rows animator; .is-open / .is-wrong / .is-correct
+     .shop-gate-inner   overflow-clipped content column (lets the row hit 0)
+     .shop-gate-label   Hornet kicker  ("// ACCESS.KEY")
+     .shop-gate-field   /> prompt + input row
+     .shop-gate-prompt  the /> glyph (driven-lamp glow while open)
+     .shop-gate-input   the password field (native I-beam via cursor:text)
+     .shop-gate-rule    hairline underline holding the activity register
+     .shop-gate-scan    the register segment (snaps between authored states)
+     .shop-gate-status  tiny state readout (rejected / granted)
+
+   COUPLED WITH sidebarShopGate.js (emits these classes) and infiniteStyles.css
+   (theme vars + --ease). Fonts per fonts.css.
+   ========================================================================== */
+
+.shop-gate {
+  /* grid-rows unfold: 0fr (collapsed) → 1fr (content height). The inner
+     child clips with overflow:hidden so the row can resolve to zero. */
+  display: grid;
+  grid-template-rows: 0fr;
+  width: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: grid-template-rows 0.42s var(--ease),
+              opacity           0.30s var(--ease);
+}
+.shop-gate.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shop-gate-inner {
+  overflow: hidden;
+  min-height: 0;               /* lets the 0fr row actually reach zero */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.55rem;        /* breathing room under the shop button */
+
+  /* small settle: content lifts into place as the rows unfold */
+  transform: translateY(-4px);
+  transition: transform 0.34s var(--ease);
+}
+.shop-gate.is-open .shop-gate-inner { transform: none; }
+
+/* --- kicker label ---------------------------------------------------------
+   The brand's signature move: a small letter-spaced uppercase readout above
+   the field. Hornet Display is the instrument tier; dim by default. */
+.shop-gate-label {
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-dim);
+}
+
+/* --- prompt + input row --------------------------------------------------- */
+.shop-gate-field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.shop-gate-prompt {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--brand-blue);    /* information affordance */
+  user-select: none;
+}
+/* ambient carrier glow, only while open (paused → invisible cost when
+   folded). Driven-lamp envelope per visualLanguage.md's carrier rules:
+   fast attack, slow decay, floored intensity, ≥1s period. The 2.2s period
+   is deliberate — the old 1.6s pulse sat in an exact 2:1 phase-lock with
+   the register's 3.2s cycle, so the two ambients synced every register
+   pass and read as one mechanism; 2.2s is incommensurate with 3.2s, so
+   they drift against each other like independent live systems. */
+.shop-gate.is-open .shop-gate-prompt {
+  animation: shop-gate-glow 2.2s infinite;
+}
+
+.shop-gate-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  /* Native I-beam: any non-none computed cursor suppresses the crosshair and
+     shows the UA text cursor — see cursor.js's --cursor protocol notes. */
+  cursor: text;
+  caret-color: var(--brand-blue);
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.22em;      /* wide tracking makes masked dots read technical */
+  color: var(--ink);
+}
+.shop-gate-input::placeholder {
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+/* --- the rule + activity register ------------------------------------------
+   A hairline data-rule with a hard-edged brand segment that SNAPS between
+   hand-authored positions/widths/colors — an activity register, the
+   "instrument is live" ambient. step-end timing means each state holds for
+   its interval then jumps: no easing, no glide. Only animates while open;
+   paused (and opacity-0 at rest) otherwise. */
+.shop-gate-rule {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: var(--line);
+  overflow: hidden;
+  transition: background 0.2s var(--ease);
+}
+.shop-gate-scan {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  /* Base state doubles as the fallback: opacity 0 keeps the segment
+     invisible whenever the animation isn't driving it (paused while folded,
+     or removed entirely under prefers-reduced-motion). left/width animate
+     via step-end — a handful of discrete jumps per second on a 1px strip,
+     so the layout cost of not using transforms is nil and the authored
+     states stay legible as plain values. */
+  left: 2%;
+  width: 10%;
+  background: var(--brand-blue);
+  opacity: 0;
+  animation: shop-gate-scan 3.2s step-end infinite;
+  animation-play-state: paused;             /* idle until open */
+}
+.shop-gate.is-open .shop-gate-scan { animation-play-state: running; }
+
+/* --- status readout -------------------------------------------------------
+   Reserves a line so nothing jumps. Wording is state-driven via ::before, so
+   the JS only toggles classes — the copy lives here with the styling. */
+.shop-gate-status {
+  min-height: 0.7rem;
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+}
+.shop-gate-status::before { content: ""; }
+.shop-gate.is-wrong   .shop-gate-status { opacity: 1; color: var(--brand-red); }
+.shop-gate.is-wrong   .shop-gate-status::before { content: "/ KEY.REJECTED"; }
+.shop-gate.is-correct .shop-gate-status { opacity: 1; color: var(--brand-green); }
+.shop-gate.is-correct .shop-gate-status::before { content: "/ ACCESS.GRANTED"; }
+
+/* --- wrong: warn the rule + prompt red, and shake the field --------------- */
+.shop-gate.is-wrong .shop-gate-rule   { background: var(--brand-red); }
+.shop-gate.is-wrong .shop-gate-scan   { display: none; }   /* clean warn read —
+                                          no blue/green ticks over the red */
+.shop-gate.is-wrong .shop-gate-prompt { color: var(--brand-red); animation: none; }
+.shop-gate.is-wrong .shop-gate-field  { animation: shop-gate-shake 0.36s var(--ease); }
+
+/* --- correct: go green ---------------------------------------------------- */
+.shop-gate.is-correct .shop-gate-rule   { background: var(--brand-green); }
+.shop-gate.is-correct .shop-gate-scan   { display: none; }   /* register off mid-grant */
+.shop-gate.is-correct .shop-gate-prompt { color: var(--brand-green); animation: none; }
+
+/* --------------------------------------------------------------------------- */
+@keyframes shop-gate-scan {
+  /* Hand-authored states; step-end holds each until the next keyframe, then
+     snaps. Holds are deliberately UNEVEN (160–420ms at the 3.2s cycle) and
+     positions jump back and forth, so it reads as live activity rather than
+     a metronome. Two opacity-0 gaps read as transmission drops. Idle palette
+     is blue (info) with green/yellow ticks — red never appears here; it's
+     reserved for the is-wrong warn so the semantics stay legible. The cycle
+     starts on a gap so a paused-at-frame-0 register shows nothing. */
+  0%   { opacity: 0; }
+  4%   { left: 2%;  width: 10%; background: var(--brand-blue);   opacity: 1; }
+  13%  { left: 34%; width: 5%;  background: var(--brand-blue);   opacity: 1; }
+  21%  { left: 18%; width: 13%; background: var(--brand-green);  opacity: 1; }
+  29%  { opacity: 0; }
+  34%  { left: 61%; width: 7%;  background: var(--brand-blue);   opacity: 1; }
+  47%  { left: 79%; width: 12%; background: var(--brand-yellow); opacity: 1; }
+  56%  { left: 48%; width: 4%;  background: var(--brand-blue);   opacity: 1; }
+  64%  { left: 88%; width: 6%;  background: var(--brand-blue);   opacity: 1; }
+  72%  { opacity: 0; }
+  79%  { left: 8%;  width: 6%;  background: var(--brand-green);  opacity: 1; }
+  90%  { left: 26%; width: 9%;  background: var(--brand-blue);   opacity: 1; }
+}
+@keyframes shop-gate-glow {
+  /* Fast attack, brief peak, slow release — a driven lamp, not a metronome
+     fade. The attack is quick but CONTINUOUS (a hard snap-on would read as
+     an information event); the decay's steep-then-flat bezier approximates
+     exponential release — drops fast off the peak, long tail into the 0.35
+     floor. Never fully off: a blackout would be an information event too.
+     Segment timing functions are declared per-keyframe below. */
+  0%   { opacity: 0.35; animation-timing-function: ease-out; }  /* attack ~175ms */
+  8%   { opacity: 1;    animation-timing-function: linear;   }  /* peak hold ~110ms */
+  13%  { opacity: 1;    animation-timing-function: cubic-bezier(0.2, 0.55, 0.35, 1); } /* release ~1.9s */
+  100% { opacity: 0.35; }
+}
+@keyframes shop-gate-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Motion-reduction: keep the state changes, drop the perpetual motion. */
+@media (prefers-reduced-motion: reduce) {
+  .shop-gate,
+  .shop-gate-inner { transition: opacity 0.2s var(--ease); }
+  .shop-gate.is-open .shop-gate-prompt,
+  .shop-gate-scan { animation: none; }
+  .shop-gate.is-open .shop-gate-inner { transform: none; }
+}

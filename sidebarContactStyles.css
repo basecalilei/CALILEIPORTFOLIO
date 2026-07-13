@@ -1,0 +1,400 @@
+/* =============================================================================
+   sidebarContactStyles.css — styles for the "contact" sidebar view
+   -----------------------------------------------------------------------------
+   The work-inquiry view: kicker + Gridnik heading + intro/mail head, then
+   the three-field transmission form. Authored per visualLanguage.md —
+   Hornet describes (field labels, status readouts), Glitched speaks (copy,
+   placeholders, the TRANSMIT button), and Gridnik carries the view's one
+   display moment (its first use in the sidebar; migration item 1, applied
+   on touch). Field focus is blue (info: this line is live), transmit is
+   green (go), missing/failed are red (warn) — one meaning per color.
+
+   AMBIENT MOTION
+     The rule's activity register (hard-edged step-end segment, same
+     species as the shop gate's — fresh hand-authored states on an
+     incommensurate 3.6s cycle so the two never read as copies) runs only
+     while the view root carries .is-live, toggled by the lifecycle hooks
+     in sidebarContact.js. The shell exposes no visibility class, so the
+     hooks are the visibility signal; a hidden view animates nothing. All
+     four non-idle states hide the register for a clean single-color read
+     on the rule.
+
+   CLASSES EMITTED
+     .sidebar-view-contact      — view root (+ .is-live while visible)
+     .sidebar-contact-head      — animated head (scramble/hover territory)
+     .sidebar-contact-kicker    — Hornet eyebrow ("// OPEN.FOR.WORK")
+     .sidebar-contact-title     — the Gridnik display heading
+     .sidebar-contact-copy      — intro paragraphs + mail line
+     .sidebar-contact-mailline  — the "/> mail:" row
+     .sidebar-contact-prompt    — the /> glyph
+     .sidebar-contact-mail      — the mailto anchor
+     .sidebar-contact-form      — the form; carries the state classes
+                                  .is-missing/.is-sending/.is-sent/.is-failed
+     .sidebar-contact-field     — label + control block (+ .is-missing)
+     .sidebar-contact-label     — Hornet field label ("/ 01 · NAME")
+     .sidebar-contact-input     — single-line controls (underline rule)
+     .sidebar-contact-area      — the message textarea (full bordered plate)
+     .sidebar-contact-gotcha    — off-screen honeypot (never display:none —
+                                  naive bots skip fields that don't render)
+     .sidebar-contact-rule      — hairline state rule above the foot
+     .sidebar-contact-scan      — the activity-register segment
+     .sidebar-contact-foot      — TRANSMIT button + status readout row
+     .sidebar-contact-send      — the submit button
+     .sidebar-contact-status    — Hornet state readout. Wording is
+                                  state-driven via ::before, so the JS only
+                                  toggles classes — copy lives here.
+
+   COUPLED WITH sidebarContact.js (emits these classes, toggles the state
+   classes and .is-live), sidebarStyles.css (.sidebar-view base padding and
+   cross-fade), and infiniteStyles.css (theme vars + --ease). Fonts per
+   fonts.css. Cursor behavior per cursor.js's --cursor protocol: clickables
+   keep the crosshair and morph it (cursor: none; --cursor: pointer); text
+   fields opt into the native I-beam (cursor: text).
+   ========================================================================== */
+
+/* =============================================================================
+   HEAD — kicker, display heading, intro + mail line
+   ========================================================================== */
+
+.sidebar-contact-head {
+  margin-bottom: 2rem;
+}
+
+.sidebar-contact-kicker {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--brand-green);          /* the kicker color, per visualLanguage */
+  margin-bottom: 0.9rem;
+}
+
+.sidebar-contact-title {
+  /* Tier 1 — the view's one display moment. */
+  font-family: "Foundry Gridnik", sans-serif;
+  font-weight: bold;
+  font-size: clamp(1.7rem, 2.7vw, 2.3rem);
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.2rem;
+}
+
+.sidebar-contact-copy {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.sidebar-contact-copy p {
+  margin-bottom: 0.9rem;
+}
+.sidebar-contact-copy p:last-child {
+  margin-bottom: 0;
+}
+
+.sidebar-contact-mailline {
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+}
+.sidebar-contact-prompt {
+  font-weight: 700;
+  color: var(--brand-blue);         /* information affordance */
+  user-select: none;
+}
+.sidebar-contact-mail {
+  color: var(--brand-blue);         /* links are blue, per the color roles */
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s var(--ease);
+  cursor: none; --cursor: pointer;  /* crosshair morphs to its point state */
+}
+.sidebar-contact-mail:hover,
+.sidebar-contact-mail:focus-visible {
+  border-bottom-color: var(--brand-blue);
+  outline: none;
+}
+
+/* =============================================================================
+   FORM FIELDS
+   -----------------------------------------------------------------------------
+   Instrument inputs per the gate's conventions: transparent, borderless
+   except for a hairline data-rule (underline for single lines, a full
+   plate for the long message field), native I-beam, blue caret. Focus is
+   an information state — the live line turns blue.
+   ========================================================================== */
+
+.sidebar-contact-field {
+  margin-bottom: 1.35rem;
+}
+
+.sidebar-contact-label {
+  display: block;
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-dim);
+  margin-bottom: 0.45rem;
+  transition: color 0.2s var(--ease);
+}
+
+.sidebar-contact-input {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);   /* the field's data-rule */
+  outline: none;
+  padding: 0.15rem 0 0.4rem;
+  cursor: text;                           /* native I-beam via --cursor protocol */
+  caret-color: var(--brand-blue);
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  transition: border-color 0.2s var(--ease);
+}
+
+.sidebar-contact-area {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--line);          /* full plate for the long field */
+  outline: none;
+  padding: 0.6rem 0.7rem;
+  resize: vertical;                       /* function over form — let long
+                                             messages have room */
+  min-height: 7.5rem;
+  cursor: text;
+  caret-color: var(--brand-blue);
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink);
+  transition: border-color 0.2s var(--ease);
+}
+
+.sidebar-contact-input::placeholder,
+.sidebar-contact-area::placeholder {
+  color: var(--ink-dim);
+  opacity: 0.7;
+  letter-spacing: 0.06em;
+}
+
+/* Focus: this line is live. (The .is-missing warn below is authored after
+   these rules on purpose — while a field is both focused and missing, red
+   wins until the first keystroke clears the warn.) */
+.sidebar-contact-input:focus,
+.sidebar-contact-area:focus {
+  border-color: var(--brand-blue);
+}
+.sidebar-contact-field:focus-within .sidebar-contact-label {
+  color: var(--brand-blue);
+}
+
+/* The honeypot: rendered (so bots see it) but off-screen and untabbable. */
+.sidebar-contact-gotcha {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   THE RULE + ACTIVITY REGISTER
+   -----------------------------------------------------------------------------
+   A hairline state rule above the foot. In idle it hosts the activity
+   register — a hard-edged brand segment snapping between hand-authored
+   states via step-end, the "instrument is live" ambient. In every non-idle
+   state the register hides and the rule itself takes the state color, so
+   the strip reads as a single unambiguous indicator.
+   ========================================================================== */
+
+.sidebar-contact-rule {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  margin: 1.6rem 0 0.75rem;
+  background: var(--line);
+  overflow: hidden;
+  transition: background 0.2s var(--ease);
+}
+.sidebar-contact-scan {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  /* Base state doubles as the fallback: opacity 0 keeps the segment
+     invisible whenever the animation isn't driving it (paused while the
+     view is hidden, or removed under prefers-reduced-motion). */
+  left: 5%;
+  width: 8%;
+  background: var(--brand-blue);
+  opacity: 0;
+  animation: sidebar-contact-scan 3.6s step-end infinite;
+  animation-play-state: paused;           /* idle until the view is visible */
+}
+.sidebar-view-contact.is-live .sidebar-contact-scan {
+  animation-play-state: running;
+}
+
+/* =============================================================================
+   THE FOOT — transmit button + status readout
+   ========================================================================== */
+
+.sidebar-contact-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.sidebar-contact-send {
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 0.5rem 0.85rem;
+  cursor: none; --cursor: pointer;
+  font-family: "Glitched", sans-serif;    /* the button speaks — voice tier */
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: color 0.2s var(--ease), border-color 0.2s var(--ease);
+}
+.sidebar-contact-send:hover,
+.sidebar-contact-send:focus-visible {
+  color: var(--brand-green);              /* transmit is a go affordance */
+  border-color: var(--brand-green);
+  outline: none;
+}
+
+/* Reserves its line so nothing jumps when an announcement arrives. */
+.sidebar-contact-status {
+  min-height: 0.7rem;
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-align: right;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+}
+.sidebar-contact-status::before { content: ""; }
+
+/* =============================================================================
+   STATES — one class on the form, per the state table in sidebarContact.js
+   ========================================================================== */
+
+/* --- missing: warn the offending fields, announce, register off ----------- */
+.sidebar-contact-form.is-missing .sidebar-contact-scan { display: none; }
+.sidebar-contact-form.is-missing .sidebar-contact-status {
+  opacity: 1;
+  color: var(--brand-red);
+}
+.sidebar-contact-form.is-missing .sidebar-contact-status::before {
+  content: "/ FIELDS.REQUIRED";
+}
+.sidebar-contact-field.is-missing .sidebar-contact-label {
+  color: var(--brand-red);
+}
+.sidebar-contact-field.is-missing .sidebar-contact-input,
+.sidebar-contact-field.is-missing .sidebar-contact-area {
+  border-color: var(--brand-red);
+}
+.sidebar-contact-field.is-missing {
+  animation: sidebar-contact-shake 0.36s var(--ease);
+}
+
+/* --- sending: info blue; inputs are locked upstream in JS ------------------ */
+.sidebar-contact-form.is-sending .sidebar-contact-rule { background: var(--brand-blue); }
+.sidebar-contact-form.is-sending .sidebar-contact-scan { display: none; }
+.sidebar-contact-form.is-sending .sidebar-contact-send {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.sidebar-contact-form.is-sending .sidebar-contact-status {
+  opacity: 1;
+  color: var(--brand-blue);
+  animation: sidebar-contact-pulse 2s infinite;
+}
+.sidebar-contact-form.is-sending .sidebar-contact-status::before {
+  content: "/ MSG.SENDING";
+}
+
+/* --- sent: go green --------------------------------------------------------- */
+.sidebar-contact-form.is-sent .sidebar-contact-rule { background: var(--brand-green); }
+.sidebar-contact-form.is-sent .sidebar-contact-scan { display: none; }
+.sidebar-contact-form.is-sent .sidebar-contact-status {
+  opacity: 1;
+  color: var(--brand-green);
+}
+.sidebar-contact-form.is-sent .sidebar-contact-status::before {
+  content: "/ MSG.SENT";
+}
+
+/* --- failed: warn red; the draft is preserved upstream ---------------------- */
+.sidebar-contact-form.is-failed .sidebar-contact-rule { background: var(--brand-red); }
+.sidebar-contact-form.is-failed .sidebar-contact-scan { display: none; }
+.sidebar-contact-form.is-failed .sidebar-contact-status {
+  opacity: 1;
+  color: var(--brand-red);
+}
+.sidebar-contact-form.is-failed .sidebar-contact-status::before {
+  content: "/ SEND.FAILED · RETRY";
+}
+
+/* =============================================================================
+   KEYFRAMES
+   ========================================================================== */
+
+@keyframes sidebar-contact-scan {
+  /* Hand-authored states; step-end holds each until the next keyframe,
+     then snaps. Holds are deliberately uneven and positions jump back and
+     forth so it reads as live activity, not a metronome. Two opacity-0
+     gaps read as transmission drops. Idle palette is blue (info) with one
+     green and one yellow tick — red never appears here; it's reserved for
+     the warn states so the semantics stay legible. The cycle starts on a
+     gap so a paused-at-frame-0 register shows nothing. */
+  0%   { opacity: 0; }
+  5%   { left: 5%;  width: 8%;  background: var(--brand-blue);   opacity: 1; }
+  16%  { left: 41%; width: 4%;  background: var(--brand-blue);   opacity: 1; }
+  23%  { left: 12%; width: 11%; background: var(--brand-yellow); opacity: 1; }
+  33%  { opacity: 0; }
+  39%  { left: 70%; width: 6%;  background: var(--brand-blue);   opacity: 1; }
+  50%  { left: 55%; width: 12%; background: var(--brand-green);  opacity: 1; }
+  61%  { left: 86%; width: 5%;  background: var(--brand-blue);   opacity: 1; }
+  68%  { opacity: 0; }
+  76%  { left: 28%; width: 7%;  background: var(--brand-blue);   opacity: 1; }
+  88%  { left: 63%; width: 9%;  background: var(--brand-blue);   opacity: 1; }
+}
+
+@keyframes sidebar-contact-pulse {
+  /* Driven-lamp envelope per visualLanguage's carrier rules: fast but
+     continuous attack, brief peak, steep-then-flat release into a floored
+     0.4 — never fully off (a blackout would read as an information event
+     during the one state where the visitor is watching for one). */
+  0%   { opacity: 0.4; animation-timing-function: ease-out; }
+  9%   { opacity: 1;   animation-timing-function: linear; }
+  14%  { opacity: 1;   animation-timing-function: cubic-bezier(0.2, 0.55, 0.35, 1); }
+  100% { opacity: 0.4; }
+}
+
+@keyframes sidebar-contact-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Motion-reduction: keep the state changes, drop the perpetual motion. */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-contact-scan { animation: none; }
+  .sidebar-contact-form.is-sending .sidebar-contact-status { animation: none; }
+}

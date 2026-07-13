@@ -1,0 +1,212 @@
+/* =============================================================================
+   desktopAudioStyles.css — styles for the "audio" FILE TYPE
+   -----------------------------------------------------------------------------
+   Three concerns:
+     1. The ICON glyph — speaker-with-soundwaves, sized to fit the
+        panel's .desktop-icon-inner slot (56×48). Uses currentColor so
+        the panel's tint rules (warm off-white at rest, --accent during
+        drop-candidate highlight, or per-icon lineColor / fillColor)
+        apply uniformly. Same convention as the folder and note glyphs.
+
+     2. The CONTAINER inside the window — a vertical flex column that
+        holds the album cover above the native audio control. The
+        container is a CSS container-queries root, exposing its size
+        to descendants so the cover + player can scale together with
+        the window.
+
+     3. The COVER + the PLAYER — two siblings in the container, both
+        sized off a single --media-size CSS variable computed on the
+        container. The variable is the largest square that fits given
+        the current container width and height (minus the player +
+        gap chrome below). Cover takes that size as its width with
+        aspect-ratio: 1/1 keeping it square; player takes the same
+        width so the two read as a unified vertical block at any
+        window size.
+
+   CLASSES THIS FILE EMITS
+     .desktop-audio-glyph       — the icon's SVG wrapper (sized to slot)
+     .desktop-audio-container   — the window's outer vertical layout
+     .desktop-audio-cover       — the album-cover area + placeholder
+     .desktop-audio-cover img   — the optional <img> layered inside
+     .desktop-audio-player      — the <audio controls> element
+
+   COUPLED WITH desktopAudio.js (emits these classes) and desktopStyles.css
+   (owns the surrounding .desktop-icon / .desktop-window chrome).
+   ========================================================================== */
+
+/* =============================================================================
+   ICON — the speaker glyph inside .desktop-icon-inner (56×48)
+   -----------------------------------------------------------------------------
+   40×32 in CSS pixels — wider than tall, matching the speaker-plus-waves
+   horizontal silhouette. The SVG inside fills the wrapper, so the
+   viewBox aspect (40:32) and the wrapper aspect match exactly — no
+   distortion, no letterboxing.
+   ========================================================================== */
+
+.desktop-audio-glyph {
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-audio-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   CONTAINER — vertical layout inside .desktop-window-content
+   -----------------------------------------------------------------------------
+   Flex column with both axes centered, so the cover + player block
+   sits centered in the content area at any window size. gap: 12px
+   separates them cleanly.
+
+   container-type: size establishes the element as a size container
+   for CSS container queries, which lets descendants use 100cqw and
+   100cqh to reference this container's actual rendered dimensions.
+   This is the mechanism that makes the cover + player adapt to
+   window resize — see --media-size below.
+
+   --media-size is the single source of truth for how big the cover
+   and player should be at any moment. The two arguments to min():
+     - 100cqw - 32px:   container width minus padding (16 each side).
+                         The cover-or-player can't be wider than this.
+     - 100cqh - 98px:   container height minus padding (32) minus
+                         the player + gap (54 + 12 = 66). The cover
+                         can't be taller than this without pushing
+                         the player out of the column.
+   min() picks whichever is smaller, which is the largest square that
+   fits. max(0px, ...) clamps to non-negative for the (degenerate but
+   possible) case where the window is shrunk to its minimum and there
+   isn't even enough room for the chrome — better to disappear than
+   compute a negative size and lay out nonsense.
+
+   The 54px figure for the audio control is the native height in
+   Chrome; Firefox and Safari render it slightly differently (a few
+   px in either direction). Acceptable approximation — the project's
+   preview workflow is Chrome via Live Preview, and a few px of
+   miscalc in other browsers shows up as a slightly tighter or
+   looser fit, not a broken layout.
+   ========================================================================== */
+
+.desktop-audio-container {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+
+  container-type: size;
+  --media-size: max(
+    0px,
+    min(100cqw - 32px, 100cqh - 98px)
+  );
+}
+
+/* =============================================================================
+   COVER — the album-art area (with built-in placeholder appearance)
+   -----------------------------------------------------------------------------
+   Width comes from --media-size on the container; aspect-ratio: 1/1
+   makes the height follow, keeping it square at every size. The div
+   carries the placeholder visuals on its own — faint warm-dark fill
+   + hairline border, same vocabulary as .desktop-image-thumb. When
+   file.cover is authored, an <img> is appended inside; on successful
+   load it fills the square via object-fit: cover, hiding the
+   placeholder beneath. On load failure the img removes itself
+   (handled in desktopAudio.js) and the placeholder is revealed
+   again. One element, two visual states, no JS branching for the
+   empty case.
+   ========================================================================== */
+
+.desktop-audio-cover {
+  width: var(--media-size);
+  aspect-ratio: 1 / 1;
+  background: rgba(28, 24, 19, 0.08);
+  border: 1px solid rgba(28, 24, 19, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.desktop-audio-cover img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;            /* fill the square, crop excess */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* =============================================================================
+   PLAYER — the <audio controls> element inside the container
+   -----------------------------------------------------------------------------
+   The native audio element has a fixed user-agent-defined height
+   (~54px in Chrome) and renders its own play/pause/timeline/volume
+   chrome. We let it keep all of that — restyling native audio controls
+   cross-browser is a deep rabbit hole that doesn't earn its keep here.
+
+   Width matches --media-size — the same value the cover uses — so
+   the two read as a single vertical block of identical width at
+   every window size. As the window grows the player gets a wider
+   timeline; as the window shrinks the player condenses with the
+   cover.
+
+   No background colour — we want the window's frosted-glass interior
+   to show through around the native control. This is the asymmetric
+   counterpart to the note's near-black "document" pane: a note IS its
+   content surface (so it gets its own dark fill); an audio window is
+   a chrome-bar tool whose visual weight is the cover, not the control.
+   ========================================================================== */
+
+.desktop-audio-player {
+  display: block;
+  width: var(--media-size);
+}
+/* =============================================================================
+   CURSOR — joining the --cursor protocol over the native controls
+   -----------------------------------------------------------------------------
+   The native <audio controls> bar lives in the browser's SHADOW DOM. That
+   breaks the site cursor system in a specific way: mouse events from inside a
+   shadow root are retargeted to the host, so cursor.js sees the <audio>
+   element (computed cursor: none → shows the crosshair) — while the browser's
+   own stylesheet puts cursor: pointer directly on the internal buttons, which
+   beats the inherited none, so the native hand ALSO shows. Two cursors at
+   once over the controls.
+
+   Fix, in two halves:
+     1. --cursor: pointer on the player → cursor.js shows the dot over the
+        whole control bar (the element IS its controls, so "clickable" is the
+        honest reading).
+     2. cursor: none forced onto the shadow internals via Chrome's documented
+        ::-webkit-media-controls-* pseudo-elements — the one sanctioned way
+        for author CSS to reach inside the UA shadow root. !important is
+        justified here (nowhere else): it's overriding the browser's own
+        stylesheet, not project CSS.
+
+   Chrome/Blink-specific by nature (matching the project's Chrome Live
+   Preview workflow — see the container notes above). Browsers without these
+   pseudo-elements ignore the rule and keep the doubled cursor over controls;
+   spec-wise, unknown ::-webkit-* pseudo-elements are valid-but-match-nothing,
+   so the shared selector list below is safe everywhere.
+   ========================================================================== */
+
+.desktop-audio-player {
+  --cursor: pointer;
+}
+
+.desktop-audio-player::-webkit-media-controls,
+.desktop-audio-player::-webkit-media-controls-enclosure,
+.desktop-audio-player::-webkit-media-controls-panel,
+.desktop-audio-player::-webkit-media-controls-play-button,
+.desktop-audio-player::-webkit-media-controls-timeline,
+.desktop-audio-player::-webkit-media-controls-current-time-display,
+.desktop-audio-player::-webkit-media-controls-time-remaining-display,
+.desktop-audio-player::-webkit-media-controls-mute-button,
+.desktop-audio-player::-webkit-media-controls-volume-slider {
+  cursor: none !important;
+}

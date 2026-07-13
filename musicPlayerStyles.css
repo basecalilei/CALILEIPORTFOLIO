@@ -1,0 +1,224 @@
+/* =============================================================================
+   musicPlayerStyles.css — presentation for musicPlayer.js
+   -----------------------------------------------------------------------------
+   STRUCTURE (built by musicPlayer.js):
+     .music-player [data-state]  — fixed bottom-right row: disc | readout | transport
+       .mp-disc                  — the record: circular, spins while playing
+         .mp-disc-art            — cover-art <img>; hidden per-track when the
+                                   track has no cover or it fails → ink disc
+         .mp-disc-hub            — the spindle hole
+       .mp-readout               — Hornet instrument stack
+         .mp-state               — the state announcement (/ NOW.PLAYING ...)
+         .mp-title               — the current track's title (JS rewrites)
+       .mp-transport             — segmented prev / play-pause / next cluster
+         .mp-btn.mp-prev
+         .mp-btn.mp-toggle       — holds BOTH glyphs; one shown per state
+         .mp-btn.mp-next
+
+   THE STATE ATTRIBUTE
+     Everything stateful derives from data-state on the root — spin
+     play-state, glyph swap, readout color. One writer (the JS), many CSS
+     readers. Per the state grammar: each state owns one color by meaning
+     (green go / dim paused / blue awaiting-input / red warn), and state
+     changes are hard cuts — glyphs swap, text rewrites, nothing crossfades.
+
+   THE SPIN
+     The analog-gauge case from visualLanguage.md: the rotation is driven
+     1:1 by playback (the motion IS the state), so it may be continuous.
+     animation-play-state — not adding/removing the animation — is what
+     freezes the disc IN PLACE on pause; a platter stops where it stops.
+     5.6s/rev: calm at 44px, and incommensurate with the site's existing
+     ambient periods (2.2 / 3.2 / 4.1s) so nothing phase-locks.
+
+   THE SIDEBAR DODGE
+     body.sidebar-is-open is the sidebar's published broadcast (set in
+     sidebar.js); --sidebar-width is the sheet's width token (owned by
+     sidebarStyles.css). Shifting by exactly that width preserves the
+     player's 1.4rem gap, now measured from the sheet's border instead of
+     the viewport edge. The transition duration/ease MUST match
+     .sidebar-sheet's (0.45s var(--ease)) so player and sheet move as one
+     object. If the sidebar is ever deleted, var(--sidebar-width, 0px)
+     makes this a no-op.
+
+   COUPLED WITH
+     - musicPlayer.js — class names, the data-state contract, the
+       both-glyphs-always-in-DOM toggle markup, art's hidden attribute.
+     - sidebar.js / sidebarStyles.css — the broadcast class + --sidebar-width.
+     - infiniteStyles.css — every color/easing token used here.
+   ========================================================================== */
+
+.music-player {
+  position: fixed;
+  right: 1.4rem;               /* same inset as the sidebar trigger / strip */
+  bottom: 1.4rem;
+  z-index: 5;                  /* above overlays (3), below the sidebar (9) */
+
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+
+  /* Frosted transient surface + hairline — the sanctioned depth treatment
+     (layering over shadow), so the player sits legibly on any panel. */
+  background: var(--sheet-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+
+  /* The dodge in a single transform: only --mp-dodge ever changes, so the
+     transition animates just the horizontal slide, in lockstep with the
+     sheet (duration/ease match .sidebar-sheet). */
+  transform: translateX(var(--mp-dodge, 0px));
+  transition: transform 0.45s var(--ease);
+}
+
+/* The dodge — shift left by the sheet's width while it's open. */
+body.sidebar-is-open .music-player {
+  --mp-dodge: calc(-1 * var(--sidebar-width, 0px));
+}
+
+/* -----------------------------------------------------------------------------
+   THE DISC — a 44px record. The ink background IS the coverless fallback:
+   art layers on top when the current track authors a cover that loads, so a
+   missing or failed cover degrades to a plain record with no empty-state
+   branching. overflow:hidden clips the art to the circle.
+   --------------------------------------------------------------------------- */
+.mp-disc {
+  position: relative;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid var(--line);
+
+  animation: mp-spin 5.6s linear infinite;
+  animation-play-state: paused;          /* frozen in place unless playing */
+  will-change: transform;
+}
+.music-player[data-state="playing"] .mp-disc {
+  animation-play-state: running;
+}
+@keyframes mp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.mp-disc-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;             /* fill the circle, crop excess */
+  display: block;
+  user-select: none;
+}
+/* The explicit display:block above would otherwise beat the UA's [hidden]
+   rule on specificity — restate it so the JS's hidden toggle actually hides
+   the art (the coverless / failed-cover fallback depends on it). */
+.mp-disc-art[hidden] {
+  display: none;
+}
+
+/* The spindle hole — page surface showing "through" the record, with a
+   hairline rim. Sits above the art; a centered circle, so the disc's
+   rotation is invisible on it — it's there to read as a record. */
+.mp-disc-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;     /* center on the disc's midpoint */
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+
+/* -----------------------------------------------------------------------------
+   THE READOUT — instrument tier, both lines (a state and a title both
+   *describe*; neither speaks to the reader). The announcement is the
+   state-grammar readout and carries the state's color; the title holds
+   steady in --ink. Long titles clip with an ellipsis rather than reflowing
+   the widget.
+   --------------------------------------------------------------------------- */
+.mp-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;                  /* lets the title ellipsis inside the flex row */
+}
+
+.mp-state {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-dim);         /* resting; states recolor below */
+}
+/* One color per state, by meaning (see the state table in musicPlayer.js).
+   Red appears ONLY as warn — this component never uses it elsewhere. */
+.music-player[data-state="playing"] .mp-state { color: var(--brand-green); }
+.music-player[data-state="paused"]  .mp-state { color: var(--ink-dim); }
+.music-player[data-state="standby"] .mp-state { color: var(--brand-blue); }
+.music-player[data-state="error"]   .mp-state { color: var(--brand-red); }
+
+.mp-title {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  max-width: 9.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* -----------------------------------------------------------------------------
+   THE TRANSPORT — prev / play-pause / next as one segmented instrument
+   cluster: a single hairline border around the group, hairline dividers
+   between segments, no per-button chrome. Real buttons with native chrome
+   stripped; glyphs descend from the media-control convention. All follow
+   the cursor.js protocol so the site cursor renders its clickable variant.
+   Hover lift is affordance feedback (play, not state) — color only, no
+   grow, to keep the row quiet.
+   --------------------------------------------------------------------------- */
+.mp-transport {
+  flex: none;
+  display: flex;
+  border: 1px solid var(--line);
+}
+
+.mp-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  transition: color 0.15s linear;
+
+  /* cursor.js protocol: hide the native cursor, declare intent. */
+  cursor: none; --cursor: pointer;
+}
+/* Segment dividers — a hairline between neighbors, not around them. */
+.mp-btn + .mp-btn {
+  border-left: 1px solid var(--line);
+}
+@media (hover: hover) {
+  .mp-btn:hover {
+    color: var(--ink);
+  }
+}
+.mp-icon { display: block; }
+
+/* Play/pause glyph per state: pause bars while playing; play triangle
+   otherwise (paused / standby / error all await the same action). A
+   display swap — discrete, per the motion rules. */
+.mp-icon-pause { display: none; }
+.music-player[data-state="playing"] .mp-icon-play  { display: none; }
+.music-player[data-state="playing"] .mp-icon-pause { display: block; }

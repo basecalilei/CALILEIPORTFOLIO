@@ -1,0 +1,238 @@
+/* =============================================================================
+   sidebarProcessStyles.css — styles for the "process" sidebar view
+   -----------------------------------------------------------------------------
+   Owns the title, body, and process list (kicker + icon tile + data-block
+   per entry). The .sidebar-view base (in sidebarStyles.css) handles
+   positioning and the cross-fade.
+
+   PER-PROCESS ACCENT
+     Every entry root carries an inline --process-accent custom property
+     (set from the PROCESSES data in sidebarProcess.js). This sheet
+     consumes it in three places — the tile's left edge bar, the icon
+     glyph (via currentColor), and the kicker — with neutral-token
+     fallbacks so an entry that omits its accent degrades quietly.
+
+   CLASSES EMITTED
+     .sidebar-view-process                — view root
+     .sidebar-process-title               — display heading
+     .sidebar-process-body                — intro copy container
+     .sidebar-process-list                — flex column of entries
+     .sidebar-process-kicker              — PROCESS / NN label above each frame
+     .sidebar-process-entry               — one process (kicker + frame)
+     .sidebar-process-frame               — hairline-framed row: icon | data
+     .sidebar-process-icon                — the icon tile <button> (click target)
+     .sidebar-process-data                — data-block container
+     .sidebar-process-data-row            — one row within the data-block
+     .sidebar-process-data-row-full         modifier: 1-cell row spanning width
+     .sidebar-process-data-cell           — label + value pair within a row
+     .sidebar-process-data-label          — small uppercase Glitched label
+     .sidebar-process-data-value          — value text alongside the label
+
+   COUPLED WITH sidebarProcess.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   TITLE / BODY — mirrors sidebarProjects' typography so the two content
+   views share a recognisable header rhythm.
+   ========================================================================== */
+
+.sidebar-process-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.4rem;
+}
+
+.sidebar-process-body {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: 2rem;
+}
+.sidebar-process-body p {
+  margin-bottom: 1rem;
+}
+.sidebar-process-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   PROCESS LIST
+   -----------------------------------------------------------------------------
+   Flex column of entries. Each entry stacks its kicker above its framed
+   row; both stretch to the full content column so the hairline frames
+   align down the list.
+   ========================================================================== */
+
+.sidebar-process-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sidebar-process-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+/* =============================================================================
+   THE KICKER
+   -----------------------------------------------------------------------------
+   PROCESS / NN — top-left, outside the frame it labels (the label grammar:
+   a schematic callout, not a caption). Hornet, small, letter-spaced, in
+   the entry's category color. Numbers are uniform across the peer set;
+   sidebarProcess.js derives them from array position.
+   ========================================================================== */
+
+.sidebar-process-kicker {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--process-accent, var(--ink-dim));
+}
+
+/* =============================================================================
+   THE FRAME — icon tile | data-block
+   -----------------------------------------------------------------------------
+   Visual model: the same terminal-style data sheet as sidebarProjects,
+   with an icon column docked to its left. Hairlines top & bottom run the
+   full row (across tile and data); the tile carries the accent edge bar
+   on its left (the old site's per-discipline color bar, quoted) and a
+   hairline on its right separating it from the data-block.
+
+   align-items: stretch — the data-block's natural height (two padded
+   rows) drives the row; the tile stretches to match and centers its
+   glyph inside.
+   ========================================================================== */
+
+.sidebar-process-frame {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* =============================================================================
+   THE ICON TILE — the entry's only click target
+   -----------------------------------------------------------------------------
+   A <button> reset to a flat tile: sheet fill, accent edge bar, hairline
+   divider against the data-block. The glyph inherits the accent via
+   currentColor (the SVGs in sidebarProcess.js stroke with currentColor).
+
+   PLACEHOLDER HOVER
+     Minimal scale + brightness lift — the same reflex as the projects
+     thumb, so the two views' click targets speak one hover language.
+     Replace when the real interaction is designed.
+   ========================================================================== */
+
+.sidebar-process-icon {
+  flex: none;
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: var(--sheet-bg);
+  border: none;
+  border-left: 3px solid var(--process-accent, var(--line));
+  border-right: 1px solid var(--line);
+  color: var(--process-accent, var(--ink));
+
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+  transition: transform 0.35s var(--ease), filter 0.35s var(--ease);
+  will-change: transform, filter;
+}
+.sidebar-process-icon svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+.sidebar-process-icon:hover {
+  transform: scale(1.04);
+  filter: brightness(1.1);
+}
+
+/* =============================================================================
+   THE DATA BLOCK
+   -----------------------------------------------------------------------------
+   Same visual model and type choices as sidebarProjects' data-block:
+   labels in Glitched 700 ~0.62rem dim ink, values in Glitched 500
+   ~0.72rem primary ink, a vertical pipe between each label and its
+   value, a horizontal rule between rows. Two rows here — TITLE and
+   LOGIC — each a single full-width cell. The frame owns the outer
+   top/bottom hairlines, so this block emits internal rules only.
+   ========================================================================== */
+
+.sidebar-process-data {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: "Glitched", sans-serif;
+}
+
+.sidebar-process-data-row {
+  display: flex;
+  align-items: stretch;
+  flex: 1 1 auto;
+}
+
+/* Internal horizontal rule between rows. Adjacent-sibling keeps the rule
+   logic local to the row that needs the line; the frame's borders stay
+   top/bottom only. */
+.sidebar-process-data-row + .sidebar-process-data-row {
+  border-top: 1px solid var(--line);
+}
+
+/* Every row is currently a single full-width cell (TITLE, LOGIC). The
+   -full modifier is a semantic hook, not a styled class — it exists so a
+   future multi-cell row can be added as a sibling modifier without
+   re-labelling the rows that already work. Same convention as
+   sidebarProjectsStyles.css. */
+
+.sidebar-process-data-cell {
+  display: flex;
+  align-items: center;   /* rows stretch to fill the frame; center within them */
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sidebar-process-data-label {
+  flex: none;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0.34rem 0.5rem 0.34rem 0.6rem;
+  border-right: 1px solid var(--line);
+
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+}
+
+.sidebar-process-data-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.34rem 0.6rem;
+
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  /* No nowrap — let titles longer than the column wrap naturally. LOGIC
+     is short by construction, so wrapping there is unlikely in practice. */
+  overflow-wrap: anywhere;
+}

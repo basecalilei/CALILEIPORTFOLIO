@@ -1,0 +1,116 @@
+/* =============================================================================
+   cursorStyles.css — styles for the INVERTING CROSSHAIR (cursor.js)
+   -----------------------------------------------------------------------------
+   One element: .site-cursor, created and moved by cursor.js. Everything visual
+   lives here — the blend mode that does the inversion, the centering, the
+   layer position, and the two visibility states the JS toggles.
+
+   HOW THE INVERSION WORKS
+     mix-blend-mode: difference computes |backdrop − element| per channel. The
+     crosshair's strokes are pure white (255), so the result is the exact
+     inverse of whatever is beneath: black over the white page, white over the
+     near-black md editor, complements over the brand hues. The blend is done
+     by the compositor against everything painted below this element — page,
+     canvases, windows, modals — with no JS involvement.
+
+   STATES (toggled by cursor.js)
+     .is-hidden      — pointer hasn't moved yet, or left the window
+     .is-suppressed  — hovering an element with its own cursor affordance
+                       (resize, I-beam…); the native cursor is showing
+                       there, so ours steps aside
+     .is-drag        — hovering a drag surface (--cursor: grab); the four
+                       arrowheads appear on the crosshair's ends
+     .is-drag-active — mid-drag (--cursor: grabbing); the glyph compresses
+     .is-point       — hovering a clickable (--cursor: pointer); the center
+                       dot appears — reticle on target
+     .is-pressed     — any mouse button held; the glyph compresses
+
+   COUPLED WITH cursor.js (creates the element, drives transform + states) and
+   infiniteStyles.css (body { cursor: none } hides the native cursor in
+   crosshair territory).
+   ========================================================================== */
+
+.site-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+
+  /* Center the box on the pointer hotspot. cursor.js sets only
+     translate3d(pointerX, pointerY, 0); these margins supply the −16px offset
+     so the transform stays a raw position (cheap string, no math in JS). */
+  margin: -16px 0 0 -16px;
+
+  /* THE inversion. Difference against everything painted beneath. The element
+     must not be wrapped in anything that isolates blending (opacity < 1,
+     filters, its own blend/isolation) — it's a direct child of body, so it
+     blends against the whole page. */
+  mix-blend-mode: difference;
+
+  /* Above everything: the project's highest layer is 1000 (dragged desktop
+     windows, taskbar frame) — see desktopStyles.css. 10000 leaves headroom. */
+  z-index: 10000;
+
+  /* Never a hit-target: clicks, hovers, and getComputedStyle checks in
+     cursor.js must always see the page beneath, not the cursor itself. */
+  pointer-events: none;
+
+  /* Position changes every mousemove; keep it on the compositor. */
+  will-change: transform;
+}
+
+.site-cursor svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: transform 120ms ease;   /* the gripped compression */
+}
+
+/* Drag affordance. .is-drag (over --cursor: grab territory) reveals the four
+   arrowheads — the crosshair reads "movable in any direction." Click
+   affordance: .is-point (over --cursor: pointer territory) reveals the center
+   dot — reticle on target. Compression: mid-drag (.is-drag-active, via
+   --cursor: grabbing) or any button press (.is-pressed, set by cursor.js) —
+   "pressed = compressed" is one gesture across the system. All states are
+   driven by cursor.js. */
+.site-cursor .cursor-arrows,
+.site-cursor .cursor-dot {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.site-cursor.is-drag .cursor-arrows {
+  opacity: 1;
+}
+.site-cursor.is-point .cursor-dot {
+  opacity: 1;
+}
+.site-cursor.is-drag-active svg,
+.site-cursor.is-pressed svg {
+  transform: scale(0.75);
+}
+
+/* Bare links get their pointing hand from the BROWSER's stylesheet, not from
+   any project rule — so they need one author rule to join the --cursor
+   protocol (author rules beat UA rules regardless of specificity). Buttons
+   don't need this: the UA doesn't give them a pointer; the project's own
+   `cursor: pointer` rules do, and those were converted at the source. */
+a {
+  cursor: none;
+  --cursor: pointer;
+}
+
+/* Hidden (pre-first-move / pointer outside the window) and suppressed
+   (native affordance showing) collapse to the same visual: gone. Kept as two
+   classes because they're set on different signals — hidden follows window
+   enter/leave, suppressed follows hover transitions — and merging them would
+   let one signal stomp the other's state. A short fade keeps hover
+   transitions from popping. */
+.site-cursor.is-hidden,
+.site-cursor.is-suppressed {
+  opacity: 0;
+}
+
+.site-cursor {
+  transition: opacity 120ms ease;
+}

@@ -1,0 +1,203 @@
+/* =============================================================================
+   sidebarProjectsStyles.css — styles for the "projects" sidebar view
+   -----------------------------------------------------------------------------
+   Owns the back button, title, body, and project list (data-block + thumbnail
+   per entry). The .sidebar-view base (in sidebarStyles.css) handles positioning
+   and the cross-fade.
+
+   CLASSES EMITTED
+     .sidebar-view-projects             — view root
+     .sidebar-projects-title            — display heading
+     .sidebar-projects-body             — intro copy container
+     .sidebar-projects-list             — flex column of entries
+     .sidebar-projects-entry            — one project (data-block + thumb)
+     .sidebar-projects-data             — bordered data-block container
+     .sidebar-projects-data-row         — one row within a data-block
+     .sidebar-projects-data-row-full      modifier: 1-cell row spanning width
+     .sidebar-projects-data-row-split     modifier: 2-cell row with divider
+     .sidebar-projects-data-cell        — label + value pair within a row
+     .sidebar-projects-data-label       — small uppercase Glitched label
+     .sidebar-projects-data-value       — value text alongside the label
+     .sidebar-projects-thumb            — the project thumbnail image
+
+   COUPLED WITH sidebarProjects.js (emits these classes) and infiniteStyles.css
+   (provides theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   TITLE / BODY — mirrors sidebarAbout's typography so the two content
+   views share a recognisable header rhythm. If the projects view ever needs
+   to diverge typographically (e.g. tighter title, denser body), override here.
+   ========================================================================== */
+
+.sidebar-projects-title {
+  font-family: "Hornet Display", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2rem, 4vw, 2.6rem);
+  letter-spacing: 0.12em;
+  line-height: 1.05;
+  color: var(--ink-strong);
+  margin-bottom: 1.4rem;
+}
+
+.sidebar-projects-body {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: 2rem;
+}
+.sidebar-projects-body p {
+  margin-bottom: 1rem;
+}
+.sidebar-projects-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   PROJECT LIST
+   -----------------------------------------------------------------------------
+   Flex column with `align-items: center` so the data-block and thumbnail
+   share a centerline. Both children stretch to 100% of the content column,
+   which makes centering trivial today and tolerant if a future entry has a
+   narrower variant — that variant stays centered without extra work.
+   ========================================================================== */
+
+.sidebar-projects-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.4rem;
+}
+
+.sidebar-projects-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+}
+
+/* =============================================================================
+   THE DATA BLOCK
+   -----------------------------------------------------------------------------
+   Visual model: terminal-style data sheet. Thin hairlines top & bottom, an
+   internal horizontal rule between rows, vertical pipes between cells in
+   the split row, and a vertical pipe between each label and its value
+   (the `|` in the spec mockup). No outer fill — the density comes from the
+   rule grid, not from a panel background.
+
+   Typography choices:
+     - Labels in Glitched 700, ~0.62rem, dim ink, generous letter-spacing —
+       reads as "machine label" rather than "content."
+     - Values in Glitched 500, ~0.72rem, primary ink — slightly larger so
+       the eye finds the value first when scanning a column of entries.
+
+   Layout:
+     Each row is a flex container of cells. The full row holds one cell
+     (spanning the row); the split row holds two equal cells. Each cell is
+     a flex(label, value), with the label as a fixed-width column-like
+     element (border-right is the visual pipe) and the value taking the
+     remainder. Padding gives breathable density without inflating height.
+   ========================================================================== */
+
+.sidebar-projects-data {
+  width: 100%;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-family: "Glitched", sans-serif;
+  /* Background omitted on purpose — the rule grid is the data block. If a
+     future variant wants a filled card, set --sheet-bg here. */
+}
+
+.sidebar-projects-data-row {
+  display: flex;
+  align-items: stretch;
+}
+
+/* Internal horizontal rule between rows. Using the adjacent-sibling
+   selector keeps the rule logic local to the row that needs the line; the
+   parent's borders stay top/bottom only. */
+.sidebar-projects-data-row + .sidebar-projects-data-row {
+  border-top: 1px solid var(--line);
+}
+
+/* In the split row, give each cell half the width and put the vertical
+   divider between them. */
+.sidebar-projects-data-row-split .sidebar-projects-data-cell {
+  flex: 1 1 0;
+  min-width: 0;          /* allow value overflow to shrink, not push the row wider */
+}
+.sidebar-projects-data-row-split .sidebar-projects-data-cell + .sidebar-projects-data-cell {
+  border-left: 1px solid var(--line);
+}
+
+.sidebar-projects-data-cell {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.sidebar-projects-data-label {
+  flex: none;
+  padding: 0.34rem 0.5rem 0.34rem 0.6rem;
+  border-right: 1px solid var(--line);
+
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  text-transform: uppercase;
+  /* Optical alignment: baseline-align with the value but lift slightly so
+     small-caps-shaped labels sit on the same visual line as the value. */
+}
+
+.sidebar-projects-data-value {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.34rem 0.6rem;
+
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  /* No nowrap — let titles longer than the column wrap naturally. The
+     split row's date/type are short by construction so wrapping there is
+     unlikely in practice. */
+  overflow-wrap: anywhere;
+}
+
+/* =============================================================================
+   THE THUMBNAIL
+   -----------------------------------------------------------------------------
+   Full content width, fixed aspect ratio so missing/loading images don't
+   collapse the row. A subtle background fill shows while the image is
+   loading or if the asset is missing — better than a broken-image glyph
+   in a portfolio context.
+
+   PLACEHOLDER HOVER
+     Minimal scale + brightness lift. Lives on the .sidebar-projects-thumb
+     itself (the <img>), so any future overlay on the entry can layer on
+     top without fighting this transition. Replace when the real
+     interaction is designed.
+   ========================================================================== */
+
+.sidebar-projects-thumb {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+
+  background: var(--sheet-bg);   /* visible while loading / if asset is missing */
+  border: 1px solid var(--line);
+
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+  transition: transform 0.35s var(--ease), filter 0.35s var(--ease);
+  will-change: transform, filter;
+}
+.sidebar-projects-thumb:hover {
+  transform: scale(1.02);
+  filter: brightness(1.05);
+}

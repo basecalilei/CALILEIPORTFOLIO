@@ -1,0 +1,146 @@
+/* =============================================================================
+   infiniteStyles.css — the CORE stylesheet
+   -----------------------------------------------------------------------------
+   Owns ONLY what the core needs: theme variables, the page reset, the two
+   fixed layers (#infinite-scroller, #infinite-overlays), the .infinite-panel
+   spacer rule, and the base .infinite-overlay rule.
+
+   COUPLED WITH infiniteScroll.js:
+   - The CORE writes two things on every overlay each frame: `opacity` and the
+     custom property `--shift` (px). The .infinite-overlay rule below CONSUMES
+     --shift in its transform. Don't set transform from JS — CSS owns the
+     centering math; JS owns the scroll-linked offset.
+   - The CORE toggles `.is-active` on the centered overlay. The base is
+     fully click/wheel-through so the page wheel always reaches #infinite-
+     scroller; .is-active is a hook a panel type can use to gate
+     pointer-events on its own interactive bits.
+
+   Panel-type stylesheets (e.g. dotsStyles.css) extend this with their own
+   .<type>-overlay rule and any inner classes — they NEVER need to override
+   the base opacity/centering contract, just add to it.
+   ========================================================================== */
+
+:root {
+  /* ---------- surfaces ----------
+     Three-step text-weight ramp: --ink-strong (high emphasis, Tier 1 headings),
+     --ink (default body text), --ink-dim (low emphasis, captions). */
+  --bg:         #ffffff;                         /* page background */
+  --ink-strong: #494949;                         /* high-emphasis text — titles, weighty elements */
+  --ink:        #1c1813;                         /* primary text */
+  --ink-dim:    #626c70;                         /* secondary text */
+  --ink-dimmer: #b5bbbd;                         /* tertiary text */
+  --line:       rgba(28, 24, 19, 0.16);          /* hairline borders */
+  --sheet-bg:   rgba(240, 240, 240, 0.6);        /* frosted glass fill */
+
+  /* ---------- brand primaries ----------
+     Canonical values; tune per use against the surrounding surface.
+     See visualLanguage.md for role assignments. */
+  --brand-red:    #ff4d00;                       /* slightly orange — warn, kickers, active */
+  --brand-yellow: #ffbb00;                       /* slightly orange — caution, tags         */
+  --brand-green:  #00d150;                       /* slightly blue   — go, "next"            */
+  --brand-blue:   #00b8e6;                       /* slightly cold   — info, "back/home"     */
+
+  /* Aliases --brand-red so the kicker color can shift without rewriting every
+     consumer that already reads var(--accent). */
+  --accent:    var(--brand-red);
+
+  /* ---------- motion ---------- */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);        /* shared easing for transitions */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* The page itself never scrolls — #infinite-scroller does. overflow:hidden on
+   body makes the body a fixed full-screen stage for the layered design. */
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Glitched Book", sans-serif; /* COUPLED: declared in fonts.css */
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Form-element font inheritance.
+   Browsers reset font-family on <button>, <input>, <textarea>, and <select>
+   to the system UI font instead of inheriting from <body>. Without this
+   rule, every button on the page would render in Helvetica/Segoe UI/etc.
+   instead of Glitched. Forcing inheritance here is a single, project-wide
+   fix so any current or future form element picks up the body font
+   automatically; a panel type that wants a different family on a
+   particular button can override .my-btn { font-family: ... } explicitly.
+   font-weight and color are inherited too because browsers reset those
+   on form elements as well. */
+button, input, textarea, select {
+  font-family: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+/* ---------- scroller (the one scrolling element) ----------
+   Holds the empty .infinite-panel spacers (real + clones). Its scrollTop is
+   the single input the visual layer derives from (via activeFloat in JS). */
+#infinite-scroller {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+/* Hide the native scrollbar on the page scroller. */
+#infinite-scroller { scrollbar-width: none; -ms-overflow-style: none; }
+#infinite-scroller::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* One panel = one viewport tall. The infinite-scroll math in JS assumes
+   exactly this (vh per panel); changing the height here desyncs the scroll
+   engine's vh-based calculations. dvh handles mobile browser chrome. */
+.infinite-panel {
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+}
+
+/* ---------- fixed overlay layer (decoupled from scroll) ----------
+   Sibling of #infinite-scroller, sitting above it. pointer-events off so
+   wheel/scroll passes through to the page; only the active overlay (or a
+   panel-type's interactive region within it) re-enables them. */
+#infinite-overlays {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ---------- overlays (base) ----------
+   Every overlay is vertically centered (top:50% + translateY -50%); the
+   JS-supplied --shift slides it up/down with scroll. The core owns this node
+   (opacity / --shift / .is-active); a panel type only authors what goes
+   INSIDE it. This base sets ONLY vertical centering — a type rule owns
+   horizontal placement. A type that overrides `transform` MUST re-include the
+   calc(-50% + var(--shift)) Y term, or it loses the fade/shift. */
+.infinite-overlay {
+  position: absolute;
+  top: 50%;
+  --shift: 0px;                                  /* set per-frame by JS */
+  transform: translateY(calc(-50% + var(--shift)));
+  opacity: 0;                                    /* set per-frame by JS */
+  pointer-events: none;                          /* base is click-through */
+  will-change: opacity, transform;
+}
+
+/* ---------- cursor signal ----------
+   Site-wide crosshair, now drawn by cursor.js as a blended element so it
+   inverts against whatever it's over (the static SVG cursor couldn't react
+   to dark backgrounds). `none` here hides the native cursor exactly where
+   the old crosshair showed — everywhere the body value is inherited.
+   Element-specific cursors still win where they're set: `cursor:
+   grab/grabbing` on .turn-drag-surface keeps the model's rotate affordance,
+   and native UA cursors on links/inputs are undisturbed — cursor.js detects
+   those and steps aside so the native cursor shows there. Buttons inherit
+   the body cursor by default — if a panel type wants `cursor: pointer` on
+   its buttons, that override lives in the type's own stylesheet. */
+body {
+   cursor: none;
+}

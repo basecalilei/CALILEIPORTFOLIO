@@ -1,0 +1,274 @@
+/* =============================================================================
+   desktopMdStyles.css — styles for the "md" FILE TYPE
+   -----------------------------------------------------------------------------
+   Two concerns, like every file-type stylesheet:
+     1. The ICON glyph — a folded page + "#" sized to the panel's
+        .desktop-icon-inner slot (56×48), using currentColor so the panel's
+        tint rules apply (warm off-white at rest, --accent during drop-candidate).
+     2. The WINDOW interior — a VSCode-style dark source editor: a line-number
+        gutter, a colored highlight backdrop, and a transparent textarea on top.
+
+   THE ALIGNMENT CONTRACT (read before changing any metric)
+     The colored backdrop (.desktop-md-highlight) only lines up with the
+     editable textarea (.desktop-md-input) if BOTH share identical text metrics:
+       font-family, font-size, line-height, letter-spacing, tab-size, padding,
+       border, box-sizing, white-space.
+     Any change to one of those MUST be mirrored on the other, or the colored
+     glyphs drift out from under the caret. They're grouped in the shared block
+     below for exactly this reason. The gutter shares line-height + vertical
+     padding so its numbers track the text rows.
+
+   WHY THE "Glitched" FAMILY (not "Glitched Book")
+     Glitched is monospaced, so the backdrop/textarea overlay keeps fixed-width
+     cells and stays aligned column-for-column. We use the "Glitched" DISPLAY
+     family rather than "Glitched Book" because the editor needs real bold for
+     headings and strong emphasis — "Glitched" carries 300/500/700/900 weights
+     (+ italics), while "Glitched Book" ships only normal + italic. A generic
+     `monospace` fallback is kept so alignment survives a font load failure.
+     NOTE: this overlay trick relies on the bold and italic faces sharing the
+     roman advance width (true of a properly monospaced family). If a line with
+     **bold** or *italic* ever drifts out from under the caret, that's the first
+     thing to check.
+
+   CLASSES THIS FILE EMITS
+     .desktop-md-glyph         — the icon's SVG wrapper (sized to slot)
+     .desktop-md               — editor root (position: relative); ::before is the
+                                 fixed line-number gutter strip
+     .desktop-md-highlight     — the <pre> backdrop (colored spans)
+     .md-line                  — one block per logical line; ::before draws its
+                                 number (CSS counter) into the gutter strip
+     .desktop-md-input         — the transparent <textarea> (the real editor)
+     .md-tok-*                 — per-token colors (marker/head/strong/em/code/
+                                 link/url/quote)
+
+   COUPLED WITH desktopMd.js (emits these classes) and desktopStyles.css
+   (owns the surrounding .desktop-icon / .desktop-window chrome).
+   ========================================================================== */
+
+/* =============================================================================
+   ICON — folded page + "#" glyph inside .desktop-icon-inner (56×48)
+   ========================================================================== */
+
+.desktop-md-glyph {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-md-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   EDITOR ROOT — the dark source surface
+   -----------------------------------------------------------------------------
+   Near-black with a faint cool tilt, matching desktopNote's interior so the two
+   document types feel like the same machine. Token colors are defined here as
+   local custom properties (NOT in :root — that would be a core change). Each
+   maps a markdown construct to one of the project's four brand hues, brightened
+   for legibility on the dark surface, plus one neutral "marker" tone for the
+   syntax symbols so they stay visible but quietly recede.
+   ========================================================================== */
+
+.desktop-md {
+  /* token palette — the colored tokens reference the project's brand variables
+     (defined in infiniteStyles.css :root) so the editor tracks the site theme.
+     Two roles can't use them: --md-text and --md-marker. The ink ramp (--ink,
+     --ink-dim) and the brand hues are all tuned for the WHITE page; this window
+     interior is near-black, so body text needs a light value the ink ramp
+     doesn't provide. --md-marker borrows --ink-dim, which stays legible (and
+     deliberately quiet) on the dark surface. With only four brand hues for more
+     roles than that, emphasis doubles up: *italic* reuses the bold red, set
+     apart by slant; blockquotes reuse the quiet --ink-dim, comment-style. */
+  --md-text:   #e6e7ec;                 /* body ink — light (no var fits dark bg)   */
+  --md-marker: var(--ink-dim);          /* #, **, `, >, -, []() — quiet symbols     */
+  --md-head:   var(--brand-yellow);     /* headings                                 */
+  --md-strong: var(--brand-red);        /* **bold**                                 */
+  --md-em:     var(--brand-red);        /* *italic* — same hue, slant sets it apart */
+  --md-code:   var(--brand-green);      /* `code` + fenced blocks                   */
+  --md-link:   var(--brand-blue);       /* [link text]                              */
+  --md-url:    var(--brand-blue);       /* (url) — dimmed via opacity in the rule   */
+  --md-quote:  var(--ink-dim);          /* > blockquote — muted, comment-like       */
+
+  --md-gutter: 52px;                    /* width of the line-number gutter strip    */
+  --md-line-h: 21px;                    /* one text row; also each line's min-height */
+
+  position: relative;                   /* anchor for the absolute layers + strip   */
+  overflow: hidden;                     /* the textarea scrolls, not this box        */
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+
+  /* Slightly transparent near-black so a hint of the frosted window glass
+     shows at the edges — same "inside a frame" feel as the note interior. */
+  background: rgba(16, 16, 18, 0.96);
+  color: var(--md-text);
+
+  /* SHARED TEXT METRICS (see the alignment contract above). These cascade to
+     both layers (the textarea and the <pre>, plus its per-line blocks and their
+     number ::before); each layer also restates the ones browsers reset on it.
+     Integer px line-height avoids sub-pixel rounding differences between the
+     layers. "Glitched" is the project's monospaced display family (declared in
+     fonts.css); the generic `monospace` keeps the layers aligned if the webfont
+     fails to load. Base weight is Medium (500) — Light (300) is also available
+     if you want a thinner code face. */
+  font-family: "Glitched", monospace;
+  font-weight: 500;
+  font-size: 13px;
+  line-height: var(--md-line-h);
+  letter-spacing: 0;
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+
+/* The fixed gutter strip — a non-scrolling band behind the numbers. The numbers
+   themselves are NOT here; they're drawn per-line in the backdrop (see .md-line
+   ::before) so they ride with their wrapped lines. This strip is purely the
+   background + divider. Its right edge meets where the text content begins. */
+.desktop-md::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--md-gutter);
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.22);               /* faint rail, darker than body */
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   THE TWO STACKED LAYERS — colored backdrop + transparent textarea
+   -----------------------------------------------------------------------------
+   Both fill .desktop-md exactly and MUST match on every metric below, INCLUDING
+   the wrapping rules, or the colored glyphs drift from the caret on wrapped
+   lines. The left padding equals the gutter width so the text column starts to
+   the right of the line numbers; the numbers live in that left padding region
+   (drawn by .md-line::before in the backdrop). Keeping the shared rules in one
+   selector makes drift hard to introduce.
+   ========================================================================== */
+
+.desktop-md-highlight,
+.desktop-md-input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+  padding: 12px 14px 12px var(--md-gutter);
+
+  font-family: inherit;        /* restated: browsers reset these on textarea/pre */
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  tab-size: inherit;
+  -moz-tab-size: inherit;
+
+  /* Soft-wrap: long lines wrap at the box width; a single unbreakable token
+     (e.g. a very long URL) breaks rather than forcing a horizontal scrollbar.
+     Both layers wrap identically because they share width, padding, and these
+     rules — and the textarea's scrollbar is hidden, so it doesn't steal width. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+/* The colored backdrop. Non-interactive; clipped (the JS mirrors scrollTop onto
+   it). Sits ABOVE the gutter strip but BELOW the textarea. */
+.desktop-md-highlight {
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.desktop-md-highlight code {
+  display: block;
+  font: inherit;               /* <code> would otherwise re-introduce its own font */
+  color: inherit;
+  white-space: inherit;
+  counter-reset: md-ln;        /* line numbering restarts at the top each render */
+}
+
+/* One block per logical line. It wraps independently, so a long line simply
+   grows taller (more rows) and the lines after it shift down — matching the
+   textarea, which wraps the same way. Empty lines hold one row via min-height. */
+.desktop-md-highlight .md-line {
+  position: relative;          /* anchor for the number ::before */
+  min-height: var(--md-line-h);
+  counter-increment: md-ln;
+  white-space: inherit;        /* pre-wrap */
+  overflow-wrap: inherit;      /* anywhere */
+}
+
+/* The line number, drawn into the gutter strip to the LEFT of the line's text.
+   top:0 pins it to the line's FIRST visual row, so a wrapped line keeps a single
+   number on its first row and blank gutter beside the spill rows. The number is
+   physically part of the line box, so it can't drift however the line wraps. */
+.desktop-md-highlight .md-line::before {
+  content: counter(md-ln);
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--md-gutter));           /* into the left padding / strip */
+  width: calc(var(--md-gutter) - 12px);        /* leaves a 12px gap before text */
+  height: var(--md-line-h);
+  line-height: var(--md-line-h);
+  text-align: right;
+  color: var(--md-marker);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The real editor. Transparent glyphs reveal the backdrop; the caret stays
+   visible via caret-color. Sits ON TOP and owns all interaction. */
+.desktop-md-input {
+  z-index: 2;
+  background: transparent;
+  color: transparent;          /* glyphs invisible — the <pre> shows the colors */
+  caret-color: var(--md-text); /* but the caret stays visible */
+  resize: none;
+  outline: none;               /* native focus ring would clash with window chrome */
+  overflow-x: hidden;          /* wrapping → no horizontal scroll */
+  overflow-y: auto;            /* vertical scroll lives here; backdrop mirrors it */
+
+  /* Hide native scrollbars to match the project's hidden-bar convention (note's
+     textarea + turn-info-scroll do the same). Hiding also means the scrollbar
+     reserves NO width, so the textarea wraps at the same column as the backdrop.
+     Scrolling still works via wheel and caret movement. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.desktop-md-input::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* Selection band. The textarea's selected glyphs are transparent, so we use a
+   translucent fill (brand-blue) — the colored backdrop reads through the tint
+   rather than being covered. Selected glyph color stays transparent. */
+.desktop-md-input::selection {
+  background: rgba(0, 184, 230, 0.26);   /* --brand-blue (#00b8e6) at low alpha */
+  color: transparent;
+}
+
+/* =============================================================================
+   TOKEN COLORS
+   -----------------------------------------------------------------------------
+   Emitted by desktopMd.js as <span class="md-tok-*">. Plain body text carries
+   no span and inherits --md-text. Markers (the syntax symbols) are deliberately
+   the quietest color so the source stays readable while the symbols remain
+   clearly present — the VSCode source look the panel is going for.
+   ========================================================================== */
+
+.md-tok-marker { color: var(--md-marker); }
+.md-tok-head   { color: var(--md-head);   font-weight: 700; }
+.md-tok-strong { color: var(--md-strong); font-weight: 700; }
+.md-tok-em     { color: var(--md-em);     font-style: italic; }
+.md-tok-code   { color: var(--md-code);   }
+.md-tok-link   { color: var(--md-link);   text-decoration: underline;
+                 text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.md-tok-url    { color: var(--md-url);    opacity: 0.6; }   /* dim the brand-blue */
+.md-tok-quote  { color: var(--md-quote);  font-style: italic; }

@@ -1,0 +1,1247 @@
+/* =============================================================================
+   processModalStyles.css — styles for the per-process detail MODAL
+   -----------------------------------------------------------------------------
+   Owns the scrim (full-viewport backdrop), the centered 80vw × 80vh sheet,
+   the close button, the structural HERO (kicker / title / taglines), the
+   media-stack defaults, and the authored building-block classes that
+   per-process media HTML composes with.
+
+   Z-INDEX
+     z:10  — .process-modal-scrim (full viewport, dim/blur backdrop)
+     z:11  — .process-modal-sheet (inside the scrim, centered)
+     Same band as projectModal — the two can never be open at once (both
+     open from sidebar views, and an open modal's scrim blocks the
+     sidebar). pdfModal sits above at z:12–13 on purpose: a .pdf-card
+     authored inside a process sheet's media must open its reader OVER
+     this modal.
+
+   ANIMATION
+     Identical mechanism to projectModal: the scrim's dim+blur transitions
+     on its ::before; the sheet FLIPs on transform with a shorter opacity
+     fade to hide the aspect-mismatch squish near the tile endpoint. See
+     projectModalStyles.css's ANIMATION note for the full rationale.
+
+   THE ACCENT
+     The sheet carries --process-accent (written by processModal.js per
+     open, from the process data). Consumed by the hero's edge bar and the
+     kicker; neutral fallbacks throughout.
+
+   AUTHORED BUILDING BLOCKS (used inside process.media HTML)
+     .process-callout          — bracket-framed italic slash-line pair (the
+                                 statement sits in a hairline [ ] slot)
+     .process-dark             — full-bleed charcoal band; descendant text
+                                 auto-inverts to light
+     .process-bleed            — full-bleed modifier for an img/video
+     .process-datawall         — full-bleed band of dense slash-separated
+                                 vocabulary (the visual-scripting opener)
+     .process-break            — ruled section divider with an accent
+                                 segment (replaces the old WORKFLOW band)
+     .process-workflow         — one workflow step: title-block head +
+                                 body copy | screenshot two-column grid
+     .process-card             — expandable workflow card (accordion; the
+                                 behavior lives in processCards.js)
+     .process-launch           — hand-off control (NO HANDLER YET)
+     .media-grid-2             — opt-in two-up media cluster (same contract
+                                 as projectModal's helper)
+     plus defaults for p, h3, ul/li, img, video in the media region.
+
+   FULL-BLEED MECHANISM
+     The content region declares --process-pad-x and pads with it; bleed
+     blocks negative-margin by the same var, so the padding has one source
+     of truth. Anything that must touch the sheet's edges reuses the var.
+
+   CLASSES EMITTED
+     .process-modal-scrim / .is-visible / .is-open
+     .process-modal-sheet
+     .process-modal-close
+     .process-modal-nav / -nav-prev / -nav-next
+     .process-modal-content
+     .process-modal-hero
+     .process-modal-kicker
+     .process-modal-title
+     .process-modal-taglines
+     .process-modal-media
+     (+ the authored building blocks listed above)
+
+   COUPLED WITH processModal.js (emits the structural classes; injects the
+   authored HTML), processCards.js (drives .process-card's .is-open state),
+   and infiniteStyles.css (theme vars + --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   THE SCRIM — full-viewport backdrop
+   ========================================================================== */
+
+.process-modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: none;                    /* shown via .is-visible */
+  align-items: center;
+  justify-content: center;
+}
+.process-modal-scrim.is-visible {
+  display: flex;
+}
+.process-modal-scrim::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.42);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  opacity: 0;
+  transition: opacity 0.32s var(--ease);
+  pointer-events: none;
+}
+.process-modal-scrim.is-open::before {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE SHEET — 80vw × 80vh centered window
+   -----------------------------------------------------------------------------
+   Two transitions, same rationale as projectModal:
+     transform 0.45s — the FLIP grow/shrink (JS-driven recovery).
+     opacity   0.32s — hides the aspect-mismatch squish near the small end
+                       of the FLIP (the icon tile is nearly square; the
+                       sheet is much wider than tall).
+   ========================================================================== */
+
+.process-modal-sheet {
+  position: relative;
+  z-index: 11;
+
+  width:  80vw;
+  height: 80vh;
+
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+
+  overflow: hidden;                 /* corners; inner content owns scroll */
+  transform-origin: center center;
+
+  opacity: 0;                       /* visible only when scrim is .is-open */
+  transition: transform 0.45s var(--ease),
+              opacity   0.32s var(--ease);
+  will-change: transform, opacity;
+}
+.process-modal-scrim.is-open .process-modal-sheet {
+  opacity: 1;
+}
+
+/* =============================================================================
+   THE CLOSE BUTTON — pinned top-right of the sheet
+   -----------------------------------------------------------------------------
+   Same treatment as the other five close buttons (.sidebar-close,
+   .grid-modal-close, .grid-detail-close, .project-modal-close,
+   .pdf-modal-close) — keep in sync when restyling any of them.
+   ========================================================================== */
+
+.process-modal-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.4rem;
+  z-index: 2;
+
+  width: 2.4rem;
+  height: 2.4rem;
+  font-size: 0;                   /* hide the &times; glyph — the X is drawn
+                                     by the ::before/::after bars below; the
+                                     text remains for the accessible name */
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.process-modal-close:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+.process-modal-close::before,
+.process-modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.process-modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* =============================================================================
+   THE NAV BUTTONS — prev / next, pinned mid-height on the sheet's edges
+   -----------------------------------------------------------------------------
+   Same family as the close button — frosted square, hairline border,
+   glyph drawn by a pseudo-element in currentColor — so the sheet's three
+   controls speak one language. Same treatment as .project-modal-nav in
+   projectModalStyles.css — keep the two in sync when restyling, the way
+   the five close buttons are kept in sync. The chevron is a bordered square rotated
+   45°, which keeps it geometrically centered and hairline-weight (a text
+   ‹ › would sit wherever the font's metrics put it).
+
+   They sit over the content's side gutters and, when scrolled, over
+   full-bleed bands; the frosted background keeps them legible on both
+   light and dark surfaces. Hidden by JS when the list has one entry.
+   ========================================================================== */
+
+.process-modal-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+
+  width: 2.4rem;
+  height: 2.4rem;
+
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+              background 0.3s var(--ease);
+}
+.process-modal-nav-prev {
+  left: 1.1rem;
+  transform: translateY(-50%);
+}
+.process-modal-nav-next {
+  right: 1.1rem;
+  transform: translateY(-50%);
+}
+.process-modal-nav:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* The chevron — two sides of a small square, rotated. The translate
+   offsets differ per direction so the arrow's visual mass (not its
+   bounding box) sits centered in the button. */
+.process-modal-nav::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-left: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+.process-modal-nav-prev::before {
+  transform: translate(-30%, -50%) rotate(45deg);     /* points left */
+}
+.process-modal-nav-next::before {
+  transform: translate(-70%, -50%) rotate(-135deg);   /* points right */
+}
+
+/* =============================================================================
+   THE CONTENT CONTAINER — scrollable column
+   -----------------------------------------------------------------------------
+   Fills the sheet; scrolls vertically. --process-pad-x is the single
+   source of truth for horizontal padding — the full-bleed building
+   blocks negative-margin by it, so changing the padding here keeps the
+   bleeds touching the edges.
+   ========================================================================== */
+
+.process-modal-content {
+  --process-pad-x: 4.5rem;
+
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 3.4rem var(--process-pad-x) 4rem;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.process-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+.process-modal-content::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+.process-modal-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (max-width: 720px) {
+  .process-modal-content {
+    --process-pad-x: 1.4rem;
+    padding-top: 3rem;
+  }
+}
+
+/* =============================================================================
+   THE HERO — the process's letterhead
+   -----------------------------------------------------------------------------
+   Quotes the old site's process-page opener: the per-discipline color bar
+   on the left edge, the display title, the slash taglines below (last one
+   strong). Restyled to the new site's tokens: hairlines, the three-step
+   ink ramp, Foundry Gridnik bold for the title — the sheet's ONE Gridnik
+   and one display-scale moment (the workflow section opens with the
+   ruled .process-break, not a display band). The title is REGISTERED
+   rather than textured: a diagonal pair of + crosses pinned to its
+   corners (the avionics registration-cross vocabulary), replacing the
+   old pages' grid patch.
+
+   padding-right clears the close button's corner so a long title wraps
+   instead of running underneath it.
+   ========================================================================== */
+
+.process-modal-hero {
+  display: block;
+  padding: 0.3rem 3.5rem 2rem 1.6rem;
+  border-left: 3px solid var(--process-accent, var(--line));
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 2.4rem;
+}
+
+.process-modal-kicker {
+  display: block;
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--process-accent, var(--ink-dim));
+  margin-bottom: 1rem;
+}
+
+.process-modal-title {
+  position: relative;
+  display: inline-block;            /* the crosses register the title's own
+                                       box, not the full hero row */
+  font-family: "Foundry Gridnik", sans-serif;
+  font-weight: bold;
+  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  letter-spacing: 0.02em;
+  line-height: 1.02;
+  color: var(--ink-strong);
+  margin-bottom: 1.8rem;
+  padding: 0.45rem 1rem 0.5rem 0.5rem;  /* breathing room so the corner
+                                           crosses sit off the glyphs */
+  /* textScramble injects spans inside this element — overflow hidden
+     would clip them. Leave default overflow. (The crosses below are
+     pseudo-elements, untouched by the span churn.) */
+}
+
+/* Registration crosses — a diagonal pair (top-left / bottom-right)
+   centered ON the title box's corner points. Hairline instrument
+   furniture: Hornet, normal weight (the h2's bold would thicken them),
+   dim ink — never the accent; fiducials are furniture, not category. */
+.process-modal-title::before,
+.process-modal-title::after {
+  content: "+";
+  position: absolute;
+  font-family: "Hornet Display", sans-serif;
+  font-weight: normal;
+  font-size: 1rem;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--ink-dim);
+}
+.process-modal-title::before {
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+.process-modal-title::after {
+  bottom: 0;
+  right: 0;
+  transform: translate(50%, 50%);
+}
+
+.process-modal-taglines p {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.6rem;
+}
+.process-modal-taglines p:last-child {
+  color: var(--ink-strong);
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   THE MEDIA STACK — the authored region
+   -----------------------------------------------------------------------------
+   Flex column, gap-based rhythm: the author never adds margins.
+
+   SELECTOR SCOPING — descendant for text, direct-child for media:
+     Text defaults (p, h3, ul/li) use DESCENDANT selectors because nesting
+     text inside wrappers is the norm here (.process-dark bands hold
+     paragraphs and lists); the wrappers then override only color.
+     Media defaults (img, video) stay DIRECT-CHILD, as in projectModal —
+     media nested in a wrapper (.media-grid-2) gets sized by that wrapper,
+     and authored widgets with their own internals (e.g. .pdf-card) are
+     never accidentally restyled.
+
+   Full-bleed blocks bleed HORIZONTALLY only — the content region keeps
+   its bottom padding, so every sheet ends with breathing room regardless
+   of whether its last block is light or dark.
+
+   ADJACENT BANDS BUTT
+     Full-bleed dark bands stacked next to each other should read as ONE
+     continuous dark region, not blocks with a white seam between them —
+     so the stack's gap is cancelled between adjacent .process-dark
+     bands. The gap is a var precisely so the cancelling margin can't
+     drift out of sync with it. (.process-break is a light element and
+     keeps the normal rhythm.)
+   ========================================================================== */
+
+.process-modal-media {
+  --process-gap: 2rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--process-gap);
+}
+
+.process-modal-media .process-dark + .process-dark {
+  margin-top: calc(-1 * var(--process-gap));
+}
+
+/* ---- text defaults (descendant-scoped; see SELECTOR SCOPING above) ------- */
+
+.process-modal-media p {
+  max-width: 80ch;                  /* readable measure for prose */
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.process-modal-media h3 {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  margin-top: 0.5rem;               /* slight extra breath before a section */
+}
+
+.process-modal-media ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  max-width: 80ch;
+}
+.process-modal-media li {
+  position: relative;
+  padding-left: 1.3em;
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.process-modal-media li::before {
+  content: "-";
+  position: absolute;
+  left: 0;
+  color: var(--ink-dim);
+}
+
+/* ---- media defaults (direct-child; see SELECTOR SCOPING above) ----------- */
+
+.process-modal-media > img,
+.process-modal-media > video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-callout
+   -----------------------------------------------------------------------------
+   The statement pair from the old pages, reframed: italic slash lines
+   sitting inside a hairline [ ] slot — the brand's bracket syntax
+   ([ WORKS ], my [NAME] is:) drawn at block scale. The brackets are
+   border-drawn (not font glyphs) so they span the callout's exact height
+   whatever the line count. Authored as:
+
+     <div class="process-callout">
+       <p>/FIRST LINE;</p>
+       <p>/SECOND LINE</p>
+     </div>
+
+   fit-content width so the slot hugs its lines instead of spanning the
+   column — the old design's callouts are partial-width objects sitting
+   in the page, not banners. The title owns the registration crosses;
+   this block owns the brackets — one framing device per element.
+   ========================================================================== */
+
+.process-modal-media .process-callout {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  padding: 1.3rem 1.9rem;
+}
+
+/* The [ and ] — full-height hairline returns. --ink-dimmer (tertiary)
+   rather than --line: the bracket IS the element's frame, so it should
+   read as deliberate furniture, a step above the ambient hairlines. */
+.process-modal-media .process-callout::before,
+.process-modal-media .process-callout::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.55rem;
+  border: 1px solid var(--ink-dimmer);
+}
+.process-modal-media .process-callout::before {
+  left: 0;
+  border-right: none;
+}
+.process-modal-media .process-callout::after {
+  right: 0;
+  border-left: none;
+}
+
+.process-modal-media .process-callout p {
+  font-family: "Glitched", sans-serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 0.9rem;
+}
+.process-modal-media .process-callout p:last-child {
+  margin-bottom: 0;
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-dark
+   -----------------------------------------------------------------------------
+   A full-bleed charcoal band — the old pages' light→dark rhythm, and a
+   nod to the old portfolio's cockpit-dark theme. Text inside auto-inverts
+   via the color overrides below (higher specificity than the descendant
+   defaults above, so the same p/ul markup works on both surfaces).
+   Authored as:
+
+     <div class="process-dark">
+       <p>…</p>
+       <ul>…</ul>
+     </div>
+   ========================================================================== */
+
+.process-modal-media .process-dark {
+  margin-left:  calc(-1 * var(--process-pad-x));
+  margin-right: calc(-1 * var(--process-pad-x));
+  padding: 2.6rem var(--process-pad-x);
+
+  background: #232323;              /* charcoal — the old pages' content band */
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.process-modal-media .process-dark p,
+.process-modal-media .process-dark li {
+  color: rgba(255, 255, 255, 0.86);
+}
+.process-modal-media .process-dark h3 {
+  color: rgba(255, 255, 255, 0.94);
+}
+.process-modal-media .process-dark li::before {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-bleed
+   -----------------------------------------------------------------------------
+   Full-bleed modifier for a single media element — the old pages' photo
+   band. Authored as a class on the element itself:
+
+     <img class="process-bleed" src="…" alt="…">
+
+   Side borders and radius are dropped so the image meets the sheet's
+   edges cleanly; top/bottom hairlines remain to frame the band.
+   ========================================================================== */
+
+.process-modal-media > .process-bleed {
+  margin-left:  calc(-1 * var(--process-pad-x));
+  margin-right: calc(-1 * var(--process-pad-x));
+  width: calc(100% + 2 * var(--process-pad-x));
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-datawall
+   -----------------------------------------------------------------------------
+   A full-bleed near-black band of dense, dim, slash-separated vocabulary —
+   the visual-scripting page's opener, rebuilt as TEXT rather than an
+   image because "geometry as data" rendered as actual selectable text is
+   the thesis made literal (and it reflows, scales, and stays editable).
+   Authored as one element; <strong> pops a term to full white — the old
+   page ends its run on a bright DATA:
+
+     <div class="process-datawall">POINTS / VERTICES / … / <strong>DATA</strong></div>
+
+   overflow-wrap lets the single unbroken run wrap anywhere, which is the
+   point — it should read as a wall, not as sentences.
+   ========================================================================== */
+
+.process-modal-media .process-datawall {
+  margin-left:  calc(-1 * var(--process-pad-x));
+  margin-right: calc(-1 * var(--process-pad-x));
+  padding: 1.6rem var(--process-pad-x);
+
+  background: #161616;              /* near-black, same surface as the old wall */
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.6rem;
+  line-height: 1.75;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  overflow-wrap: anywhere;
+}
+.process-modal-media .process-datawall strong {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-break
+   -----------------------------------------------------------------------------
+   A SECTION BREAK, drawn as an instrument rather than a poster: a
+   full-bleed hairline rule (solid separates, per the line grammar) with a
+   short accent segment riding its start at the sheet's left edge — the
+   hero's vertical accent bar, rhymed horizontal — and the section title
+   below at working-document scale. Replaces the old pages' dark
+   WORKFLOW(s) display band: after three typeface attempts it was clear
+   the poster GESTURE was the problem, not the font — a shouting band
+   reads decorative; a ruled break reads like documentation. This also
+   returns the hero to being the sheet's only display-scale (and only
+   Gridnik) moment, and lets the charcoal statement band stand as the
+   sheet's one dark gesture.
+
+   Generic on purpose — any section can open with one:
+
+     <div class="process-break">- WORKFLOW<span>(s):</span></div>
+     <div class="process-break">- MATERIALS<span>:</span></div>
+
+   The <span> renders its text thin and dim (the old banner's "(s):"
+   character, carried over). Same one-element authoring contract as the
+   banner it replaces.
+   ========================================================================== */
+
+.process-modal-media .process-break {
+  position: relative;
+  /* Full-bleed rule; padding re-aligns the title with the content column. */
+  margin-left:  calc(-1 * var(--process-pad-x));
+  margin-right: calc(-1 * var(--process-pad-x));
+  padding: 1.9rem var(--process-pad-x) 0.2rem;
+  border-top: 1px solid var(--line);
+  margin-top: 1.5rem;               /* extra air on top of the stack gap —
+                                       a section break earns more than the
+                                       default rhythm */
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+
+/* The accent segment — 3px, matching the hero bar's weight — sitting on
+   the rule's first stretch at the sheet edge. Positioned to straddle the
+   1px border-top (the containing block is the padding box, so top:0 is
+   just below the border; -2px centers a 3px tick on the hairline). */
+.process-modal-media .process-break::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 3.5rem;
+  height: 3px;
+  background: var(--process-accent, var(--ink-dim));
+}
+
+.process-modal-media .process-break span {
+  font-weight: 300;
+  color: var(--ink-dim);
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-workflow
+   -----------------------------------------------------------------------------
+   One step of a process's workflow pipeline: a title-block head (index,
+   tool name, role readout on a hairline rule) over a two-column grid —
+   body copy left, screenshot right. The old pages' solid black label
+   bars and per-step colors are translated into the site's grammar:
+   hairline rules instead of filled bars; a uniformly numbered peer set
+   (WF / 01…) with the index in the PROCESS accent instead of four
+   arbitrary step colors (red on a step that can't fail would break the
+   color grammar). Dashed rules separate consecutive steps — dashed
+   delineates, as on the old pages. Authored as:
+
+     <div class="process-workflow">
+       <div class="process-workflow-head">
+         <span class="process-workflow-index">WF / 01</span>
+         <h3 class="process-workflow-tool">// RHINO:</h3>
+         <span class="process-workflow-role">/ DIGITAL FLOWFORM MODELING</span>
+       </div>
+       <div class="process-workflow-body">
+         <p>> …</p>
+       </div>
+       <img src="…" alt="…" loading="lazy" decoding="async">
+     </div>
+
+   The head's pieces follow the label grammar: the index and role DESCRIBE
+   (Hornet, small, letter-spaced — role dim, index in the accent), the
+   tool name SPEAKS (Glitched, heavy). Per-step accent override: set
+   --workflow-accent inline on an entry to detach its index color from
+   the process accent (the fallback chain is workflow → process → dim).
+
+   The direct <img>/<video> child lands in the media grid area; body
+   paragraphs pick up the stack's descendant text defaults.
+   ========================================================================== */
+
+.process-modal-media .process-workflow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 46%);
+  grid-template-areas:
+    "head head"
+    "body media";
+  gap: 1.6rem 2.4rem;
+  align-items: start;
+}
+
+/* Dashed hairline between consecutive steps. Combined with the stack's
+   2rem gap, the rule sits in a generous band between entries. */
+.process-modal-media .process-workflow + .process-workflow {
+  border-top: 1px dashed var(--line);
+  padding-top: 2rem;
+}
+
+.process-modal-media .process-workflow-head {
+  grid-area: head;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.2rem;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.process-modal-media .process-workflow-index {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--workflow-accent, var(--process-accent, var(--ink-dim)));
+}
+
+/* Overrides the media stack's descendant h3 defaults (size, margin) —
+   the tool name is a step heading, one register up from a body h3. */
+.process-modal-media .process-workflow-tool {
+  margin-top: 0;
+  font-family: "Glitched", sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+
+.process-modal-media .process-workflow-role {
+  margin-left: auto;                /* right-aligned on the title row */
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.process-modal-media .process-workflow-body {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-width: 0;
+}
+
+/* A step's media: either a single direct img/video, or a
+   .process-workflow-media wrapper holding several stacked. The wrapper is
+   required for more than one — two direct children would both resolve to
+   the same grid area and overlap. */
+.process-modal-media .process-workflow > img,
+.process-modal-media .process-workflow > video,
+.process-modal-media .process-workflow-media {
+  grid-area: media;
+}
+.process-modal-media .process-workflow-media {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.process-modal-media .process-workflow > img,
+.process-modal-media .process-workflow > video,
+.process-modal-media .process-workflow-media img,
+.process-modal-media .process-workflow-media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+/* Narrow sheets: stack head / body / media in one column. */
+@media (max-width: 900px) {
+  .process-modal-media .process-workflow {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "head"
+      "body"
+      "media";
+  }
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-card (accordion card; behavior in processCards.js)
+   -----------------------------------------------------------------------------
+   An expandable workflow card: an always-visible instrument-row HEAD
+   (icon tile, index, title, +/– state glyph) over a collapsible BODY
+   (two columns: text | stacked screenshots). One card open at a time;
+   opening pushes surrounding content in-flow. The old pages' dark
+   header bars and green ticks translate to the hairline box + the
+   process accent (per-card override: set --card-accent inline; the
+   chain is card → process → dim). Authored as:
+
+     <div class="process-card">
+       <button class="process-card-head" type="button" aria-expanded="false">
+         <span class="process-card-icon">{inline svg}</span>
+         <span class="process-card-index">WF / 01</span>
+         <span class="process-card-title">FOLIAGE DESIGN: <span>— [ SPEEDTREE ]</span></span>
+         <span class="process-card-state" aria-hidden="true"></span>
+       </button>
+       <div class="process-card-body">
+         <div class="process-card-inner">
+           <div class="process-card-text">
+             <div class="process-card-tags"><p>/ …</p><p>/ …</p></div>
+             <p>> …</p>
+             <div class="process-card-terms"><span>…</span><span>…</span></div>
+             <p>> …</p>
+             <div class="process-card-note">…</div>
+           </div>
+           <div class="process-card-media"><img …><img …></div>
+         </div>
+       </div>
+     </div>
+
+   THE EXPANSION ANIMATION — grid-template-rows 0fr → 1fr on the body,
+   with the inner as the min-height:0 / overflow:hidden grid item. This
+   animates to the content's natural height with no measured max-heights
+   (which go stale when images size in). PADDING PLACEMENT IS LOAD-
+   BEARING: the inner carries none — a padded overflow container leaks
+   its padding as height at 0fr — so the text and media columns carry
+   their own padding instead, safely clipped while collapsed.
+   ========================================================================== */
+
+.process-modal-media .process-card {
+  border: 1px solid var(--line);
+}
+
+/* Cards read as one grouped list — pull consecutive cards closer than
+   the stack's 2rem rhythm. */
+.process-modal-media .process-card + .process-card {
+  margin-top: -1.2rem;
+}
+
+/* ---- the head — always visible, the click target ---------------------- */
+
+.process-modal-media .process-card-head {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+  transition: background 0.3s var(--ease);
+}
+.process-modal-media .process-card-head:hover {
+  background: var(--sheet-bg);
+}
+/* Hairline between head and expanded body. On the head (state-gated)
+   rather than the body — a border on the collapsing container would
+   leak 1px of height at 0fr. */
+.process-modal-media .process-card.is-open .process-card-head {
+  border-bottom: 1px solid var(--line);
+}
+
+.process-modal-media .process-card-icon {
+  flex: none;
+  align-self: stretch;
+  width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0;
+
+  background: var(--sheet-bg);
+  border-left: 3px solid var(--card-accent, var(--process-accent, var(--line)));
+  border-right: 1px solid var(--line);
+  color: var(--card-accent, var(--process-accent, var(--ink)));
+}
+.process-modal-media .process-card-icon svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.process-modal-media .process-card-index {
+  flex: none;
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--card-accent, var(--process-accent, var(--ink-dim)));
+}
+
+.process-modal-media .process-card-title {
+  min-width: 0;
+  font-family: "Glitched", sans-serif;
+  font-weight: 900;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+}
+.process-modal-media .process-card-title span {
+  font-weight: 300;
+  color: var(--ink-dim);
+}
+
+/* The +/– state glyph — two hairline bars; the vertical one collapses
+   when the card opens, leaving the minus. */
+.process-modal-media .process-card-state {
+  flex: none;
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+  margin-left: auto;
+  margin-right: 1.1rem;
+}
+.process-modal-media .process-card-state::before,
+.process-modal-media .process-card-state::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  background: var(--ink-dim);
+}
+.process-modal-media .process-card-state::before {
+  width: 12px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+}
+.process-modal-media .process-card-state::after {
+  width: 1px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s var(--ease);
+}
+.process-modal-media .process-card.is-open .process-card-state::after {
+  transform: translate(-50%, -50%) scaleY(0);
+}
+
+/* ---- the body — the animated collapse ---------------------------------- */
+
+.process-modal-media .process-card-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.45s var(--ease);
+}
+.process-modal-media .process-card.is-open .process-card-body {
+  grid-template-rows: 1fr;
+}
+.process-modal-media .process-card-inner {
+  min-height: 0;
+  overflow: hidden;                 /* NO padding here — see block comment */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 42%);
+  column-gap: 2rem;
+  align-items: start;
+}
+
+.process-modal-media .process-card-text {
+  min-width: 0;
+  padding: 1.5rem 0 1.6rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.process-modal-media .process-card-media {
+  min-width: 0;
+  padding: 1.5rem 1.6rem 1.6rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.process-modal-media .process-card-media img,
+.process-modal-media .process-card-media video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+/* ---- expanded-content pieces ------------------------------------------- */
+
+.process-modal-media .process-card-tags p {
+  font-family: "Glitched", sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 0.5rem;
+}
+.process-modal-media .process-card-tags p:last-child {
+  margin-bottom: 0;
+}
+
+/* The terms row — small spaced Hornet readouts (the datawall's little
+   sibling): the card's dataset fields laid out as an instrument strip. */
+.process-modal-media .process-card-terms {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 1.6rem;
+  padding: 0.2rem 0;
+}
+.process-modal-media .process-card-terms span {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* The bold summary strip — the old pages' filled statement bar, with the
+   accent edge echoing the hero. */
+.process-modal-media .process-card-note {
+  padding: 1rem 1.2rem;
+  background: var(--sheet-bg);
+  border-left: 3px solid var(--card-accent, var(--process-accent, var(--line)));
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Narrow sheets: single column, screenshots after the text. */
+@media (max-width: 900px) {
+  .process-modal-media .process-card-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .process-modal-media .process-card-text {
+    padding: 1.3rem 1.2rem 0.2rem;
+  }
+  .process-modal-media .process-card-media {
+    padding: 1.1rem 1.2rem 1.3rem;
+  }
+}
+
+/* =============================================================================
+   BUILDING BLOCK — .process-launch
+   -----------------------------------------------------------------------------
+   A control that hands off to something bigger, authored at the end of a
+   process's stack. The old pages centered this as a poster-style call to
+   action; here it stays in the document's left-aligned flow and the
+   CONTROL carries the emphasis, as an instrument would.
+
+   Pair it with a .process-dark band holding the closing statement — the
+   dark surface separates the hand-off from the workflow steps above it,
+   and the light control immediately beneath then reads as the thing to
+   press. (There is no dedicated outro class: .process-dark already is
+   the closing-statement surface, and a second near-identical block would
+   only be one more thing to keep in sync.) Authored as:
+
+     <div class="process-dark">
+       <p>> …</p>
+       <p>> …</p>
+     </div>
+     <button class="process-launch" type="button" data-launch="ipm">
+       <span class="process-launch-mark">[ I<i>.</i>P<i>.</i>M ]</span>
+       <span class="process-launch-cue">/ CLICK TO EXPLORE THE FULL SYSTEM</span>
+       <span class="process-launch-arrow" aria-hidden="true"></span>
+     </button>
+
+   THE ARROW POINTS UP — the brand's upward shape language (arrows,
+   chevrons and triangular forms point upward by default; see
+   visualLanguage.md). The <i> tags in the mark are the namespace dots,
+   tinted with the process accent — the syntax-as-ornament vocabulary at
+   its smallest.
+
+   NOTE: .process-launch has NO BEHAVIOR YET. It needs a click handler
+   (a modal, an expanded card — undecided). Wire it before shipping, or
+   the control is a lie: it looks pressable and does nothing.
+   ========================================================================== */
+
+.process-modal-media .process-launch {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  width: 100%;
+  padding: 1.15rem 1.3rem;
+  text-align: left;
+
+  background: var(--sheet-bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--process-accent, var(--line));
+
+  /* Native hand replaced: cursor.js draws the inverting cursor variant
+     wherever --cursor is set (see the --cursor protocol in cursor.js). */
+  cursor: none; --cursor: pointer;
+  transition: border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+.process-modal-media .process-launch:hover {
+  border-color: var(--ink);
+  border-left-color: var(--process-accent, var(--line));
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.process-modal-media .process-launch-mark {
+  flex: none;
+  font-family: "Glitched", sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: 0.18em;
+  color: var(--ink-strong);
+}
+/* The namespace dots — syntax as ornament, in the process accent. */
+.process-modal-media .process-launch-mark i {
+  font-style: normal;
+  color: var(--process-accent, var(--ink-dim));
+}
+
+.process-modal-media .process-launch-cue {
+  margin-left: auto;
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+/* The chevron — two sides of a square, rotated to point UP. Nudges up on
+   hover: the control's one motion, acknowledging the press-to-ascend. */
+.process-modal-media .process-launch-arrow {
+  flex: none;
+  position: relative;
+  width: 1.1rem;
+  height: 1.1rem;
+  transition: transform 0.3s var(--ease);
+}
+.process-modal-media .process-launch-arrow::before {
+  content: "";
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  border-left: 1px solid var(--ink);
+  border-top: 1px solid var(--ink);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.process-modal-media .process-launch:hover .process-launch-arrow {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .process-modal-media .process-launch {
+    flex-wrap: wrap;
+    gap: 0.6rem 1rem;
+  }
+  .process-modal-media .process-launch-cue {
+    margin-left: 0;
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+
+/* =============================================================================
+   MEDIA GRID HELPER — .media-grid-2
+   -----------------------------------------------------------------------------
+   Same contract as projectModal's helper, so authoring vocabulary carries
+   across both modals: one wrapper, any number of items, two-up on wide
+   sheets, single column on narrow ones. Children re-declare the media
+   sizing because they're no longer direct children of the stack.
+   ========================================================================== */
+
+.process-modal-media .media-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+}
+
+.process-modal-media .media-grid-2 > img,
+.process-modal-media .media-grid-2 > video {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--sheet-bg);      /* visible during load / if asset missing */
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+@media (max-width: 640px) {
+  .process-modal-media .media-grid-2 {
+    grid-template-columns: 1fr;
+  }
+}

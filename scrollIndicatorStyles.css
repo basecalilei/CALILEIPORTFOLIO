@@ -1,0 +1,186 @@
+/* =============================================================================
+   scrollIndicatorStyles.css — presentation for scrollIndicator.js
+   -----------------------------------------------------------------------------
+   STRUCTURE (built by scrollIndicator.js):
+     .scroll-indicator            — fixed right-edge column: track + readout
+       .si-track                  — overflow:hidden strip, height = N * STEP
+         .si-mark  (× N)          — registration cross, one per panel;
+                                    clickable (click-to-jump), with a
+                                    STEP-sized ::after hit box
+         .si-reticle (× 2)        — the traveler + its wrap clone; per-frame
+                                    transform is written by the JS
+       .si-readout                — "02 / 07" Hornet instrument readout
+         .si-readout-index        — the live index span (JS rewrites this)
+         .si-readout-total        — static " / 07"
+
+   THE SIDEBAR DODGE
+     body.sidebar-is-open is the sidebar's published broadcast (set in
+     sidebar.js); --sidebar-width is the sheet's width token (owned by
+     sidebarStyles.css). Shifting by exactly that width preserves the strip's
+     1.4rem gap, now measured from the sheet's border instead of the viewport
+     edge. The transition duration/ease MUST match .sidebar-sheet's
+     (0.45s var(--ease)) so strip and sheet move as one object. If the
+     sidebar is ever deleted, var(--sidebar-width, 0px) makes this a no-op.
+
+   COLOR
+     Straight from the :root tokens in infiniteStyles.css (which loads before
+     every module sheet): --ink-dim for resting marks, --ink for the reticle,
+     --brand-red for the active mark and readout index (active emphasis, per
+     visualLanguage.md's role table).
+
+   COUPLED WITH
+     - scrollIndicator.js — class names, the negative-margin centering
+       contract (glyphs center on their (left, top) point so JS transforms
+       carry only raw y), and STEP (mark spacing is set inline by the JS;
+       only glyph sizes live here).
+     - sidebar.js / sidebarStyles.css — the broadcast class + the
+       --sidebar-width and --sidebar-trigger-width tokens.
+   ========================================================================== */
+
+.scroll-indicator {
+  position: fixed;
+  top: 50%;
+  right: 1.4rem;               /* same inset as the trigger… */
+  /* …and the same width: with matching right offsets and matching widths,
+     the strip's centerline registers with the MENU button's by construction
+     (contents center via align-items below). Falls back to content width if
+     the sidebar — the token's owner — is ever deleted. */
+  width: var(--sidebar-trigger-width, auto);
+  z-index: 5;                  /* above overlays (3), below the sidebar (9) */
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+
+  pointer-events: none;        /* the container never traps input; only the
+                                  marks opt back in below (click-to-jump) */
+
+  /* Base centering + the dodge in one transform. Only --si-dodge ever
+     changes, so the transition animates just the horizontal slide. */
+  transform: translateY(-50%) translateX(var(--si-dodge, 0px));
+  transition: transform 0.45s var(--ease);
+}
+
+/* The dodge — see header. */
+body.sidebar-is-open .scroll-indicator {
+  --si-dodge: calc(-1 * var(--sidebar-width, 0px));
+}
+
+/* -----------------------------------------------------------------------------
+   THE TRACK — the clipping window for the reticle pair. Height is set inline
+   by the JS (N * STEP); width just needs to contain the widest glyph.
+   --------------------------------------------------------------------------- */
+.si-track {
+  position: relative;
+  width: 24px;
+  overflow: hidden;            /* clips whichever reticle is off-cycle */
+}
+
+/* Kill the inline-SVG baseline gap so negative-margin centering is exact. */
+.si-mark svg,
+.si-reticle svg {
+  display: block;
+}
+
+/* -----------------------------------------------------------------------------
+   THE MARKS — registration crosses, one per panel. Hairline, quiet, --ink-dim;
+   the active one ticks to brand red (active emphasis — a resting-state change
+   is a color change, not a size change: the instrument doesn't rescale itself
+   to mark position. Hover is the exception — a transient grow is affordance
+   feedback ("this is clickable"), not state, so it doesn't muddy that rule).
+   --------------------------------------------------------------------------- */
+.si-mark {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;   /* center the glyph on its (left, top) point */
+  color: var(--ink-dim);
+  opacity: 0.55;
+  transform: scale(1);     /* explicit resting scale so the hover grow has
+                              two matrix endpoints to ease between */
+  transition: color 0.15s linear, opacity 0.15s linear,
+              transform 0.2s var(--ease);
+
+  pointer-events: auto;    /* the strip's one interactive element */
+  /* cursor.js protocol: hide the native cursor, declare intent — the site
+     cursor renders its reticle-with-dot ("clickable") variant over marks. */
+  cursor: none; --cursor: pointer;
+}
+/* Hit target. The glyph is 12px — too small to click comfortably — so each
+   mark carries an invisible STEP-sized (36px) hit box: glyph 12px + 12px on
+   every side. Targets tile the track edge-to-edge without overlapping.
+   Renders nothing; exists purely for hit-testing. */
+.si-mark::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+}
+/* Hover feedback on pointer devices — resting dim lifts to full ink AND the
+   cross grows slightly (transform-origin defaults to the box center, which the
+   negative-margin centering already puts on the glyph, so it swells in place).
+   Scaling up under an already-inside cursor can't cause hover flicker. The
+   active mark is excluded so hovering it never overrides its brand red or
+   fights the reticle framing it. */
+@media (hover: hover) {
+  .si-mark:not(.is-active):hover {
+    color: var(--brand-blue);
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+.si-mark.is-active {
+  color: var(--brand-red);
+  opacity: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   THE RETICLE — corner brackets, target-acquired. Two instances exist (the
+   traveler + its wrap clone); both are positioned every frame by the JS via
+   translate3d, so this rule declares everything except the transform.
+   --------------------------------------------------------------------------- */
+.si-reticle {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;   /* center on (left, top); transform carries raw y */
+  color: var(--brand-green);
+  will-change: transform;
+}
+
+/* -----------------------------------------------------------------------------
+   THE READOUT — Tier-3 instrument label ("describing what something is").
+   Hornet, small, letter-spaced, uppercase; index in brand red, total dim.
+   --------------------------------------------------------------------------- */
+.si-readout {
+  font-family: "Hornet Display", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--ink-dim);
+}
+.si-readout-index {
+  color: var(--brand-red);
+}
+/* ---------- update afterglow ----------
+   scrollIndicator.js re-triggers .is-fresh on the index span each time the
+   nearest-panel readout is rewritten; the fresh write flashes the write
+   color and decays back to the index's resting brand-red. `from`-only
+   keyframe — the end state is the element's own computed color. Blue =
+   information write (visualLanguage.md color semantics); decay curve
+   matches the phosphor-style release used across the site's carriers.
+
+   NOTE deliberately a per-module COPY (its twin lives in dotsStyles.css)
+   — second consumer copies, third lifts, per the project's rule-of-three.
+   A third stylesheet needing this should trigger the lift into a shared
+   carrier stylesheet, not another copy. */
+.si-readout-index.is-fresh {
+  animation: si-afterglow 0.9s cubic-bezier(0.2, 0.55, 0.35, 1) 1;
+}
+@keyframes si-afterglow {
+  from { color: var(--ink); }
+}

@@ -1,0 +1,252 @@
+/* =============================================================================
+   wallStyles.css — styles for the "wall" PANEL TYPE
+   -----------------------------------------------------------------------------
+   Two layers, two sets of styles:
+
+     1. The OVERLAY — a centered block over the page background (a logo,
+        or authored text). No card chrome. Shares .turn-overlay's
+        typography so the two types feel like siblings.
+
+     2. The TEXTWALL — a 90% × 90% viewport-fixed content layer that
+        sits behind the overlay. NOT a scroll container: content is fit
+        to the box by JS (wallPanel.js) adjusting the font-size on
+        .wall-textwall-content. See wallPanel.js for why it lives as a
+        SIBLING of the overlay in #infinite-overlays.
+
+   CLASSES THIS FILE EMITS
+     .wall-overlay          — centered positioning over .infinite-overlay
+     .wall-card             — padding container for the overlay content (no chrome)
+     .wall-logo             — the centered SVG logo; forced white
+     .wall-kicker           — small-caps kicker label (Hornet Display)
+     .wall-title            — display heading (Hornet Display Bold)
+     .wall-body             — body copy, narrow column
+     .wall-textwall         — viewport-fixed 90% box (behind the overlay)
+     .wall-textwall-content — inner fit-target; font-size set by JS;
+                              text kept invisible (color: transparent),
+                              present only for fit measurement
+     .wall-spanlayer        — the ONE absolute overlay carrying the
+                              visible (span-ified) text; shared by all
+                              four hover primitives in layered mode
+     .wall-zone             — display:contents event-routing wrappers
+                              nested inside the span layer; one per
+                              hover primitive (see wallPanel.js's
+                              ZONE ROUTING)
+
+   COUPLED WITH wallPanel.js (emits these classes) and infiniteStyles.css
+   (provides .infinite-overlay base + theme vars).
+   ========================================================================== */
+
+/* ---------- overlay positioning ----------
+   Centered block. Width is max-content so the block shrinks to its content
+   — for the logo, the image defines the width; for authored text, the
+   body's own max-width (set on .wall-body) controls the wrap. The transform
+   centers horizontally (translateX -50%) AND re-includes the base's
+   calc(-50% + var(--shift)) Y term for the scroll-link — the base
+   .infinite-overlay sets only vertical centering, so a type that overrides
+   transform must carry that Y term or it loses the fade/shift. */
+.wall-overlay {
+  left: 50%;
+  width: max-content;
+  max-width: 90vw;
+  transform: translate(-50%, calc(-50% + var(--shift)));
+  text-align: center;
+}
+
+/* ---------- the overlay's container ----------
+   No frosted card — just a padding box that gives the text breathing
+   room from the viewport edge. */
+.wall-card {
+  padding: clamp(1.4rem, 4vw, 3.2rem);
+}
+
+/* ---------- the centered logo ----------
+   For a wall panel whose authored html is a single SVG, e.g.
+     html: `<img class="wall-logo" src="assets/Calilei.svg" alt="">`
+   Forces the mark to flat white.
+
+   filter: brightness(0) invert(1) collapses whatever fills the source SVG
+   uses down to black, then inverts to pure white. It's the only way to
+   recolor an EXTERNAL svg referenced through <img> — `currentColor` and
+   `fill` can't cross the <img> boundary into the document the browser loads
+   separately. The filter operates on rendered pixels, so it works for any
+   opaque source art and preserves the source's alpha shape (transparent
+   stays transparent).
+
+   Sized responsively and capped to the viewport; height:auto keeps the
+   source's intrinsic aspect ratio. Retune the width/caps freely — this is
+   the one place that controls how big the mark reads. */
+.wall-logo {
+  display: block;
+  width: min(40vw, 440px);
+  height: auto;
+  max-width: 90vw;
+  max-height: 78vh;
+  filter: brightness(0) invert(1);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* ---------- overlay typography (wall-prefixed; not shared) ---------- */
+.wall-kicker {
+  font-family: "Hornet Display", sans-serif;     /* Tier 3 — instrument readout */
+  font-size: 0.72rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--brand-green);
+  margin-bottom: 1.1rem;
+}
+.wall-title {
+  font-family: "Hornet Display", sans-serif;     /* Tier 1 — display, brand "shout" */
+  font-weight: bold;
+  font-size: clamp(2.6rem, 3vw, 5.4rem);
+  line-height: 0.94;
+  letter-spacing: 0.20em;
+  color: var(--ink-strong);
+  margin-bottom: 1.2rem;
+  overflow-wrap: anywhere;
+}
+.wall-body {
+  font-size: clamp(0.82rem, 1.4vw, 0.95rem);
+  line-height: 1.7;
+  color: var(--ink-dim);
+  max-width: 34ch;          /* narrow column reads better over imagery */
+}
+
+/* =============================================================================
+   THE TEXTWALL — viewport-fixed content layer behind the scrollable overlay
+   -----------------------------------------------------------------------------
+   A 90vw × 90vh padded outer box, centered via `inset` inside its
+   parent #infinite-overlays (itself position:fixed at viewport
+   coverage). See wallPanel.js for the containing-block reasoning that
+   puts this element as a SIBLING of the overlay rather than a child.
+
+   NO --shift. The overlay sibling carries the scroll-linked transform;
+   this layer is stationary while the overlay shifts past.
+
+   Opacity is written per-frame by wallPanel.js, eased to the same `grow`
+   value the overlay uses, so the two layers enter and leave as one.
+
+   pointer-events: none — the wall covers ~90% of the viewport. Setting
+   it auto would intercept wheel/touch over that area and break scroll,
+   because #infinite-overlays is a SIBLING of the scroller (not an
+   ancestor), so wheel events captured here never reach the scroller via
+   bubble. The cursor-driven text animations get their mouseenter/
+   mousemove/mouseleave through synthetic dispatchEvent calls instead,
+   fired from a module-level document listener after a hit-test against
+   a CACHED rect (the wall is viewport-fixed, so the rect only changes
+   on resize — wallPanel.js refreshes it from its ResizeObserver).
+   pointer-events: none + synthetic events keeps scroll passthrough
+   intact while still driving the hover primitives.
+
+   NOT A SCROLL CONTAINER. overflow:hidden clips any visual transient
+   during the fit binary search, and it clips the final content if the
+   viewport is so small that even FIT_MIN_PX overflows. Content sizing
+   is JS-driven, not user-driven — no overflow:auto, no scrollbar.
+   ========================================================================== */
+.wall-textwall {
+  position: absolute;
+  inset: 5vh 5vw;             /* 90vw × 90vh, centered in the fixed parent */
+  opacity: 0;                 /* set per-frame by JS */
+  pointer-events: none;
+  will-change: opacity;
+
+  /* No surface treatment — transparent, no border, no radius. The textwall
+     reads as bare text over the page background; only the text is visible.
+     (Layout, opacity fade, pointer-events and the overflow clip below are
+     functional, not chrome, and stay.) */
+
+  /* Padded box. The inner .wall-textwall-content fills the padded inner
+     area at 100%×100%, and that's the box the fit algorithm targets. */
+  padding: clamp(1.4rem, 3.5vw, 3rem);
+  overflow: hidden;
+}
+
+/* The fit target. width/height:100% means it claims the full padded inner
+   area of .wall-textwall; its clientHeight = the available height for
+   text, its scrollHeight = the natural height at the current font-size.
+   wallPanel.js writes font-size on this element via binary search until
+   scrollHeight no longer exceeds clientHeight.
+
+   Children inherit font-size by default — children that should scale
+   with the fit should use em units; px/rem children stay fixed.
+
+   MEASUREMENT LAYER + SPAN LAYER
+     The visible wall text is NOT rendered by this element's own text.
+     Its own text content is kept in flow at color: transparent — that
+     text is invisible, but its layout still drives scrollHeight (which
+     fitTextToBox reads, so removing it would break the fit: the span
+     layer is absolute-positioned and out of flow, contributing nothing
+     to scrollHeight). The visible text is rendered by ONE absolute
+     child overlay (.wall-spanlayer) holding a span-ified copy of the
+     same text, shared by all four hover primitives in layered mode.
+     During the fit's probe sequence wallPanel.js sets content-
+     visibility: hidden on the span layer so the ~4,500 spans aren't
+     relaid on every probe — only the plain text here is measured.
+     position: relative establishes the positioning context the span
+     layer anchors to. */
+.wall-textwall-content {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  font-family: "Hornet Display", sans-serif;   /* Tier 3 — instrument readout */
+  font-size: 14px;            /* fallback only — JS overwrites on every fit */
+  letter-spacing: 0.04em;
+  line-height: 1.2;           /* base — matches FIT_BASE_LINE_HEIGHT in JS;
+                                 JS overwrites with the phase-2 stretched value */
+  color: transparent;         /* hide own text — only present for fit measurement;
+                                 visible text comes from .wall-spanlayer */
+
+  /* Horizontal: standard CSS justify — every line stretches edge-to-edge
+     EXCEPT the last (which stays ragged-left via default
+     text-align-last: auto). Justifying the last line stretches its few
+     remaining terms across the full width with huge gaps, which reads
+     as a layout bug. The ragged last line reads as natural typesetting.
+
+     Vertical fill is handled by wallPanel.js's phase-2 line-height
+     stretch — that's what prevents empty space below the final line. */
+  text-align: justify;
+
+  /* Last-resort line-break behavior. Multi-word terms are joined with
+     non-breaking spaces by wallPanel.js so they normally wrap as atomic
+     units at " / " boundaries — but on a viewport narrow enough that a
+     single term is wider than the container, overflow-wrap: anywhere
+     lets the browser break inside the term rather than overflowing
+     horizontally. The fit algorithm's width check catches this case
+     too; this CSS is the second line of defense. */
+  overflow-wrap: anywhere;
+}
+
+/* THE SPAN LAYER — one absolute-positioned child of .wall-textwall-
+   content holding the visible copy of the wall text (span-ified in idle
+   time by wallPanel.js; renders identically as plain text until then).
+   All four hover primitives borrow its spans in layered mode.
+
+   Typography inherits from .wall-textwall-content (font-family,
+   font-size, line-height, letter-spacing, text-align, overflow-wrap)
+   so this layer lays out identically to the transparent measurement
+   text in the parent — identical layout is what lets the fit measure
+   the plain text and have the result hold for the visible copy.
+
+   Color is set HERE (not inherited) to override the parent's
+   transparent color. inset: 0 fills the parent's box. */
+.wall-spanlayer {
+  position: absolute;
+  inset: 0;
+  color: var(--ink-dim);
+}
+
+/* ZONE WRAPPERS — four nested children of .wall-spanlayer, the
+   innermost of which contains the text. Pure event-routing targets:
+   each is one hover primitive's rootEl, so synthetic events dispatched
+   to a zone fire exactly that primitive's listeners while all four
+   primitives share the same spans (any zone's TreeWalker reaches them).
+   See wallPanel.js's ZONE ROUTING for the full reasoning.
+
+   display: contents — the wrappers generate no boxes, so the text lays
+   out exactly as if the spans were direct children of .wall-spanlayer.
+   No other styling belongs here: a zone with a box would change text
+   layout and break the measurement-layer equivalence above. */
+.wall-zone {
+  display: contents;
+}

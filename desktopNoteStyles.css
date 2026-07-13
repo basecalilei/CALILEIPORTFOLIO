@@ -1,0 +1,104 @@
+/* =============================================================================
+   desktopNoteStyles.css — styles for the "note" FILE TYPE
+   -----------------------------------------------------------------------------
+   Two concerns:
+     1. The ICON glyph — sized to fit the panel's .desktop-icon-inner slot
+        (56×48), using currentColor so the panel's tint rules (warm
+        off-white at rest, --accent during drop-candidate) apply uniformly.
+     2. The TEXTAREA inside the window — a cream "paper" surface with
+        monospace ink, evoking real Windows Notepad inside the dark
+        frosted window chrome. The light interior reads as a deliberate
+        "document" affordance against the desktop's warm-dark surface.
+
+   CLASSES THIS FILE EMITS
+     .desktop-note-glyph        — the icon's SVG wrapper (sized to slot)
+     .desktop-note-area         — the <textarea> inside the window
+
+   COUPLED WITH desktopNote.js (emits these classes) and desktopStyles.css
+   (owns the surrounding .desktop-icon / .desktop-window chrome).
+   ========================================================================== */
+
+/* =============================================================================
+   ICON — the page-with-lines glyph inside .desktop-icon-inner (56×48)
+   ========================================================================== */
+
+.desktop-note-glyph {
+  width: 36px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-note-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   WINDOW INTERIOR — the textarea ("notepad paper")
+   -----------------------------------------------------------------------------
+   A near-black surface with near-white text inside the light frosted
+   window. The dark interior reads as a "terminal" or "code editor"
+   pane against the cool grey desktop — the window chrome is the
+   computer's frame, the textarea is the actual document.
+
+   The fill carries a very slight cool tilt (b > r) to match the cool
+   grey desktop's tone; the foreground is a slightly cool near-white
+   for the same reason. The contrast is strong but not pure #000 / #fff,
+   which would feel harsh next to the project's softer palette.
+   ========================================================================== */
+
+.desktop-note-area {
+  /* Fill the window's content area completely. The panel's resize
+     logic adjusts the window box; this textarea adapts via 100% sizing. */
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+
+  /* Near-black with a faint cool tilt (b > r) so it sits cohesively
+     against the cool grey desktop. Slightly transparent so a hint of
+     the frosted glass behind shows through on the edges, preserving
+     the "inside a frame" feel rather than reading as an opaque slab. */
+  background: rgba(16, 16, 18, 0.96);
+  color: rgba(245, 245, 248, 1.0);
+  border: none;
+  outline: none;            /* native focus ring would clash with the
+                               window chrome; the window itself reads
+                               as focused via its z-stack position. */
+  padding: 14px 16px;
+
+  /* Font: "Glitched Book" — the project's body family (same one <body>
+     and .turn-info-text inherit). Keeps the notepad's text aesthetically
+     uniform with the rest of the showcase. */
+  font-family: "Glitched Book", sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  letter-spacing: 0;
+
+  /* Plain textarea behaviour: wrap soft, scroll vertically when full,
+     don't allow user-resize via the corner grip (the WINDOW resizes,
+     not the textarea). */
+  resize: none;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  /* Hide the native scrollbar to match the project's hidden-bar
+     convention (turn-info-scroll uses the same pattern). The textarea
+     still scrolls; the bar just isn't drawn. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.desktop-note-area::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+/* Selection highlight inside the notepad — use --accent at higher alpha
+   so it's visible against the dark background. Without this, the browser
+   default (blue) would also be jarring against the near-black surface.
+   Selected text stays light so it reads cleanly over the accent fill. */
+.desktop-note-area::selection {
+  background: rgba(199, 93, 52, 0.5);    /* --accent at mid alpha */
+  color: rgba(245, 245, 248, 1.0);
+}

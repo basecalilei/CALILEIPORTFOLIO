@@ -1,0 +1,321 @@
+/* =============================================================================
+   desktopVideoStyles.css — styles for the "video" FILE TYPE
+   -----------------------------------------------------------------------------
+   Three concerns:
+     1. The ICON glyph — play-triangle-in-rounded-rectangle, sized to
+        fit the panel's .desktop-icon-inner slot. Same convention as
+        the folder, note, and audio glyphs. UNCHANGED from prior.
+
+     2. The WINDOW CONTENT — a vertical stack:
+          .desktop-video-wrap
+            ├── .desktop-video-strip   (4px four-color brand signature)
+            └── .desktop-video-stage   (the video, with HUD overlays)
+
+     3. The HUD OVERLAYS — four corner registration marks (hairline L
+        shapes) and two corner readouts (Hornet Display). The state pip
+        in the left readout is color-coded via data-state attribute,
+        mapped to the project's brand primaries.
+
+   STYLING STRATEGY
+     The native <video controls> bar is retained — restyling native
+     media controls cross-browser is a deep rabbit hole that doesn't
+     earn its keep here (same rationale as desktopAudio). Brand
+     identity is expressed in the framing around the video: the strip
+     at the top of the content area, the registration marks treating
+     the frame as a measured viewport, and the small instrumentation-
+     style readouts in the top corners. The bottom registration marks
+     get partially obscured by the native controls when they're
+     visible — acceptable graceful degradation; the marks are part of
+     the "instrument frame" you see while watching, the controls come
+     forward when summoned.
+
+   CLASSES THIS FILE EMITS
+     .desktop-video-glyph              — icon SVG wrapper
+     .desktop-video-glyph svg          — fills the wrapper
+     .desktop-video-wrap               — outer flex column
+     .desktop-video-strip              — the four-color brand strip
+     .desktop-video-strip-{r,y,g,b}    — its four colored cells
+     .desktop-video-stage              — relative container, holds video + HUD
+     .desktop-video-player             — the <video> element
+     .desktop-video-regmark            — corner registration L
+     .desktop-video-regmark.{tl,tr,bl,br} — positioning variants
+     .desktop-video-hud                — corner HUD readout container
+     .desktop-video-hud.{left,right}   — positioning variants
+     .desktop-video-hud-label          — the Hornet-Display readout text
+     .desktop-video-pip                — color-coded state dot (data-state)
+
+   COUPLED WITH
+     - desktopVideo.js (emits these classes; the BRAND_STRIP_PX constant
+       there MUST match the flex-basis on .desktop-video-strip below).
+     - desktopStyles.css (owns the surrounding .desktop-icon /
+       .desktop-window chrome).
+     - infiniteStyles.css (provides --brand-* tokens, --ease).
+   ========================================================================== */
+
+/* =============================================================================
+   ICON — the play-triangle-in-screen glyph inside .desktop-icon-inner
+   -----------------------------------------------------------------------------
+   40×32 in CSS pixels — same dimensions as the audio glyph, so audio
+   and video icons read as a visual pair in a row of file icons.
+   ========================================================================== */
+
+.desktop-video-glyph {
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-video-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   WRAP — outer flex column filling .desktop-window-content
+   -----------------------------------------------------------------------------
+   Two children, stacked vertically: the brand strip (fixed 4px) and
+   the stage (takes the remaining space). The wrap's black background
+   fills any letterbox area around the video — the .desktop-video-player
+   below is transparent, so the wrap's color shows through wherever the
+   video's object-fit: contain doesn't reach.
+   ========================================================================== */
+
+.desktop-video-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.92);   /* canonical "video letterbox" black */
+}
+
+/* =============================================================================
+   BRAND STRIP — four-color signature
+   -----------------------------------------------------------------------------
+   Four equal cells in a flex row, each 1fr, in the canonical order
+   red / yellow / green / blue. 4px tall — the BRAND_STRIP_PX constant
+   in desktopVideo.js MUST match this value (it's added to the height
+   passed to fitToContent so the visible video keeps its natural aspect).
+   ========================================================================== */
+
+.desktop-video-strip {
+  flex: 0 0 4px;
+  display: flex;
+}
+.desktop-video-strip > div { flex: 1; }
+.desktop-video-strip-r { background: var(--brand-red); }
+.desktop-video-strip-y { background: var(--brand-yellow); }
+.desktop-video-strip-g { background: var(--brand-green); }
+.desktop-video-strip-b { background: var(--brand-blue); }
+
+/* =============================================================================
+   STAGE — relative container holding the video and HUD overlays
+   -----------------------------------------------------------------------------
+   position: relative establishes the containing block for the absolute-
+   positioned HUD elements below.
+
+   padding-top: 32px reserves the dark HUD band ABOVE the video — the
+   top corner readouts and top registration marks sit inside this band
+   so they never overlap the video content itself. The value MUST
+   match HUD_BAND_PX in desktopVideo.js (which adds HUD_BAND_PX to the
+   height passed to fitToContent so the visible video area stays at
+   natural aspect after the top band takes its share).
+
+   No padding-bottom: the native control bar at the bottom of the
+   <video> element provides the symmetric dark visual weight at the
+   bottom — sized by the browser to hold the play button, scrubber,
+   time, volume, fullscreen, and overflow menu. The video extends to
+   the bottom of the stage; native controls render at the bottom of
+   the video. The bottom registration marks (bottom: 10px) sit inside
+   that native control bar — partially visible at the corners where
+   the bar's gradient is most translucent, mostly obscured by the
+   controls themselves. Acceptable graceful degradation; the marks are
+   part of the framing seen while watching, the controls take
+   precedence when summoned.
+
+   The video element's box-sizing: border-box makes its width/height
+   100% target the stage's inner area (excluding the top padding), so
+   the video fills everything below the top band. The HUD overlays and
+   top reg marks position from the stage's outer edges (including
+   padding), so they land in the top band as intended.
+
+   min-height: 0 is needed because this is a flex item that must shrink
+   below its content's intrinsic height (the video's natural size).
+   Without it, the stage refuses to shrink and the wrap overflows the
+   window content area when the user manually resizes downward.
+
+   user-select: none prevents a drag-select on the window chrome from
+   spilling into the video and creating a phantom selection rectangle.
+   Native controls inside still receive clicks normally because the
+   <video> element ignores user-select for its own UI.
+   ========================================================================== */
+
+.desktop-video-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-top: 32px;           /* top HUD band — must match HUD_BAND_PX */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.desktop-video-player {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: transparent;     /* wrap fills with black; don't repeat */
+}
+
+/* =============================================================================
+   HUD — registration marks and corner readouts
+   -----------------------------------------------------------------------------
+   All HUD elements are pointer-events: none so they never interfere
+   with the native video controls underneath. Bottom registration marks
+   may be partially obscured when the native control bar is visible;
+   acceptable graceful degradation (marks are framing for the viewing
+   state, controls take precedence when summoned).
+   ========================================================================== */
+
+/* ---------- registration marks ----------
+   Hairline L-shape at each corner of the stage. 18px positioning box,
+   12px arms, 1px stroke, white at 55% opacity. Two pseudo-elements
+   share the corner origin — horizontal arm (::before) + vertical arm
+   (::after). The corner classes (.tl/.tr/.bl/.br) anchor the box to
+   the appropriate stage corner and reverse the pseudo-element edges
+   so the L opens toward the center of the frame regardless of which
+   corner it's in. */
+.desktop-video-regmark {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  pointer-events: none;
+}
+.desktop-video-regmark::before,
+.desktop-video-regmark::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 255, 255, 0.55);
+}
+.desktop-video-regmark::before { width: 12px; height: 1px; }   /* horizontal arm */
+.desktop-video-regmark::after  { height: 12px; width: 1px; }   /* vertical arm */
+
+.desktop-video-regmark.tl { top:    10px; left:  10px; }
+.desktop-video-regmark.tl::before,
+.desktop-video-regmark.tl::after  { top:    0; left:  0; }
+
+.desktop-video-regmark.tr { top:    10px; right: 10px; }
+.desktop-video-regmark.tr::before,
+.desktop-video-regmark.tr::after  { top:    0; right: 0; }
+
+.desktop-video-regmark.bl { bottom: 10px; left:  10px; }
+.desktop-video-regmark.bl::before,
+.desktop-video-regmark.bl::after  { bottom: 0; left:  0; }
+
+.desktop-video-regmark.br { bottom: 10px; right: 10px; }
+.desktop-video-regmark.br::before,
+.desktop-video-regmark.br::after  { bottom: 0; right: 0; }
+
+/* ---------- corner readouts ----------
+   Two HUD readouts in the top corners. Hornet Display, ~10px,
+   uppercase, letter-spaced. text-shadow handles legibility against
+   most video content; very bright/white footage may wash out the
+   readouts — open visual call whether to add a backdrop layer.
+
+   Inset from the stage edge (left/right 36px) to clear the
+   registration marks at the top corners.
+
+   gap: 7px between the pip and the label in the left HUD; the right
+   HUD has only one child so the gap is unused there. */
+.desktop-video-hud {
+  position: absolute;
+  top: 14px;
+  font-family: "Hornet Display", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+}
+.desktop-video-hud.left  { left:  36px; }
+.desktop-video-hud.right { right: 36px; }
+
+/* ---------- state pip ----------
+   Color-coded dot in the left HUD. data-state on the pip element
+   selects the color from the brand primaries; desktopVideo.js writes
+   the attribute from playback event listeners.
+
+     loading / ready  → blue   (info; default)
+     playing          → green  (go)
+     paused           → yellow (caution)
+     error            → red    (warn)
+
+   The default rule below covers loading + ready + any unknown state,
+   so a missing or unexpected value still reads. Transition is on the
+   color and the glow shadow only — no size/position changes — so the
+   state shift is a soft pulse rather than a jump.
+   ========================================================================== */
+.desktop-video-pip {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background:  var(--brand-blue);
+  box-shadow: 0 0 8px var(--brand-blue);
+  transition:
+    background 0.2s var(--ease),
+    box-shadow 0.2s var(--ease);
+}
+.desktop-video-pip[data-state="playing"] {
+  background:  var(--brand-green);
+  box-shadow: 0 0 8px var(--brand-green);
+}
+.desktop-video-pip[data-state="paused"] {
+  background:  var(--brand-yellow);
+  box-shadow: 0 0 8px var(--brand-yellow);
+}
+.desktop-video-pip[data-state="error"] {
+  background:  var(--brand-red);
+  box-shadow: 0 0 8px var(--brand-red);
+}
+
+/* =============================================================================
+   CURSOR — joining the --cursor protocol over the native controls
+   -----------------------------------------------------------------------------
+   Same situation and same fix as desktopAudio (see the parallel section
+   there for the full mechanics): the native control bar lives in the UA
+   shadow DOM, events retarget to the host (so cursor.js shows the
+   crosshair), while the browser's internal stylesheet puts pointer on the
+   buttons (so the native hand shows too). Two cursors at once.
+
+   --cursor: pointer on the player is doubly honest for video: beyond the
+   control bar, clicking anywhere on the frame toggles play/pause in Chrome,
+   so the whole element is a click target. The pseudo-element piercing kills
+   the native hand on the shadow internals; !important overrides the
+   browser's own stylesheet (the one place in the project it's warranted).
+   Chrome/Blink-specific, matching the preview workflow; elsewhere the rule
+   is inert and the doubled cursor persists over controls only.
+   ========================================================================== */
+
+.desktop-video-player {
+  --cursor: pointer;
+}
+
+.desktop-video-player::-webkit-media-controls,
+.desktop-video-player::-webkit-media-controls-enclosure,
+.desktop-video-player::-webkit-media-controls-panel,
+.desktop-video-player::-webkit-media-controls-overlay-play-button,
+.desktop-video-player::-webkit-media-controls-play-button,
+.desktop-video-player::-webkit-media-controls-timeline,
+.desktop-video-player::-webkit-media-controls-current-time-display,
+.desktop-video-player::-webkit-media-controls-time-remaining-display,
+.desktop-video-player::-webkit-media-controls-mute-button,
+.desktop-video-player::-webkit-media-controls-volume-slider,
+.desktop-video-player::-webkit-media-controls-fullscreen-button,
+.desktop-video-player::-webkit-media-controls-toggle-closed-captions-button {
+  cursor: none !important;
+}

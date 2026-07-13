@@ -1,0 +1,84 @@
+/* =============================================================================
+   desktopImageStyles.css — styles for the "image" FILE TYPE
+   -----------------------------------------------------------------------------
+   Two concerns:
+     1. The THUMBNAIL inside the icon — a small framed preview that reads
+        as "a picture file" (cropped to fit the 56×48 slot, hairline
+        outline like the project's frosted vocabulary).
+     2. The VIEWER inside the window — the image filling the content
+        area, letterboxed to preserve aspect even before fitToContent
+        resizes the window.
+
+   The icon's outer wrapper (.desktop-icon--image) and the window's
+   outer wrapper (.desktop-window--image) are owned by desktopPanel.js;
+   we style only the image-specific interior.
+
+   CLASSES THIS FILE EMITS
+     .desktop-image-thumb         — the icon's thumbnail wrapper
+     .desktop-image-thumb img     — the actual <img> inside the wrapper
+     .desktop-image-view          — the <img> inside the window
+
+   COUPLED WITH desktopImage.js (emits these classes) and desktopStyles.css
+   (owns the surrounding .desktop-icon / .desktop-window chrome).
+   ========================================================================== */
+
+/* =============================================================================
+   THUMBNAIL — the preview inside .desktop-icon-inner (56×48 slot)
+   -----------------------------------------------------------------------------
+   A 1px dark hairline border plus a tight inset makes the thumbnail read
+   as a "framed preview" rather than a borderless image. The border tone
+   matches the desktop's dark-on-light wireframe vocabulary.
+   ========================================================================== */
+
+.desktop-image-thumb {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: hidden;
+  border-radius: 3px;                       /* tight corners — "computer file" */
+  border: 1px solid rgba(28, 24, 19, 0.18);
+  background: rgba(28, 24, 19, 0.05);       /* fallback colour while loading */
+}
+
+.desktop-image-thumb img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;                        /* fill slot without distortion */
+  /* Slight desaturation makes thumbnails harmonise with the surrounding
+     warm-light palette; full saturation comes back when the user opens
+     the viewer and the image is the focus. */
+  filter: saturate(0.92);
+  transition: filter 0.2s var(--ease);
+}
+
+/* Hover state on the icon: thumbnail snaps back to full saturation, like
+   a small "wake up" cue. */
+.desktop-icon--image:hover .desktop-image-thumb img,
+.desktop-icon--image.is-dragging .desktop-image-thumb img {
+  filter: saturate(1);
+}
+
+/* =============================================================================
+   VIEWER — the image inside .desktop-window-content
+   -----------------------------------------------------------------------------
+   The image fills the window content area. object-fit: contain
+   letterboxes (instead of cropping) so the entire image is always
+   visible — appropriate for an "image viewer" use case. After
+   fitToContent resizes the window to match the image's natural aspect,
+   the letterboxing collapses to zero in practice; before that (or if
+   the user manually resized), the letterbox preserves the image.
+   ========================================================================== */
+
+.desktop-image-view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* The content area's background shows through any letterboxed gaps —
+     a barely-there dark tint reads as "viewer container" against the
+     frosted glass without competing with the image. */
+  background: rgba(28, 24, 19, 0.06);
+  user-select: none;
+  -webkit-user-select: none;
+}
