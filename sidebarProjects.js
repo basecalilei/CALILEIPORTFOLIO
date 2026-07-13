@@ -1184,7 +1184,7 @@ export const projectsView = {
       <h2 class="sidebar-projects-title">Project</h2>
       <div class="sidebar-projects-body">
         <p>
-          > My Recent projects indexed as project sheets.
+          > My recent work indexed as project sheets.
           <br> 
           <br>
           - Click a thumbnail to learn more about each project.
