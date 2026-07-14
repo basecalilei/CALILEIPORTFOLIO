@@ -1,0 +1,273 @@
+/* =============================================================================
+   desktopLockGateStyles.css — locked-item badge + the access-key prompt
+   -----------------------------------------------------------------------------
+   Two concerns, one lock system:
+
+   1. THE BADGE — .desktop-icon.is-locked::after. Pure CSS: desktopPanel
+      emits the class (from desktopLockGate's isLocked), this file owns
+      what the badge looks like — the same emit/consume split as
+      .is-clear and the taskbar. A small black padlock on a light beveled
+      chip (3px radius, matching the window buttons) at the icon's
+      top-right, over the glyph's corner. The chip is what keeps the
+      black lock legible over image thumbnails.
+
+   2. THE PROMPT — .desktop-lock. The shop gate's instrument grammar
+      (Hornet kicker, /> syntax prompt, hairline data-rule with an
+      activity register, brand-color status semantics) recomposed as a
+      CENTERED DIALOG CARD over the screen: frosted surface + hairline
+      (the sanctioned depth treatment, per visualLanguage.md), entering
+      with a small lift-and-settle instead of the menu's row unfold.
+
+   CLASSES
+     .desktop-icon.is-locked      emitted by desktopPanel; badge via ::after
+     .desktop-lock                the card; .is-open / .is-wrong / .is-correct
+     .desktop-lock-label          Hornet kicker ("// LOCKED.[NAME]")
+     .desktop-lock-field          /> prompt + input row
+     .desktop-lock-prompt         the /> glyph (driven-lamp glow while open)
+     .desktop-lock-input          the password field (native I-beam)
+     .desktop-lock-rule           hairline underline holding the register
+     .desktop-lock-scan           the register segment (snaps between states)
+     .desktop-lock-status         tiny state readout (rejected / granted)
+
+   COUPLED WITH desktopLockGate.js (emits the DOM + state classes),
+   desktopPanel.js (emits .is-locked on icons), desktopStyles.css (owns
+   .desktop-icon / .desktop-overlay.is-clear), infiniteStyles.css (theme
+   vars + --ease). Fonts per fonts.css.
+   ========================================================================== */
+
+/* =============================================================================
+   THE BADGE
+   -----------------------------------------------------------------------------
+   The icon element is 88×96 with the 56×48 glyph slot centered at the top,
+   so the glyph's right edge sits 16px in from the icon's. top/right below
+   park the chip on the glyph's top-right corner — nudge them if a future
+   icon type wants the badge elsewhere. pointer-events need no handling:
+   ::after is part of the icon's hit target, and a click on the badge IS a
+   click on the (locked) icon — which raises the prompt. Fitting.
+   ========================================================================== */
+
+.desktop-icon.is-locked::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  right: 11px;
+  width: 16px;
+  height: 16px;
+
+  background-color: rgba(255, 255, 255, 0.92);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 12'%3E%3Cpath d='M2 5V3.5a3 3 0 0 1 6 0V5h.75a.75.75 0 0 1 .75.75v5a.75.75 0 0 1-.75.75H1.25a.75.75 0 0 1-.75-.75v-5A.75.75 0 0 1 1.25 5H2zm1.4 0h3.2V3.5a1.6 1.6 0 0 0-3.2 0V5z' fill='%23000'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 9px 11px;
+
+  border: 1px solid var(--line);
+  border-radius: 3px;          /* the window buttons' bevel — one system */
+}
+
+/* =============================================================================
+   THE PROMPT CARD
+   -----------------------------------------------------------------------------
+   Centered in the screen. z:2000 clears the frame hairlines (1000) and any
+   realistic window z (windows count up from 1 per focus). The overlay's
+   whole-panel opacity fade governs it for free (it's a screen child), and
+   pointer-events ride the same .is-clear gate as icons/windows/taskbar —
+   the prompt can't catch clicks while the panel is assembling, and its
+   base is inert so a closed prompt never blocks the surface behind it.
+   ========================================================================== */
+
+.desktop-lock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2000;
+
+  width: min(340px, 78%);
+  padding: 1rem 1.1rem 0.85rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  /* Frosted transient surface + hairline — the sanctioned depth treatment. */
+  background: var(--sheet-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+
+  /* Closed at rest: invisible, inert, sitting 6px low. Opening lifts it
+     into place — a settle, not a zoom; dialogs that scale read as OS
+     chrome, and this is the site's own instrument. */
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-50% + 6px));
+  transition: opacity 0.26s var(--ease), transform 0.30s var(--ease);
+}
+
+.desktop-lock.is-open {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+
+/* Interactive only when open AND the panel is clear — same gate family as
+   icons, windows, and the taskbar. */
+.desktop-overlay.is-clear .desktop-lock.is-open {
+  pointer-events: auto;
+}
+
+/* --- kicker label ---------------------------------------------------------
+   The brand's signature move: small letter-spaced uppercase readout above
+   the field. Hornet is the instrument tier; dim by default. The gate JS
+   rewrites the text per item ("// LOCKED.[NAME]") and scrambles it in. */
+.desktop-lock-label {
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: var(--ink-dim);
+}
+
+/* --- prompt + input row --------------------------------------------------- */
+.desktop-lock-field {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.desktop-lock-prompt {
+  font-family: "Glitched", sans-serif;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--brand-blue);    /* information affordance */
+  user-select: none;
+}
+/* Driven-lamp glow while open — fast attack, slow decay, floored, never
+   fully off (per visualLanguage.md's carrier rules). 2.4s period chosen
+   incommensurate with the register's 3.2s cycle so the two ambients drift
+   rather than phase-lock (and incommensurate with the shop gate's 2.2s,
+   for the rare frame where both prompts are alive on screen). */
+.desktop-lock.is-open .desktop-lock-prompt {
+  animation: desktop-lock-glow 2.4s infinite;
+}
+
+.desktop-lock-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  /* Native I-beam: any non-none computed cursor suppresses the crosshair
+     and shows the UA text cursor — see cursor.js's --cursor protocol. */
+  cursor: text;
+  caret-color: var(--brand-blue);
+
+  font-family: "Glitched", sans-serif;
+  font-weight: 500;
+  font-size: 0.95rem;
+  letter-spacing: 0.22em;      /* wide tracking makes masked dots read technical */
+  color: var(--ink);
+}
+.desktop-lock-input::placeholder {
+  color: var(--ink-dim);
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+/* --- the rule + activity register ------------------------------------------
+   Hairline data-rule with a hard-edged brand segment that SNAPS between
+   hand-authored positions — the "instrument is live" ambient, same
+   mechanism as the shop gate's register (authored states, step-end holds,
+   uneven timing, opacity-0 transmission drops, red reserved for is-wrong).
+   Idle until open. */
+.desktop-lock-rule {
+  position: relative;
+  height: 1px;
+  width: 100%;
+  background: var(--line);
+  overflow: hidden;
+  transition: background 0.2s var(--ease);
+}
+.desktop-lock-scan {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  left: 5%;
+  width: 8%;
+  background: var(--brand-blue);
+  opacity: 0;
+  animation: desktop-lock-scan 3.2s step-end infinite;
+  animation-play-state: paused;             /* idle until open */
+}
+.desktop-lock.is-open .desktop-lock-scan { animation-play-state: running; }
+
+/* --- status readout -------------------------------------------------------
+   Reserves a line so nothing jumps. Wording is state-driven via ::before —
+   the JS only toggles classes; the copy lives here with the styling. */
+.desktop-lock-status {
+  min-height: 0.7rem;
+  font-family: "Hornet Display", sans-serif;
+  text-transform: uppercase;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+}
+.desktop-lock-status::before { content: ""; }
+.desktop-lock.is-wrong   .desktop-lock-status { opacity: 1; color: var(--brand-red); }
+.desktop-lock.is-wrong   .desktop-lock-status::before { content: "/ KEY.REJECTED"; }
+.desktop-lock.is-correct .desktop-lock-status { opacity: 1; color: var(--brand-green); }
+.desktop-lock.is-correct .desktop-lock-status::before { content: "/ ACCESS.GRANTED"; }
+
+/* --- wrong: warn red + shake the field ------------------------------------- */
+.desktop-lock.is-wrong .desktop-lock-rule   { background: var(--brand-red); }
+.desktop-lock.is-wrong .desktop-lock-scan   { display: none; }  /* clean warn read */
+.desktop-lock.is-wrong .desktop-lock-prompt { color: var(--brand-red); animation: none; }
+.desktop-lock.is-wrong .desktop-lock-field  { animation: desktop-lock-shake 0.36s var(--ease); }
+
+/* --- correct: go green ------------------------------------------------------ */
+.desktop-lock.is-correct .desktop-lock-rule   { background: var(--brand-green); }
+.desktop-lock.is-correct .desktop-lock-scan   { display: none; } /* register off mid-grant */
+.desktop-lock.is-correct .desktop-lock-prompt { color: var(--brand-green); animation: none; }
+
+/* --------------------------------------------------------------------------- */
+@keyframes desktop-lock-scan {
+  /* Hand-authored, uneven holds, back-and-forth positions, two opacity-0
+     transmission drops; starts on a gap so paused-at-0 shows nothing.
+     States differ from the shop gate's on purpose — two live instruments
+     shouldn't broadcast the same tape. */
+  0%   { opacity: 0; }
+  5%   { left: 5%;  width: 8%;  background: var(--brand-blue);   opacity: 1; }
+  15%  { left: 42%; width: 4%;  background: var(--brand-blue);   opacity: 1; }
+  22%  { left: 24%; width: 11%; background: var(--brand-green);  opacity: 1; }
+  31%  { opacity: 0; }
+  37%  { left: 70%; width: 6%;  background: var(--brand-blue);   opacity: 1; }
+  49%  { left: 55%; width: 9%;  background: var(--brand-yellow); opacity: 1; }
+  58%  { left: 86%; width: 5%;  background: var(--brand-blue);   opacity: 1; }
+  67%  { opacity: 0; }
+  74%  { left: 12%; width: 7%;  background: var(--brand-green);  opacity: 1; }
+  84%  { left: 34%; width: 5%;  background: var(--brand-blue);   opacity: 1; }
+  94%  { left: 63%; width: 10%; background: var(--brand-blue);   opacity: 1; }
+}
+@keyframes desktop-lock-glow {
+  /* Fast continuous attack, brief peak, exponential-ish release into a
+     0.35 floor — a driven lamp, not a metronome (visualLanguage.md). */
+  0%   { opacity: 0.35; animation-timing-function: ease-out; }
+  8%   { opacity: 1;    animation-timing-function: linear;   }
+  13%  { opacity: 1;    animation-timing-function: cubic-bezier(0.2, 0.55, 0.35, 1); }
+  100% { opacity: 0.35; }
+}
+@keyframes desktop-lock-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* Motion-reduction: keep the state changes, drop the perpetual motion. */
+@media (prefers-reduced-motion: reduce) {
+  .desktop-lock { transition: opacity 0.2s var(--ease); transform: translate(-50%, -50%); }
+  .desktop-lock.is-open .desktop-lock-prompt,
+  .desktop-lock-scan { animation: none; }
+}
