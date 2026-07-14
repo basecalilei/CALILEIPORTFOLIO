@@ -6,6 +6,10 @@
    to bring that window to the front.
 
    SCOPE
+     - A static identity section ("start button") at the left end —
+       //CALILEI.[DESKTOP], sectioned off from the slot list the way
+       the clock is on the right. Ornamental for now: no click
+       behavior, no state. See buildStartSection for the upgrade path.
      - One slot per open window (minimized windows included)
      - Slot label = item.name
      - The currently-focused (top-z VISIBLE) slot is visually highlighted
@@ -45,7 +49,8 @@
 
    COUPLED WITH
      - desktopPanel.js: imports subscribeWindowsChanged + focusWindowById.
-     - desktopTaskbarStyles.css: emits .desktop-taskbar, .desktop-taskbar-list,
+     - desktopTaskbarStyles.css: emits .desktop-taskbar, .desktop-taskbar-start,
+       .desktop-taskbar-start-mark, .desktop-taskbar-list,
        .desktop-taskbar-slot, .desktop-taskbar-slot--focused,
        .desktop-taskbar-slot--minimized, .desktop-taskbar-clock,
        .desktop-taskbar-clock-time, .desktop-taskbar-clock-date.
@@ -70,6 +75,16 @@ import { subscribeWindowsChanged, focusWindowById } from "./desktopPanel.js";
 export function buildTaskbar(state) {
   const bar = document.createElement("div");
   bar.className = "desktop-taskbar";
+
+  // The start section — the bar's left-end identity region, before the
+  // slot list, where an OS taskbar puts its start button. Purely
+  // ornamental for now: a static label, no click behavior, no reads or
+  // writes of state (even simpler than the clock — no timer). CSS keeps
+  // pointer-events off so it can't catch clicks. WHEN IT GROWS BEHAVIOR:
+  // swap the <div> for a <button type="button">, re-enable its
+  // pointer-events under the .is-clear gate, and route its action
+  // through a panel-exported function — same contract as the slots.
+  bar.appendChild(buildStartSection());
 
   const list = document.createElement("div");
   list.className = "desktop-taskbar-list";
@@ -175,6 +190,52 @@ function render(state, list) {
    teardown path ever appears, returning the interval ID from
    startClock and clearing it in a future dispose function is the move.
    --------------------------------------------------------------------------- */
+
+/* -----------------------------------------------------------------------------
+   START SECTION
+   -----------------------------------------------------------------------------
+   The left-end identity region — a sectioned-off zone of the bar
+   (mirroring the clock's treatment on the right) carrying the
+   //CALILEI.[DESKTOP] label: the syntax in the instrument voice
+   (Hornet) and CALILEI itself in the display voice (Gridnik Bold),
+   the bar's one wordmark moment, balancing the clock at the right end.
+   Static by design: a <div>, not a <button>, because it does nothing
+   yet and shouldn't advertise interactivity it doesn't have (hover
+   states, focus ring, cursor). The upgrade path is documented at the
+   call site in buildTaskbar.
+   --------------------------------------------------------------------------- */
+function buildStartSection() {
+  const el = document.createElement("div");
+  el.className = "desktop-taskbar-start";
+
+  // Two voices in one label. The syntax (`//`, `.[ ]`) is ornament and
+  // stays in the instrument face inherited from the section; CALILEI is
+  // the wordmark, so it gets its own span to carry Gridnik Bold (Tier 1
+  // display). Text nodes rather than innerHTML — no parsing, nothing to
+  // escape, and the structure is explicit.
+  //
+  // The label sits inside ONE wrapper span, which matters: the section is
+  // a flex container, and bare text nodes in a flex container become
+  // anonymous flex items — each face would get its own box and the two
+  // baselines would drift apart. Inside the wrapper it's ordinary inline
+  // text, so the browser aligns the baselines for free, and flex only has
+  // to center a single child.
+  const label = document.createElement("span");
+  label.className = "desktop-taskbar-start-label";
+
+  label.appendChild(document.createTextNode("//"));
+
+  const mark = document.createElement("span");
+  mark.className = "desktop-taskbar-start-mark";
+  mark.textContent = "CALILEI";
+  label.appendChild(mark);
+
+  label.appendChild(document.createTextNode(".[DESKTOP]"));
+
+  el.appendChild(label);
+
+  return el;
+}
 
 const TIME_FMT = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",

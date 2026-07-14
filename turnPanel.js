@@ -171,6 +171,7 @@ let modalScrim = null;
 let modalSheet = null;
 let modalBody = null;
 let modalCloseBtn = null;
+let modalScroll = null;
 let modalOpen = false;
 
 function ensureModal() {
@@ -192,7 +193,9 @@ function ensureModal() {
 
   // The scroll region sits INSIDE the sheet but BELOW the close button in
   // z-order — so the close stays pinned while content scrolls underneath.
-  const modalScroll = document.createElement("div");
+  // Module-scoped (not a local const) because openInfo() must reset its
+  // scrollTop on every open — see the note there.
+  modalScroll = document.createElement("div");
   modalScroll.className = "turn-info-scroll";
 
   modalBody = document.createElement("div");
@@ -218,6 +221,27 @@ function openInfo(html) {
   const justCreated = !modalScrim;
   ensureModal();
   modalBody.innerHTML = html || "";
+
+  // SCROLL RESET. The modal DOM is built ONCE in ensureModal() and reused by
+  // every panel — only modalBody's contents are swapped. Replacing innerHTML
+  // does not touch the parent scroller's scrollTop, so a reader who reached
+  // the bottom of entry 01 would open entry 02 already scrolled to the bottom.
+  //
+  // Reset on OPEN, not on close. Two reasons:
+  //   1. A closed sheet is still on screen for the length of its slide-out
+  //      transition, so resetting in closeInfo() would show the content
+  //      visibly snapping to the top as the sheet leaves.
+  //   2. Reset-on-open is an invariant ("the sheet always opens at the top")
+  //      rather than a cleanup step, so it survives any future code path that
+  //      opens the sheet without a close having run first.
+  //
+  // Safe to write while hidden: the closed scrim is position: fixed with the
+  // sheet merely translated off-screen (never display: none), so the scroller
+  // still has a layout box and scrollTop is settable here.
+  //
+  // The media rails inside the body need no reset — innerHTML rebuilds them
+  // as fresh nodes on every open, so they always start at 0.
+  modalScroll.scrollTop = 0;
 
   if (justCreated) {
     // FIRST-OPEN FIX: the modal DOM was created in this same synchronous

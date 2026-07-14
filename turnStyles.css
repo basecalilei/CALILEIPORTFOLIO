@@ -33,7 +33,19 @@
      .turn-info-body        — author's HTML container inside the scroll region
      .turn-info-kicker      — typography for use inside infoHtml (matches old build)
      .turn-info-heading     — typography for use inside infoHtml
+     .turn-info-spec        — typography for use inside infoHtml: the <dl> readout
+     .turn-info-spec-label  — typography for use inside infoHtml: a readout <dt>
+     .turn-info-spec-value  — typography for use inside infoHtml: a readout <dd>
      .turn-info-text        — typography for use inside infoHtml
+     .turn-info-line        — for use inside infoHtml: a "> " prompt beat
+     .turn-info-item        — for use inside infoHtml: a "- " reference item
+     .turn-info-rule        — for use inside infoHtml: <hr> section divider
+     .turn-info-layout      — for use inside infoHtml: two-column grid (main | media)
+     .turn-info-main        — for use inside infoHtml: the text column
+     .turn-info-media       — for use inside infoHtml: the image rail
+     .turn-info-media-scroll — for use inside infoHtml: the rail's inner scroller
+     .turn-info-media-item  — for use inside infoHtml: one <figure> in the rail
+     .turn-info-media-tag   — for use inside infoHtml: Hornet id tag under an image
 
    COUPLED WITH turnPanel.js (emits these classes) and infiniteStyles.css
    (provides .infinite-overlay base + theme vars).
@@ -316,10 +328,33 @@
   bottom: clamp(1rem, 4vw, 3rem);
   top: clamp(4rem, 12vh, 9rem);
 
-  /* The frosted glass — context-independent. The blur is what creates the
-     glass; the light neutral overlay is barely there, so it doesn't force a
-     white-card look on dark or colored backgrounds. */
-  background: rgba(255, 255, 255, 0.08);
+  /* The frosted glass. The blur + saturate is what makes it read as glass;
+     the WHITE FILL is what makes it readable.
+
+     This fill used to be 0.08 — barely there, chosen so the sheet wouldn't
+     force a white-card look on dark or colored backgrounds. The result was
+     the opposite of context-independent: with a near-transparent fill, the
+     scrim's ::before dim (32% black, painted BELOW the sheet and therefore
+     sampled by backdrop-filter) and whatever the three.js scene renders
+     behind it both bleed through, and the surface lands at mid-grey. The
+     ink ramp in :root is calibrated against --bg (#ffffff), so on mid-grey
+     --ink-dimmer vanishes, --ink-dim goes muddy, and --accent washes out.
+     Worse, the model behind the sheet MOVES — so the contrast under the
+     text drifts frame to frame. That's not a surface you can design type on.
+
+     At 0.72 the fill pins the luminance floor: the blur still samples the
+     scene (the glass still feels alive, and colored light behind still
+     tints it), but the text sits on a known bright ground regardless of
+     what's underneath. Tunable — 0.60 is the floor before the readout
+     labels start to swim again; above ~0.85 it stops reading as glass and
+     becomes an opaque card.
+
+     Note this is a LOCAL fill, not var(--sheet-bg). The sidebar, pdfModal,
+     projectModal and musicPlayer all consume that variable and none of
+     them carry long-form prose; they don't need this and shouldn't inherit
+     it. If a second reading surface ever appears, lift this into a shared
+     --reading-sheet-bg rather than copying the number a third time. */
+  background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(26px) saturate(160%);
   -webkit-backdrop-filter: blur(26px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.18);
@@ -412,15 +447,224 @@
   margin-bottom: 1.6rem;
   color: var(--ink-strong);
 }
+
+/* ---------- spec readout ----------
+   The hard facts (year, role, scope, stack, status) pulled out of the prose
+   and set as an instrument readout — Hornet, tracked, hairline-ruled. Prose
+   is the wrong container for a fact a reader wants to SCAN: burying
+   "2025—2026" mid-sentence makes them read a paragraph to answer a one-word
+   question. The site's voice is instrument readouts; a project's facts are
+   exactly that.
+
+   The <dt>/<dd> pairs are DIRECT grid children — no wrapper rows. The
+   two-column grid pairs them automatically, and the semantics are already
+   right: these ARE term/definition pairs. Two gotchas encoded below:
+     - <dd> carries a UA margin-inline-start (~40px) that must be zeroed,
+       or every value shears right off its label.
+     - label and value line-heights must MATCH (1.9), or the two columns
+       drift out of baseline alignment as soon as a value wraps to two
+       lines. They're separate grid items, not a shared line box.
+
+   max-width matches .turn-info-text's 60ch so the readout's rules and the
+   body copy share one measure — the block reads as a header to the prose
+   rather than a separate object floating at a different width. */
+.turn-info-spec {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 2.4rem;
+  row-gap: 0.45rem;
+  max-width: 60ch;
+  margin-bottom: 2.2rem;
+  padding-block: 1.1rem;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.turn-info-spec-label {
+  font-family: "Hornet Display", sans-serif;    /* Tier 3 — instrument readout */
+  font-size: 0.64rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  /* --ink-dim, NOT --ink-dimmer. The tertiary ink is built for de-emphasis
+     at size on a clean surface; at 0.64rem with 0.28em tracking it drops
+     under 3:1 even against pure white, and the label stops being a label.
+     The two-tier read (label recedes, value leads) survives fine on the
+     dim/primary pair. */
+  color: var(--ink-dim);
+  line-height: 1.9;
+}
+.turn-info-spec-value {
+  font-family: "Hornet Display", sans-serif;    /* Tier 3 — instrument readout */
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink);
+  line-height: 1.9;
+  margin: 0;                                    /* kill the UA <dd> indent */
+}
+
 .turn-info-text {
   max-width: 60ch;
   font-size: clamp(0.85rem, 1.5vw, 1rem);
   line-height: 1.85;
-  color: var(--ink-dim);
+  /* --ink, not --ink-dim. --ink-dim is the caption/secondary tier; this is
+     the sheet's PRIMARY content — five paragraphs the reader is expected to
+     actually read. Secondary ink on a frosted surface is what made the old
+     sheet feel unreadable even after the fill was fixed. */
+  color: var(--ink);
 }
 .turn-info-text p              { margin-bottom: 1.1rem; }
 .turn-info-text p:last-child   { margin-bottom: 0; }
 .turn-info-text a              { color: var(--accent); }
+
+/* ---------- prompt lines ----------
+   The sheet speaks in the panel's terminal voice ("> ROOTED IN SOIL"), so
+   body beats carry a "> " and reference items carry a "- ". Those marks are
+   FURNITURE, not content, and they live in CSS rather than in the copy for
+   three reasons:
+
+     1. HANGING INDENT. With a literal "> " typed into the text, a line that
+        wraps resumes underneath the mark — the prompt column collapses and
+        the paragraph goes ragged. padding-left + negative text-indent pulls
+        the first line back out to the margin and lets every wrapped line
+        align to the WORDS. This is the whole reason to do it in CSS.
+     2. The marks can then take --ink-dimmer and recede. Tertiary ink is
+        wrong for a label (see .turn-info-spec-label) but exactly right for
+        decoration: it should be present and quiet.
+     3. They stay out of the user's copy buffer and out of a screen reader's
+        mouth ("greater-than, greater-than, greater-than...").
+
+   Spacing lives here too, NOT in <br><br>. Two breaks inside a <p> produce a
+   gap of two line-heights (~3.7rem) between beats, while sibling <p>s are
+   only 1.1rem apart — which spaces beats WITHIN a section further apart than
+   the sections themselves and inverts the hierarchy. One beat, one <p>. */
+.turn-info-text .turn-info-line,
+.turn-info-text .turn-info-item {
+  padding-left: 1.5em;
+  text-indent: -1.5em;                          /* the hanging indent */
+  margin-bottom: 1.25rem;
+}
+.turn-info-text .turn-info-line::before {
+  content: "> ";
+  color: var(--ink-dimmer);
+}
+.turn-info-text .turn-info-item {
+  padding-left: 2.6em;                          /* items sit inboard of lines */
+  text-indent: -1.1em;
+  margin-bottom: 1.25rem;
+}
+.turn-info-text .turn-info-item::before {
+  content: "- ";
+  color: var(--ink-dimmer);
+}
+
+/* Section rule. Replaces a hand-typed run of underscores, which is a fixed
+   glyph count pretending to be a line: it wraps to a second row of junk at
+   narrow widths and gets read aloud character by character. A border does
+   the same job at any width and says nothing. */
+.turn-info-rule {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2.4rem 0;
+  max-width: 60ch;
+}
+
+/* Emphasis. MUST switch family: the body inherits "Glitched Book", which
+   ships a normal weight only (Book + BookItalic). Asking it for bold gets a
+   browser-SYNTHESIZED faux bold — the regular face smeared — which is
+   conspicuous on a face this distinctive. "Glitched" is the sibling family
+   that actually carries a Bold. Same design, real weight. */
+.turn-info-text strong {
+  font-family: "Glitched", sans-serif;
+  font-weight: bold;
+  color: var(--ink);
+}
+
+/* ---------- media rail ----------
+   Two-column layout for the sheet body: prose left at its 60ch measure,
+   a rail of selected grid images right. The rail exists because the sheet
+   spans the viewport while the text holds a reading measure — everything
+   right of 60ch was dead space for the entire scroll.
+
+   THE HEIGHT INVERSION (load-bearing). A naive grid makes the row as tall
+   as its tallest column — and a stack of portrait images beats the prose
+   easily, so the sheet kept scrolling long after the text had ended. The
+   fix is .turn-info-media-scroll: absolutely positioned (inset: 0) inside
+   the rail, which removes the images from the row-height calculation
+   entirely. The TEXT column alone sets the entry's height; the rail
+   stretches to match it (grid default align stretch) and scrolls its own
+   overflow internally. Wheel-over-the-rail scrolls the images; when they
+   run out, scrolling chains to the sheet — deliberate, don't add
+   overscroll-behavior: contain.
+
+   justify-content: space-between stays and covers the short case: if an
+   entry's images are SHORTER than its text, they distribute down the full
+   height instead of clustering at the top. (Safe with overflow: negative
+   free space makes space-between behave as flex-start, so excess scrolls
+   off the END. It's center/flex-end that create unreachable overflow.)
+
+   The scrollbar is hidden to match .turn-info-scroll, and the clip at the
+   rail's edges is HARD — no mask fade. An image cut mid-frame is already
+   an unambiguous "more below," and a soft gradient would be the only
+   blended edge in a design built entirely on hard cuts.
+
+   Images deliberately do NOT open the grid modal: that would need a JS
+   hook in turnPanel.js, and the rail's job is ambience, not navigation —
+   the VIEW.GRID button already owns that. The Hornet id tags under each
+   image (matching the grid captions) are the pointer instead. */
+.turn-info-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 60ch) minmax(0, 1fr);
+  column-gap: clamp(2.5rem, 6vw, 5.5rem);
+}
+.turn-info-media {
+  position: relative;                   /* anchor for the inner scroller */
+  min-width: 0;                         /* let grid shrink the rail, not overflow it */
+}
+.turn-info-media-scroll {
+  position: absolute;
+  inset: 0;                             /* fill the text-set height exactly */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  scrollbar-width: none;                /* bar hidden — the hard clip is the affordance */
+  -ms-overflow-style: none;
+}
+.turn-info-media-scroll::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.turn-info-media-item { margin: 0; }    /* kill the UA <figure> margins */
+.turn-info-media img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+.turn-info-media-tag {
+  font-family: "Hornet Display", sans-serif;   /* Tier 3 — instrument readout */
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 0.55rem;
+}
+
+/* Narrow: the rail can't sit beside 60ch of prose, so it becomes a two-up
+   grid BELOW the text — the images are supporting material, so text wins
+   the top of the sheet on mobile. The inner scroller MUST return to static
+   flow here: inside a relative parent with no intrinsic height, inset: 0
+   would collapse it to nothing and the images would vanish. */
+@media (max-width: 900px) {
+  .turn-info-layout { grid-template-columns: minmax(0, 1fr); }
+  .turn-info-media-scroll {
+    position: static;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 2.75rem;
+  }
+}
 .turn-info-text code {
   /* Inline code uses a system monospace stack rather than Glitched, because
      Glitched isn't a monospace family — and inline code reads more clearly

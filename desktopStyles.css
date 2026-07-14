@@ -41,7 +41,7 @@
    CLASSES THIS FILE EMITS
      .desktop-overlay          — full-viewport, --shift hook, opacity target
      .desktop-html-overlay     — scroll-tracking horizontal line behind screen
-     .desktop-screen           — 90vw × 90vh fixed-centered, holds the frame
+     .desktop-screen           — fixed-centered screen rect, holds the frame
      .desktop-frame--top/--bottom/--left/--right — the four wireframe lines
      .desktop-surface          — the desktop background + interaction gate
      .desktop-icon             — icon outer wrapper, positioning + drag state
@@ -54,7 +54,8 @@
      .desktop-window           — light frosted-glass window shell
      .desktop-window-header    — drag handle / title / close button row
      .desktop-window-title     — window title typography
-     .desktop-window-close     — × button
+     .desktop-window-minimize  — − button (beveled square)
+     .desktop-window-close     — × button (beveled square)
      .desktop-window-content   — interior content area (where children mount)
      .desktop-window-resize-handle — invisible drag zones for window resize
 
@@ -76,7 +77,9 @@
                                  indicator (a 1px line for now). Painted
                                  first so the screen hides it where they
                                  overlap.
-       .desktop-screen        — 90vw × 90vh, fixed-centered in viewport.
+       .desktop-screen        — the screen rect: viewport minus margins
+                                 that clear the fixed instruments,
+                                 centered (see THE SCREEN below).
                                  The four .desktop-frame lines + the
                                  .desktop-surface live here. The screen
                                  does NOT move with scroll — it stays put,
@@ -85,7 +88,7 @@
    Layout map at rest:
      overlay  ████████████████████████████  (full viewport)
        html      ━━━━━━━━━━━━━━━━━━━━━━━━   (line at centre, full width)
-       screen        ┌──────────────┐         (90% × 90%, centered, the four
+       screen        ┌──────────────┐         (screen rect, centered, the four
                      │  desktop     │           frame lines outline this rect,
                      │  contents    │           hiding the line where they
                      └──────────────┘           overlap)
@@ -147,13 +150,13 @@
 }
 
 /* =============================================================================
-   THE SCREEN — 90vw × 90vh, fixed-centered, hosts the frame + surface
+   THE SCREEN — fixed-centered screen rect, hosts the frame + surface
    -----------------------------------------------------------------------------
    The screen is a positioning + clipping container AND the occluder for
    the scroll-indicator line. The four .desktop-frame children outline
    it; the .desktop-surface fills the rectangle inside.
 
-   We keep overflow: hidden so dragged windows can't escape the 90% area,
+   We keep overflow: hidden so dragged windows can't escape the screen rect,
    and we declare the custom property defaults here because they need to
    inherit only to the screen subtree (NOT to the html-overlay sibling).
 
@@ -177,13 +180,35 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 90vw;
-  width: 90dvw;
-  height: 90vh;
-  height: 90dvh;
+  /* Symmetric margins with PIXEL FLOORS. A flat 5% margin per side is
+     proportional, but the instruments it has to clear are fixed-pixel and
+     all inset 1.4rem from the viewport edge:
+
+       x floor 7.5rem — the right-edge column: the sidebar trigger (MENU)
+         and the scrollIndicator strip, both locked to the published
+         --sidebar-trigger-width (84px), so the column occupies
+         1.4rem + 84px ≈ 106px in from the right.
+       y floor 6rem   — the musicPlayer pill in the bottom-right corner
+         (44px disc + padding + border + its 1.4rem inset ≈ 84px tall from
+         the viewport bottom). This is what keeps the taskbar clock, which
+         lives in the screen's bottom-right corner, out from under it.
+
+     max() means the 5% side wins on large viewports (the screen stays
+     proportional and the margins grow with the window); the floors win at
+     laptop sizes, where 5vw/5vh fall below the instruments' footprints.
+     The margins are applied symmetrically because the screen must stay
+     viewport-CENTERED: the collapsed wireframe has to align with the
+     page-level scroll line (.desktop-html-overlay) during the assembly.
+
+     Literal units rather than a custom property so the vw → dvw fallback
+     chain still works: a browser that doesn't parse dvw keeps the vw line. */
+  width:  calc(100vw  - 2 * max(5vw,  7.5rem));
+  width:  calc(100dvw - 2 * max(5dvw, 7.5rem));
+  height: calc(100vh  - 2 * max(5vh,  6rem));
+  height: calc(100dvh - 2 * max(5dvh, 6rem));
   transform: translate(-50%, -50%);
 
-  overflow: hidden;          /* clip the surface + windows to 90% bounds */
+  overflow: hidden;          /* clip the surface + windows to the screen rect */
 
   /* Matches the page background so this rectangle is invisible against
      the page while still occluding the scroll-line where they overlap.
@@ -309,7 +334,7 @@
    here would sample from inside the (empty) root rather than from the
    outer line — see the comment above.
 
-   Geometry: the surface fills the 90vw × 90vh .desktop-screen, which
+   Geometry: the surface fills the .desktop-screen rect, which
    is centered in the viewport. So `top: 50%` on this pseudo-element is
    at the surface's vertical centre, which equals viewport centre — the
    same y position as the outer .desktop-html-overlay shell. With the
@@ -561,7 +586,7 @@
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid rgba(28, 24, 19, 0.18);
-  border-radius: 12px;
+  border-radius: 3px;
   overflow: hidden;                       /* clip content to rounded corners */
 
   /* Elevation: a soft dark shadow that puts the window distinctly above
@@ -614,62 +639,72 @@
   pointer-events: none;     /* clicks on the title pass through to the header */
 }
 
+/* =============================================================================
+   THE WINDOW BUTTONS — minimize + close
+   -----------------------------------------------------------------------------
+   Beveled squares, not circles: the panel's language is rectangles and
+   hairlines (the wireframe, the screen, the windows, the taskbar's
+   sections), and a circle was the one round thing in it. 3px of radius
+   is enough to keep the corners from reading as sharp-cut without
+   rounding into a squircle.
+
+   The two buttons share everything except margin and hover, so the base
+   is grouped — the previous version duplicated the full rule twice and
+   the two copies had to be kept in sync by hand.
+
+   GLYPH CENTERING: `display: grid` + `place-items: center` centers the
+   text's content box in both axes, and `line-height: 1` collapses the
+   line box to the glyph so the font's ascent/descent can't push it off
+   center. The glyphs are &minus; and &times; (set in desktopPanel.js) —
+   both are drawn on the font's math axis, i.e. optically centered in
+   their own em box, so box-centering them lands them true. A hyphen
+   (-) or a lowercase x would NOT behave this way; if the glyphs ever
+   change, re-check the centering.
+   ========================================================================== */
+
+.desktop-window-minimize,
 .desktop-window-close {
-  flex: 0 0 24px;
-  width: 24px;
-  height: 24px;
-  font-size: 1.1rem;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+
+  display: grid;
+  place-items: center;
+  padding: 0;
+
+  font-size: 1rem;
   line-height: 1;
   color: rgba(28, 24, 19, 0.7);
+
   background: transparent;
   border: 1px solid rgba(28, 24, 19, 0.22);
-  border-radius: 50%;
+  border-radius: 3px;        /* the bevel. 0 = sharp corners; 2–4px is the
+                                usable range before it reads as a pill. */
+
   cursor: none; --cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
+
   transition:
     color 0.2s var(--ease),
     border-color 0.2s var(--ease),
     background 0.2s var(--ease);
 }
 
+/* Minimize sits just left of close in the header. */
+.desktop-window-minimize {
+  margin-right: 0.3rem;
+}
+
+/* Close hovers to the accent orange because it's destructive — the
+   "heads up, this dismisses the window" signal. */
 .desktop-window-close:hover {
   color: #fff;
   border-color: var(--accent);
   background: var(--accent);
 }
 
-/* Minimize button — visually paired with the close button (same size,
-   shape, and rest-state border so they read as a button cluster) but
-   with a deliberately different hover. Close hovers to the accent
-   orange because it's destructive — that's the "heads up, this dismisses
-   the window" signal. Minimize is reversible (one taskbar click brings
-   it back), so it gets a neutral ink-tint hover that says "interactive"
-   without saying "warning." Sits just left of close in the header. */
-.desktop-window-minimize {
-  flex: 0 0 24px;
-  width: 24px;
-  height: 24px;
-  margin-right: 0.3rem;
-  font-size: 1.1rem;
-  line-height: 1;
-  color: rgba(28, 24, 19, 0.7);
-  background: transparent;
-  border: 1px solid rgba(28, 24, 19, 0.22);
-  border-radius: 50%;
-  cursor: none; --cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  transition:
-    color 0.2s var(--ease),
-    border-color 0.2s var(--ease),
-    background 0.2s var(--ease);
-}
-
+/* Minimize is reversible (one taskbar click brings it back), so it gets
+   a neutral ink-tint hover that says "interactive" without saying
+   "warning." */
 .desktop-window-minimize:hover {
   color: rgba(28, 24, 19, 1);
   border-color: rgba(28, 24, 19, 0.45);

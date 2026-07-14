@@ -74,6 +74,7 @@
 import { registerPanelType, registerWeight, isClearToEnter } from "./infiniteScroll.js";
 import { makeDraggable } from "./desktopDraggable.js";
 import { buildTaskbar } from "./desktopTaskbar.js";
+import { isLocked, requestUnlock } from "./desktopLockGate.js";
 
 /* -----------------------------------------------------------------------------
    FILE-TYPE SUB-REGISTRY
@@ -345,6 +346,13 @@ function buildIconEl(state, item) {
   label.textContent = item.name;
   el.appendChild(label);
 
+  // Locked marker. The panel only emits the class; the badge itself is
+  // pure CSS in desktopLockGateStyles.css (::after) — the same
+  // emit/consume split as .is-clear and the taskbar. isLocked comes from
+  // the gate module so badge and open-intercept can't disagree on what
+  // "locked" means (locked: true without a password is NOT locked).
+  el.classList.toggle("is-locked", isLocked(item));
+
   wireIconInteraction(state, item, el);
 
   // Store the live DOM reference on the item. Lets callers find an
@@ -408,6 +416,14 @@ function wireIconInteraction(state, item, el) {
 
   makeDraggable(el, {
     onClick: () => {
+      // Locked items route through the gate instead of opening. Drag is
+      // deliberately NOT intercepted — the lock guards opening, not
+      // arranging. On a correct key the gate unlocks the live item
+      // (session-only) and calls back here to open it.
+      if (isLocked(item)) {
+        requestUnlock(state, item, () => openWindowFor(state, item));
+        return;
+      }
       openWindowFor(state, item);
     },
 
@@ -853,7 +869,31 @@ export function focusWindowById(state, itemId) {
    panel for folder windows (recursive icons) and by the file-type for
    file windows.
    --------------------------------------------------------------------------- */
-function openWindowFor(state, item) {
+/* -----------------------------------------------------------------------------
+   Default window size for an item — the file type's declared defaultWindow,
+   or the panel's own defaults (folders have no file type). Shared by
+   openWindowFor's geometry resolution and the openOnLoad pass in init
+   (which needs the effective size for edge clamping before the window
+   exists).
+   --------------------------------------------------------------------------- */
+function defaultWindowSize(item) {
+  if (item.type === "folder") return { w: WIN_DEFAULT_W, h: WIN_DEFAULT_H };
+  const ft = getFileType(item.type);
+  return {
+    w: ft?.defaultWindow?.width  ?? WIN_DEFAULT_W,
+    h: ft?.defaultWindow?.height ?? WIN_DEFAULT_H,
+  };
+}
+
+function openWindowFor(state, item, authored = null) {
+  // `authored` is optional pixel geometry ({ x?, y?, w?, h? }) from an
+  // openOnLoad spec, resolved by init's openOnLoad pass. It slots into
+  // the precedence chain BELOW windowState: in practice windowState is
+  // always null when this path runs (the pass fires once, at init,
+  // before any user interaction), but keeping windowState first means
+  // the precedence reads the same everywhere — the user's session
+  // layout always wins.
+
   // Idempotent: if a window for this item is already open, restore it
   // from minimized (if it was) and bring it to the front.
   const existing = state.windows.get(item.id);
@@ -865,22 +905,15 @@ function openWindowFor(state, item) {
 
   // Determine initial size + position. Persisted windowState wins if
   // present (preserves user's last layout for this item this session).
-  let w, h;
-  if (item.type === "folder") {
-    w = item.windowState?.w ?? WIN_DEFAULT_W;
-    h = item.windowState?.h ?? WIN_DEFAULT_H;
-  } else {
-    const ft = getFileType(item.type);
-    const defW = ft?.defaultWindow?.width  ?? WIN_DEFAULT_W;
-    const defH = ft?.defaultWindow?.height ?? WIN_DEFAULT_H;
-    w = item.windowState?.w ?? defW;
-    h = item.windowState?.h ?? defH;
-  }
+  const def = defaultWindowSize(item);
+  const w = item.windowState?.w ?? authored?.w ?? def.w;
+  const h = item.windowState?.h ?? authored?.h ?? def.h;
 
-  // Position: persisted state wins, else stagger from a fresh slot.
+  // Position: persisted state wins, else authored, else stagger from a
+  // fresh slot.
   const slot = state.windows.size;
-  const x = item.windowState?.x ?? (40 + slot * WIN_STACK_OFFSET);
-  const y = item.windowState?.y ?? (40 + slot * WIN_STACK_OFFSET);
+  const x = item.windowState?.x ?? authored?.x ?? (40 + slot * WIN_STACK_OFFSET);
+  const y = item.windowState?.y ?? authored?.y ?? (40 + slot * WIN_STACK_OFFSET);
 
   const el = document.createElement("div");
   el.className = `desktop-window desktop-window--${item.type}`;
@@ -914,7 +947,12 @@ function openWindowFor(state, item) {
   //
   // userResized is persisted across open/close in windowState — once the
   // user has resized the window, file-types' fitToContent calls become
-  // no-ops so re-opening doesn't reset their custom shape.
+  // no-ops so re-opening doesn't reset their custom shape. An AUTHORED
+  // size (openOnLoad w/h) counts as resized for the same reason: the
+  // author chose that shape, so fit-to-aspect types (image, video)
+  // shouldn't snap away from it on load. Authored position alone does
+  // not set it — fit behavior stays intact when only x/y are given.
+  const authoredSize = authored?.w != null || authored?.h != null;
   //
   // The three on*Fns arrays hold lifecycle callbacks registered by the
   // file-type via the narrow handle exposed in populateFileWindow
@@ -927,7 +965,7 @@ function openWindowFor(state, item) {
     el, header, content,
     x, y, w, h,
     zIndex: 0,
-    userResized: item.windowState?.userResized || false,
+    userResized: item.windowState?.userResized || authoredSize,
     // Visible by default. minimizeWindow sets true (visibility: hidden
     // via .is-minimized class); restoreWindow sets back to false. New
     // windows always open visible — minimize is a user action only.
@@ -1473,7 +1511,10 @@ function fitWindowToContent(state, win, naturalW, naturalH) {
        ├── .desktop-html-overlay  — consumes --shift; visible scroll
                                     indicator. For now, a horizontal line.
                                     Sits BEHIND the screen in DOM order.
-       └── .desktop-screen        — 90vw × 90vh, centered, fixed in viewport.
+       └── .desktop-screen        — the screen rect: viewport minus margins
+                                    that clear the fixed instruments (the
+                                    MENU trigger / scroll strip on the right,
+                                    the music player bottom-right), centered.
                                     Hosts the four wireframe frame lines,
                                     .desktop-surface, and (at rest) all of
                                     the icons + windows. The custom
@@ -1592,11 +1633,15 @@ registerPanelType("desktop", {
 
     // Initial top-level icon layout. Surface dimensions may be 0 if the
     // overlay hasn't laid out yet (e.g., when init runs before the first
-    // paint). Fallback uses 90% of viewport because that's the actual
-    // size of the screen (set in CSS); using 100% would push icons past
-    // the right/bottom edges of the visible surface.
-    const surfaceW = surface.clientWidth  || window.innerWidth  * 0.9;
-    const surfaceH = surface.clientHeight || window.innerHeight * 0.9;
+    // paint). The screen box in desktopStyles.css is the source of truth
+    // for the real size (viewport minus instrument-clearing margins, which
+    // have pixel floors and so aren't a fixed fraction of the viewport).
+    // This fallback is a deliberately CONSERVATIVE approximation of it:
+    // undershooting is safe (icons land inside the real surface and the
+    // first measured layout corrects them), overshooting would push them
+    // past the right/bottom edges of the visible surface.
+    const surfaceW = surface.clientWidth  || window.innerWidth  * 0.8;
+    const surfaceH = surface.clientHeight || window.innerHeight * 0.8;
 
     const topLevel = childrenOf(state, "desktop");
     autoLayoutIcons(topLevel, surfaceW, surfaceH);
@@ -1605,6 +1650,72 @@ registerPanelType("desktop", {
       const el = buildIconEl(state, item);
       surface.appendChild(el);
     });
+
+    // AUTHORED-OPEN WINDOWS (openOnLoad)
+    // Items authored with `openOnLoad` start with their window already
+    // open — the greeting-note case. Any item qualifies, nested ones
+    // included (windows don't require their parent folder to be open).
+    //
+    //   openOnLoad: true              — default size, stagger position
+    //   openOnLoad: { x, y }          — position as FRACTIONS 0..1 of the
+    //                                   surface (fractions stay meaningful
+    //                                   across the screen's viewport-
+    //                                   dependent size; pixels wouldn't)
+    //   openOnLoad: { x, y, w, h }    — plus explicit PIXEL size; counts
+    //                                   as user-resized so fitToContent
+    //                                   types (image, video) won't snap
+    //                                   away from the authored shape
+    //
+    // Deferred one frame: the fractions need the surface's real
+    // dimensions, and init can run before first layout. The icon pass
+    // above tolerates the zero-size fallback because auto-layout is
+    // approximate anyway; a greeting window landing in the wrong place
+    // is conspicuous, so this pass waits for layout and only falls back
+    // if the surface still hasn't sized (same conservative constants).
+    //
+    // Runs once per page load. Closing the window keeps it closed for
+    // the session; reload restores it — the authored-data model that
+    // governs everything else on the desktop.
+    // Locked items never auto-open — an authored openOnLoad on a locked
+    // item would bypass the gate it was also authored with; the lock wins.
+    const toOpen = [...state.items.values()]
+      .filter((it) => it.openOnLoad && !isLocked(it));
+    if (toOpen.length) {
+      requestAnimationFrame(() => {
+        const sw = surface.clientWidth  || window.innerWidth  * 0.8;
+        const sh = surface.clientHeight || window.innerHeight * 0.8;
+
+        toOpen.forEach((item) => {
+          const spec = item.openOnLoad;
+          let authored = null;
+
+          if (spec && typeof spec === "object") {
+            const w = Number.isFinite(spec.w) ? spec.w : null;
+            const h = Number.isFinite(spec.h) ? spec.h : null;
+
+            // Fractions → pixels, clamped so the window opens fully on
+            // the surface even when fraction + size would spill past an
+            // edge on a small viewport. Clamping uses the EFFECTIVE size
+            // (authored, else the type default) — that's what the window
+            // will actually open at.
+            const def = defaultWindowSize(item);
+            const effW = w ?? def.w;
+            const effH = h ?? def.h;
+
+            const x = Number.isFinite(spec.x)
+              ? Math.max(0, Math.min(spec.x * sw, sw - effW))
+              : null;
+            const y = Number.isFinite(spec.y)
+              ? Math.max(0, Math.min(spec.y * sh, sh - effH))
+              : null;
+
+            authored = { x, y, w, h };
+          }
+
+          openWindowFor(state, item, authored);
+        });
+      });
+    }
   },
 
   tick(index, overlay, _presence, _dist, dt /*, t */) {

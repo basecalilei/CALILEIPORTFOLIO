@@ -16,6 +16,9 @@
 
    CLASSES
      .desktop-taskbar           — outer bar, bottom of screen
+     .desktop-taskbar-start     — left-end identity section (static, non-interactive)
+     .desktop-taskbar-start-label — the label wrapper (one flex child)
+     .desktop-taskbar-start-mark  — CALILEI, the Gridnik Bold wordmark
      .desktop-taskbar-list      — slot row container (flex row)
      .desktop-taskbar-slot      — one slot per open window (a <button>)
      .desktop-taskbar-slot-label
@@ -39,16 +42,21 @@
   bottom: 0;
   height: 40px;
 
-  /* Subtle frosted strip — same colour family as the surface tint but
-     a touch more opaque so the bar reads as a distinct surface that
-     belongs to the screen's chrome. Sits above the surface in DOM
-     order so it's not affected by the surface's clip-path. */
-  background: rgba(0, 0, 0, 0.55);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  /* One step down the ink ramp from the surface. The panel already has
+     a dark-ink-at-low-alpha ramp (icon hovers at 0.05 / 0.08 in
+     desktopStyles.css); the bar sits at 0.04 — visibly a surface of its
+     own against the desktop, but still light, still the same family.
+     Sits above the surface in DOM order so it's not affected by the
+     surface's clip-path. */
+  background: rgba(28, 24, 19, 0.04);
+  border-top: 1px solid var(--line);
 
   display: flex;
   align-items: center;
-  padding: 0 10px;
+  /* No left padding — the start section is flush with the bar's left
+     edge (it has a fill; a gap would read as a floating chip, which is
+     exactly what it isn't). It carries its own inner padding. */
+  padding: 0 10px 0 0;
   gap: 8px;
 
   /* Hidden until the panel is ready (mirrors the .is-clear gate that
@@ -64,6 +72,84 @@
 .desktop-overlay.is-clear .desktop-taskbar {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* =============================================================================
+   THE START SECTION — left-end identity region
+   -----------------------------------------------------------------------------
+   Where an OS taskbar puts its start button. Not a floating chip — a
+   SECTIONED-OFF region of the bar itself, mirroring the clock's
+   treatment on the right: full height, flush with the bar's left edge,
+   separated from the slot list by a var(--line) divider (border-right
+   here, border-left on the clock — same tone, same system). The fill is
+   one more step down the ink ramp than the bar (0.05 over the bar's
+   0.04), so it reads as a distinct zone that still belongs to the bar.
+
+   The label carries TWO VOICES. The syntax (`//`, `.[ ]`) is ornament in
+   the instrument voice (Hornet: uppercase, small, letter-spaced); CALILEI
+   is the wordmark and gets Gridnik Bold — Tier 1 display, the one face
+   reserved for brand moments. Both in dark ink, on the ink ramp with the
+   rest of the bar: the wordmark at full var(--ink), the syntax one step
+   back at 0.55 so the name reads as the subject and the punctuation as
+   the frame around it. (For a flat, uniform label instead, drop the 0.55
+   below to var(--ink) — the mark's font weight alone still separates
+   them.)
+
+   Non-interactive BY DESIGN for now: pointer-events off (the bar itself
+   is pointer-events: auto under .is-clear, so the section must opt out
+   individually, same as the clock) and no hover state — a static region
+   shouldn't advertise interactivity it doesn't have. When it gains a
+   click behavior, move it to a <button>, re-enable pointer-events under
+   .desktop-overlay.is-clear, and add hover/active states one ramp step
+   darker (0.08, matching the focused slot).
+   ========================================================================== */
+
+.desktop-taskbar-start {
+  display: inline-flex;
+  align-items: center;       /* centers the ONE label child in the full-height
+                                section; the two faces' baselines are aligned
+                                by inline layout INSIDE the label, not here.
+                                See buildStartSection for why that matters. */
+  flex-shrink: 0;
+
+  height: 100%;              /* full-height section, like the clock */
+  padding: 0 14px;
+  background: rgba(28, 24, 19, 0.05);
+  border-right: 1px solid var(--line);
+
+  font-family: "Hornet Display", sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase; /* label is authored uppercase; this enforces
+                                the instrument-voice pattern if it ever
+                                changes */
+  color: rgba(28, 24, 19, 0.55);   /* the syntax — ornament, one step back */
+
+  white-space: nowrap;
+
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* The label wrapper — inherits the section's instrument face and carries
+   the two text runs plus the wordmark span as ordinary inline content. */
+.desktop-taskbar-start-label {
+  display: inline-block;
+}
+
+/* THE WORDMARK — CALILEI in Gridnik Bold.
+   Tier 1 display, the face reserved for brand moments; this is the
+   desktop's one. Sized at 1em (inherits the section's 0.68rem) but with
+   tighter tracking: Gridnik Bold is denser than Hornet, and the 0.08em
+   that gives Hornet its instrument-readout spacing makes Gridnik look
+   loose. 0.04em is the knob if it reads too tight or too airy next to
+   the syntax. Full var(--ink) — the subject of the label. */
+.desktop-taskbar-start-mark {
+  font-family: "Foundry Gridnik", sans-serif;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  color: var(--ink);
 }
 
 /* =============================================================================
@@ -102,7 +188,7 @@
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.03em;
-  color: rgba(245, 245, 248, 0.78);
+  color: rgba(28, 24, 19, 0.72);
 
   cursor: pointer;
   white-space: nowrap;
@@ -116,8 +202,8 @@
 }
 
 .desktop-taskbar-slot:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(245, 245, 248, 1.0);
+  background: rgba(28, 24, 19, 0.05);
+  color: var(--ink);
 }
 
 /* The currently-focused window's slot. A faint accent stripe at the
@@ -125,13 +211,13 @@
    as "this is the active tab" without needing the user to compare
    colours. Combined with a slight brightness lift on the text. */
 .desktop-taskbar-slot--focused {
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(245, 245, 248, 1.0);
+  background: rgba(28, 24, 19, 0.08);
+  color: var(--ink);
   box-shadow: inset 0 -2px 0 0 var(--accent);
 }
 
 .desktop-taskbar-slot--focused:hover {
-  background: rgba(255, 255, 255, 0.10);
+  background: rgba(28, 24, 19, 0.10);
 }
 
 /* Minimized slot: the window is hidden but still tracked. Dimmer text
@@ -142,13 +228,13 @@
    brightens to make it feel clickable, since clicking a minimized
    slot is the primary way to bring its window back. */
 .desktop-taskbar-slot--minimized {
-  color: rgba(245, 245, 248, 0.42);
+  color: rgba(28, 24, 19, 0.40);
   font-style: italic;
 }
 
 .desktop-taskbar-slot--minimized:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(245, 245, 248, 0.85);
+  background: rgba(28, 24, 19, 0.04);
+  color: rgba(28, 24, 19, 0.85);
 }
 
 .desktop-taskbar-slot-label {
@@ -164,9 +250,9 @@
    same letterspacing family) so the bar reads as one cohesive surface, but
    pointer-events: none — the clock is ambient info, not interactive.
 
-   A subtle vertical border on the left separates it from the slot list, same
-   tone as the bar's top border so the divider belongs to the same visual
-   system. tabular-nums keeps the digits monospaced even though Glitched is
+   A subtle vertical border on the left separates it from the slot list —
+   var(--line), the same hairline as the bar's top border and the start
+   section's divider, so all three belong to one visual system. tabular-nums keeps the digits monospaced even though Glitched is
    proportional, so the minute tick doesn't shift the column horizontally.
    ========================================================================== */
 
@@ -180,7 +266,7 @@
   height: 100%;
   padding: 0 4px 0 12px;
   margin-left: 8px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--line);
 
   font-family: "Glitched", sans-serif;
   font-variant-numeric: tabular-nums;
@@ -194,7 +280,7 @@
 .desktop-taskbar-clock-time {
   font-size: 0.72rem;
   font-weight: 500;
-  color: rgba(245, 245, 248, 0.95);
+  color: rgba(28, 24, 19, 0.92);
   line-height: 1.15;
 }
 
@@ -202,6 +288,6 @@
   font-size: 0.6rem;
   font-weight: 400;
   letter-spacing: 0.05em;
-  color: rgba(245, 245, 248, 0.55);
+  color: rgba(28, 24, 19, 0.55);
   line-height: 1.15;
 }

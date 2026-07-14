@@ -121,10 +121,96 @@ const PANELS = [
     <button class="turn-btn turn-btn--ghost turn-btn--major" data-action="grid">[ VIEW.GRID ]</button>
   </div>`,
     infoHtml: `
+      <div class="turn-info-layout">
+      <div class="turn-info-main">
       <p class="turn-info-kicker">PORTFOLIO ENTRY / 01</p>
       <h2 class="turn-info-heading">BASE</h2>
+      <dl class="turn-info-spec">
+        <dt class="turn-info-spec-label">Year</dt>
+        <dd class="turn-info-spec-value">2025 &mdash; 2026</dd>
+        <dt class="turn-info-spec-label">Role</dt>
+        <dd class="turn-info-spec-value">Solo / Founder / Designer</dd>
+        <dt class="turn-info-spec-label">Scope</dt>
+        <dd class="turn-info-spec-value">Identity / Product / Sampling / Production / Campaign</dd>
+        <dt class="turn-info-spec-label">Stack</dt>
+        <dd class="turn-info-spec-value">Visual Identity / CLO3D / Physical Sampling / Overseas Manufacturing</dd>
+        <dt class="turn-info-spec-label">Status</dt>
+        <dd class="turn-info-spec-value">Closed &mdash; 2026</dd>
+      </dl>
       <div class="turn-info-text">
-        <p>This info sheet modal is currently under construction.</p>
+        <p class="turn-info-line"><strong>BASE was an elevated essentials clothing label</strong>: built to be worn, and to still make sense in ten years.</p>
+        <p class="turn-info-line">I developed it solo from early 2025 to early 2026: identity, product, samples, campaign, and bulk production, end to end.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line">The design problem was how to make a garment feel like the future without dressing it as one.</p>
+        <p class="turn-info-line">Futurism in apparel usually arrives as costume; a graphic, a gimmick, a material that photographs well and wears badly.</p>
+        <p class="turn-info-line">BASE put it in the construction instead.</p>
+        <p class="turn-info-line">The interest lived in silhouette and paneling: where a seam breaks, how a sleeve is set, what shape the garment holds when nobody is in it.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>The references all shared that logic.</strong></p>
+        <p class="turn-info-item">Military flight gear and the suits of the NASA Shuttle program are paneled the way they are because a body has to move, seal, and survive inside them.</p>
+        <p class="turn-info-item">The Nike Mag is an object drawn for a future that didn't exist yet, and then actually built.</p>
+        <p class="turn-info-item">The YZY &times; Gap Round Jacket strips away everything a jacket is assumed to need until silhouette is the only thing left doing any work.</p>
+        <p class="turn-info-line">Four answers, one method: the future gets in through the construction.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>Working alone kept the loop tight.</strong></p>
+        <p class="turn-info-line">I designed garments in CLO3D, so a paneling idea could be cut, draped, and judged on a body before a yard of fabric was touched; what survived that became a physical sample.</p>
+        <p class="turn-info-line">What survived the sample got specced and sent out. I ran correspondence with the overseas manufacturers directly, through techpacks, revisions, and the bulk runs.</p>
+        <p class="turn-info-line">The person who drew the panel lines was the same person who sewed it, shot it, and communicated it to the factory.</p>
+        <p class="turn-info-line">Nothing was lost in the handoff, because there was no handoff.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>I closed BASE in early 2026 and went to work inside the industry.</strong></p>
+        <p class="turn-info-line">Running every function of a brand alone showed me the shape of the whole thing, and it showed me precisely where my own craft ran thin.</p>
+        <p class="turn-info-line">I decided to spend the next stretch of my career sharpening my skills against harder problems and higher standards, rather than to keep running a company that had already taught me what I came to learn.</p>
+      </div>
+      </div>
+      <aside class="turn-info-media">
+      <div class="turn-info-media-scroll">
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/90full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#090</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/83full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#083</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/87full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#087</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/86full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#086</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/88full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#088</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/119full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#119</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/2full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#002</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/144full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#144</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/base/full/106full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[BSE].#106</figcaption>
+        </figure>
+      </div>
+      </aside>
       </div>`,
     // ----- gridImages: the image set for this panel's "View Grid" button --
     // Each entry is { src, full, caption }:
@@ -324,17 +410,104 @@ const PANELS = [
       <p class="turn-kicker">PORTFOLIO ENTRY / 02</p>
   <div class="turn-static">
     <h1 class="turn-title">CRUDEBOX</h1>
-    <p class="turn-body">> FROM THIS BOX<br>> CRUDE THINGS WILL COME</p>
+    <p class="turn-body">> FROM THIS CRUDE BOX<br>> CRUDE THINGS WILL COME</p>
   </div>
   <div class="turn-controls">
     <button class="turn-btn turn-btn--ghost turn-btn--minor" data-action="info">OPEN.INFO</button>
     <button class="turn-btn turn-btn--ghost turn-btn--major" data-action="grid">[ VIEW.GRID ]</button>
   </div>`,
     infoHtml: `
+      <div class="turn-info-layout">
+      <div class="turn-info-main">
       <p class="turn-info-kicker">PORTFOLIO ENTRY / 02</p>
       <h2 class="turn-info-heading">CRUDEBOX</h2>
+      <dl class="turn-info-spec">
+        <dt class="turn-info-spec-label">Year</dt>
+        <dd class="turn-info-spec-value">2023 &mdash; 2024</dd>
+        <dt class="turn-info-spec-label">Role</dt>
+        <dd class="turn-info-spec-value">Associate Designer</dd>
+        <dt class="turn-info-spec-label">Scope</dt>
+        <dd class="turn-info-spec-value">Apparel Design / Sample Making / Drop Production</dd>
+        <dt class="turn-info-spec-label">Stack</dt>
+        <dd class="turn-info-spec-value">Cut-Sew / Visual Identity / In-House Production</dd>
+        <dt class="turn-info-spec-label">Status</dt>
+        <dd class="turn-info-spec-value">Brand Active &mdash; Departed 2024</dd>
+      </dl>
       <div class="turn-info-text">
-        <p>This info sheet modal is currently under construction.</p>
+        <p class="turn-info-line"><strong>CRUDEBOX is an anime apparel label built on tapestry.</strong></p>
+        <p class="turn-info-line">I joined in early 2023 as associate designer, brought on for apparel design and sewing, and stayed through late 2024.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line">The garment starts as a blank; a hoodie or a crewneck, quiet, unremarkable on purpose. One sleeve is cut away and rebuilt in woven tapestry.</p>
+        <p class="turn-info-line">A garment made entirely of tapestry can be a costume. A single sleeve is an intervention.</p>
+        <p class="turn-info-line">The blank has to stay a blank for the sleeve to land. Everything else in the piece gets out of its way.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>The name is the thesis.</strong></p>
+        <p class="turn-info-line">Tapestry is a low-resolution medium. Woven on a jacquard, an image arrives coarse and pixelated, stitches visible, reassembled in thread you can feel with your hand.</p>
+        <p class="turn-info-line">Rather than smoothing the weave and chasing print fidelity, CRUDEBOX made the coarseness the entire proposition.</p>
+        <p class="turn-info-line"><strong>The art direction is the counterweight.</strong></p>
+        <p class="turn-info-item">Black on black. Hard collegiate type, X-marked.</p>
+        <p class="turn-info-item">Product lit in near-total shadow, a single sliver of light and nothing else.</p>
+        <p class="turn-info-item">Packaging as severe as the garment is loud.</p>
+        <p class="turn-info-line">Crude object, immaculate frame. The tension between the two is the brand.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>Production ran in house.</strong></p>
+        <p class="turn-info-line">I was responsible for helping to get each drop through it, and I ran the machines myself: cutting panels, working the serger.</p>
+        <p class="turn-info-line">A design decision you have to execute a hundred times with your own hands stops being theoretical very quickly.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>The founder became my mentor.</strong></p>
+        <p class="turn-info-line">A genius brand designer and creative director; two years working beside him was my real education: graphic design, brand systems, marketing, and the universal principles sitting underneath all of it.</p>
+        <p class="turn-info-line">I left in late 2024 to build BASE. Entry 01 exists because of what I learned here.</p>
+        <p class="turn-info-line">CRUDEBOX is still dropping. I still maintain a strong relationship with my mentor and am still learning from him.</p>
+      </div>
+      </div>
+      <aside class="turn-info-media">
+      <div class="turn-info-media-scroll">
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/70full.webp" alt="CRUDE wordmark on black, flanked by X marks, above the line FROM THIS CRUDE BOX CRUDE THINGS WILL COME" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#070</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/110full.webp" alt="Five tapestry-sleeved hoodies hung from a bare branch against black" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#110</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/75full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#075</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/4full.webp" alt="Black crewneck with one woven tapestry sleeve, lit hard on cracked concrete" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#004</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/178full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#178</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/166full.webp" alt="Six hoodies on a rack, each sleeve woven with a different anime figure" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#166</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/122full.webp" alt="Stacks of matte black CRUDE BOX packaging, wordmark in white" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#122</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/164full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#164</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/crude/full/180full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[CRD].#180</figcaption>
+        </figure>
+      </div>
+      </aside>
       </div>`,
     gridImages: [
       
@@ -549,10 +722,105 @@ const PANELS = [
   </div>`,
       
     infoHtml: `
+      <div class="turn-info-layout">
+      <div class="turn-info-main">
       <p class="turn-info-kicker">PORTFOLIO ENTRY / 03</p>
       <h2 class="turn-info-heading">AZULI</h2>
+      <dl class="turn-info-spec">
+        <dt class="turn-info-spec-label">Year</dt>
+        <dd class="turn-info-spec-value">2021 &mdash; 2022</dd>
+        <dt class="turn-info-spec-label">Role</dt>
+        <dd class="turn-info-spec-value">Cut-Sew Assistant</dd>
+        <dt class="turn-info-spec-label">Scope</dt>
+        <dd class="turn-info-spec-value">Garment Construction / Sewing / Illustration</dd>
+        <dt class="turn-info-spec-label">Stack</dt>
+        <dd class="turn-info-spec-value">Patternmaking / Boro / Sashiko / Indigo / Reconstruction</dd>
+        <dt class="turn-info-spec-label">Status</dt>
+        <dd class="turn-info-spec-value">Closed &mdash; 2022</dd>
+      </dl>
       <div class="turn-info-text">
-        <p>This info sheet modal is currently under construction.</p>
+        <p class="turn-info-line"><strong>AZULI was a bespoke Japanese Americana streetwear label, and it is where I started.</strong></p>
+        <p class="turn-info-line">I worked there from early 2021 to late 2022, assisting with cut and sew. It was my introduction to apparel design and to garment construction. I had no training when I walked in.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>Nobody taught me. I took things apart.</strong></p>
+        <p class="turn-info-line">During the day I cut panels and ran a machine. After hours I stayed with the scrap fabric and taught myself patternmaking, building garments from nothing to see whether I could.</p>
+        <p class="turn-info-line">I unpicked my own clothes at the seams to find out how they were held together. I spent what money I had on garments for the sole purpose of reverse engineering them.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>The method and the material turned out to be the same thing.</strong></p>
+        <p class="turn-info-line">Boro is cloth patched so many times that the patching becomes the garment. Sashiko is the reinforcing stitch, left visible on purpose. Both are traditions of taking a thing apart and putting it back with the repair still showing.</p>
+        <p class="turn-info-line">The garments I was studying were made by the same operation I was using to study them.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>I studied the designers who had already done it.</strong></p>
+        <p class="turn-info-item">Kiro Hirata of Kapital, whose Kountry line takes finished garments back apart to dye, shred, patch and rebuild them.</p>
+        <p class="turn-info-item">Hiroki Nakamura of visvim, who builds garments on traditional construction and traditional cloth, and lets the process stay legible in the finished piece.</p>
+        <p class="turn-info-line">Both read Japanese craft through a contemporary lens; boro, sashiko, indigo. Neither of them treats the tradition as decoration.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>Every spare hour went into drawing.</strong></p>
+        <p class="turn-info-line">Looks, silhouettes, construction studies. For me, it was where art met design, and I have not stopped since.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>The aesthetic was never the point, and that was why I found it beautiful.</strong></p>
+        <p class="turn-info-item">Indigo was the dye of ordinary people. The indigo plant was abundant and perfect for cotton and flax, while silk was reserved for royalty and the upper classes. They wore blue because blue was what they could get.</p>
+        <p class="turn-info-item">Boro and sashiko exist because cloth was costly and the people wearing it spent their days working the fields. Clothing wore through, so clothing was repaired, and repaired again, and the repairs stayed.</p>
+        <p class="turn-info-line">Nobody sat down to design any of it. The palette, the patching, the visible stitch; all of it emerged as a byproduct of necessity, and centuries later it holds a cult following.</p>
+        <p class="turn-info-line">That is the lesson I took out of this room and still carry with me today. The aesthetics I trust are the ones that emerge from a function-first mind. Beauty as a consequence, not an objective.</p>
+
+        <hr class="turn-info-rule">
+
+        <p class="turn-info-line"><strong>AZULI closed in late 2022 and our small team scattered to other work.</strong></p>
+        <p class="turn-info-line">I call what I made here student work and I mean it plainly, without apology: it is the work of someone learning, and it looks like it.</p>
+        <p class="turn-info-line">Everything in entries 02 and 01 is built on what I took apart at this table.</p>
+      </div>
+      </div>
+      <aside class="turn-info-media">
+      <div class="turn-info-media-scroll">
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/37full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#037</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/6full.webp" alt="Boro indigo vest on a hanger, patched in many shades with visible sashiko stitching" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#006</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/80full.webp" alt="Heavily patched indigo boro jeans, worn through to the backing cloth" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#080</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/32full.webp" alt="Detail of patched denim with sherpa letters appliqued over Japanese printed cotton" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#032</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/35full.webp" alt="Sashiko-quilted boro chore jacket with a sherpa collar and chevron patch" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#035</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/98full.webp" alt="Quilted plaid boro long coat hung in the workshop" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#098</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/45full.webp" alt="" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#045</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/77full.webp" alt="Patchwork denim trousers inset with printed Japanese cotton panels" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#077</figcaption>
+        </figure>
+        <figure class="turn-info-media-item">
+          <img src="images/azuli/full/99full.webp" alt="Grey and teal sherpa-lined haori with a chevron patch pocket" loading="lazy">
+          <figcaption class="turn-info-media-tag">//img.[AZL].#099</figcaption>
+        </figure>
+      </div>
+      </aside>
       </div>`,
     gridImages: [
       
@@ -674,97 +942,25 @@ const PANELS = [
   {
   type: "desktop",
   items: [
-    { type: "md",    name: "test",   src: "assets/md/test.md" },
-    { type: "md",    name: "NOTES",  lineColor: "#000000", fillColor: "#ffbb00",
-      content: "## Scratch\n\n- [x] desktopMd\n- [ ] polish\n\nstatus: _draft_\n" },
-    {
-      type: "folder",
-      name: "Projects",
-      lineColor: "#000000",
-      fillColor: "#00a7f5",
-      contents: [
-        {
-          type: "folder",
-          name: "Calilei",
-          lineColor: "#000000",
-          fillColor: "#ffffff",
-          contents: [
-            {
-              type: "folder",
-              name: "Assets",
-              lineColor: "#000000",
-              fillColor: "#ffffff",
-              contents: [
-                { type: "image", name: "logo",   src: "images/base/full/1full.webp", thumb: "images/base/thumb/1thumb.webp" },
-                { type: "image", name: "icon",   src: "images/base/full/2full.webp", thumb: "images/base/thumb/2thumb.webp" },
-              ],
-            },
-            { type: "note", name: "README", content: "Calilei project notes\n\n- " },
-          ],
-        },
-        {
-          type: "folder",
-          name: "Drafts",
-          lineColor: "#000000",
-          fillColor: "#ffffff",
-          contents: [
-            { type: "image", name: "sketch", src: "images/base/full/3full.webp", thumb: "images/base/thumb/3thumb.webp" },
-          ],
-        },
-      ],
-    },
-    {
-              type: "folder",
-              name: "folder",
-              lineColor: "#000000",
-              fillColor: "#fa1d00",
-              contents: [
-                { type: "image", name: "logo",   src: "images/base/full/6full.webp", thumb: "images/base/thumb/6thumb.webp" },
-                { type: "image", name: "icon",   src: "images/base/full/7full.webp", thumb: "images/base/thumb/7thumb.webp" },
-              ],
-            },
-    {
-              type: "folder",
-              name: "folder",
-              lineColor: "#000000",
-              fillColor: "#00c74c",
-              contents: [
-                { type: "image", name: "logo",   src: "images/base/full/8full.webp", thumb: "images/base/thumb/8thumb.webp" },
-                { type: "image", name: "icon",   src: "images/base/full/9full.webp", thumb: "images/base/thumb/9thumb.webp" },
-              ],
-            },
-    {
-              type: "folder",
-              name: "folder",
-              lineColor: "#000000",
-              fillColor: "#ffb921",
-              contents: [
-                { type: "image", name: "logo",   src: "images/base/full/10full.webp", thumb: "images/base/thumb/10thumb.webp" },
-                { type: "image", name: "icon",   src: "images/base/full/11full.webp", thumb: "images/base/thumb/11thumb.webp" },
-              ],
-            },                
-    { type: "note", name: "thoughts", content: "[ ] " },
+    // Four empty folders, one per brand primary (tokens from
+    // infiniteStyles.css :root). contents: [] authored explicitly so
+    // filling them later is an edit, not a structural addition.
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ff4d00", contents: [],
+      // Locked demo — SOFT gate: this password ships to the browser in
+      // plaintext. A deterrent, not security (same as the shop gate).
+      locked: true, password: "opensesame" },
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ffbb00", contents: [] },
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00d150", contents: [] },
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00b8e6", contents: [] },
+
     { type: "image", name: "photo", src: "images/base/full/4full.webp", thumb: "images/base/thumb/4thumb.webp" },
-    {
-      type: "audio",
-      name: "song.mp3",
-      src: "assets/beats/necktat.mp3",
-      cover: "assets/beats/necktatcover.png",
-      lineColor: "#c75d34",
-      fillColor: "rgba(199, 93, 52, 0.12)",
-      pauseOnMinimize: false, 
-      loop: true,
-      playOnOpen: true,   
-    },
-    {
-      type: "video",
-      name: "showreel",
-      src: "assets/videos/videotest.mp4",
-      lineColor: "#c75d34",
-      fillColor: "rgba(199, 93, 52, 0.10)",
-      playOnOpen: true,
-      loop: true,
-    },
+
+    // The greeting — opens automatically on page load (openOnLoad),
+    // positioned upper-right. x/y are fractions of the desktop surface;
+    // w/h are pixels. Content is placeholder voice — rewrite freely.
+    { type: "md", name: "hello", lineColor: "#000000", fillColor: "#ffbb00",
+      openOnLoad: { x: 0.58, y: 0.05, w: 480, h: 340 },
+      content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- drag things. open things.\n- drop them into folders.\n\nnothing persists — reload resets the room.\n\nstatus: _live_\n" },
   ],
 },
 
