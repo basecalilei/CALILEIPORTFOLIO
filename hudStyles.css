@@ -1,0 +1,697 @@
+/* =============================================================================
+   hudStyles.css — styles for the "hud" panel type (hudPanel.js)
+   -----------------------------------------------------------------------------
+   Two layers:
+
+     .hud-overlay  — the scroll-linked layer. Extends the .infinite-overlay
+                     base (which owns centering + --shift). Carries exactly
+                     one element: .hud-horizon, the dashed line that rides
+                     the scroll.
+
+     .hud-stage    — the static instrument. A viewport-fixed sibling of the
+                     overlay; every cluster inside is absolutely positioned.
+
+   COORDINATES
+     Cluster positions are measured off the source graphic (2560×1440
+     reference) and expressed in vw/vh — the layout is FLUID: clusters pin
+     to viewport edges like instruments filling a bezel, rather than
+     scaling a locked 16:9 canvas. The dial and everything that must stay
+     geometrically locked to it (the horizon's center gap, the under-dial
+     range readout) use vmin so they hold together at any aspect ratio.
+     Collision-prone clusters carry content-safe clamps — max()/min() of
+     the design position and a text-width-derived bound — so narrow and
+     portrait viewports degrade gracefully instead of overlapping. The
+     design value always wins at wide aspects; extreme sizes remain
+     approximate by design.
+
+   COLOR
+     All status colors route through hud-scoped aliases of the brand
+     primaries (set on .hud-stage below). If the art direction needs the
+     exact hues from the source graphic instead of the brand canon,
+     remap each alias here — one line per color, no markup changes.
+
+   TYPE
+     Hornet Display for every readout ("Hornet describes"). The headline
+     is set in Foundry Gridnik Bold (the Tier 1 face) to match the source
+     graphic; swap the font-family on .hud-headline to "Glitched" for the
+     display-speaking voice — one line.
+
+   COUPLED WITH hudPanel.js: every class here is emitted there; the dial's
+   own strokes/fills live in the generated SVG, not here.
+   ========================================================================== */
+
+/* ---------- the scroll-linked layer ---------- */
+
+/* The base .infinite-overlay contract owns position/top/transform/opacity.
+   We only give the overlay a width and collapse its height to zero so the
+   base's translateY(-50% + --shift) centers the horizon EXACTLY on the
+   viewport's vertical center when the scroll is settled. */
+.hud-overlay {
+  left: 0;
+  width: 100%;
+  height: 0;
+}
+
+/* The horizon — the one element that moves with the scroll. A dashed
+   hairline spanning from the headline plate's right edge to the right
+   margin (matching the source at rest), with a dial-width gap masked out
+   of its center so it sweeps AROUND the instrument instead of across it,
+   the way a pitch ladder respects the boresight.
+
+   The gap is element-relative but the element never moves horizontally,
+   so it stays locked over the dial (dial center = 50vw = 27.5vw from this
+   element's left edge; half-gap = 30vmin = the card rim). Delete the two
+   mask lines for an unbroken line. */
+.hud-horizon {
+  position: absolute;
+  top: 0;
+  left: 22.5vw;
+  right: 5.9vw;
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(28, 24, 19, 0.38) 0 2px,
+    transparent 2px 5px
+  );
+  -webkit-mask-image: linear-gradient(90deg,
+    #000 0 calc(27.5vw - 30vmin),
+    transparent calc(27.5vw - 30vmin) calc(27.5vw + 30vmin),
+    #000 calc(27.5vw + 30vmin) 100%);
+  mask-image: linear-gradient(90deg,
+    #000 0 calc(27.5vw - 30vmin),
+    transparent calc(27.5vw - 30vmin) calc(27.5vw + 30vmin),
+    #000 calc(27.5vw + 30vmin) 100%);
+}
+
+/* The headline — the horizon's travel companion. It lives in the overlay
+   so the two move as one scroll-linked pair; at rest it docks back onto
+   the plate, spanning the plate's full width edge-to-edge. Sized directly
+   in vw to fill the plate width (--hud-plate-w is 15.8vw): no container
+   context to establish, same robust unit the rest of the stage uses. The
+   overlay is zero-height with the horizon at its center; bottom-anchoring
+   the box so its lower edge sits 1.5vh below the line keeps the wordmark
+   docked on the plate's bottom edge. */
+.hud-headline {
+  position: absolute;
+  left: 6.5vw;                 /* the plate's left edge */
+  bottom: -1.5vh;
+  width: var(--hud-plate-w);   /* == plate width, for reference/alignment */
+}
+/* Foundry Gridnik Bold (the Tier 1 face), matching the source graphic;
+   swap font-family to "Glitched" for the display-speaking voice. This
+   base size is a starting point — init measures the rendered width and
+   applies a UNIFORM scale to hit plate width exactly, so the base mostly
+   cancels out (a larger base yields a smaller scale factor). Kept near
+   the final rendered size so the scale factor stays close to 1 for
+   crispest text. The actual string comes from the PANELS entry's
+   `headline` in main.js. */
+.hud-headline-text {
+  display: block;
+  font-family: "Foundry Gridnik", sans-serif;
+  font-weight: 700;
+  font-size: 1.7vw;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;         /* always one line */
+  color: var(--hud-green);
+}
+
+/* ---------- the static instrument ---------- */
+
+/* hud-scoped status colors — one remap point for exact art hues if the
+   brand canon ever needs overriding. Defined on BOTH layers: the headline
+   lives in the overlay, outside the stage's scope (it fell back to ink
+   when only the stage carried these). */
+.hud-overlay,
+.hud-stage {
+  --hud-red:    var(--brand-red);
+  --hud-yellow: var(--brand-yellow);
+  --hud-green:  var(--brand-green);
+  --hud-blue:   var(--brand-blue);
+}
+
+.hud-stage {
+  position: absolute;
+  inset: 0;
+  opacity: 0;                 /* set per-frame by JS (tick), in lockstep
+                                 with the overlay */
+  pointer-events: none;       /* display-only for now — the wheel must fall
+                                 through to the scroller */
+  will-change: opacity;
+  overflow: hidden;
+
+  /* Instrument tier type: Hornet, small, letter-spaced (visualLanguage.md). */
+  font-family: "Hornet Display", sans-serif;
+  font-size: clamp(10px, 1.45vh, 21px);
+  letter-spacing: 0.08em;
+  line-height: 1.55;
+  color: var(--ink);
+
+  /* The shared height of the two structural rules — the VOR1 box's
+     extended bottom edge on the left, the ILS leader on the right. Both
+     hang off this one knob, so they stay horizontally locked by
+     construction; the VOR/ILS menu label rides it too. */
+  --hud-rules-y: 73vh;
+
+  /* The menu tree's second column. The design position is 12vw; the em
+     bound is column 1's widest label ("ANTI ICING", ~6.8em at this
+     letter-spacing) plus clearance, measured from column 1's left edge.
+     On narrow viewports — where the font rides its clamp ceiling while
+     vw shrinks — the em bound wins and the column steps right instead
+     of collapsing onto column 1 and the VOR1 box. */
+  --hud-menu-col2: max(12vw, calc(4.5vw + 7.9em));
+
+  /* Where the right-side horizontals stop — the radio column's left
+     edge. Shared by the ILS leader and the bottom scale bar so their
+     right endpoints stay locked. */
+  --hud-col-stop: 19.6vw;
+
+  /* The headline plate's width — shared with the headline (which lives
+     on the overlay, a different layer) so the wordmark spans the plate
+     exactly. */
+  --hud-plate-w: 15.8vw;
+}
+
+/* Emphasis utilities — color carries the meaning, weight stays uniform
+   (line grammar: emphasis by color, not thickness; same idea for text). */
+.hud-dim    { color: var(--ink-dim); }
+.hud-dimmer { color: var(--ink-dimmer); }
+.hud-red    { color: var(--hud-red); }
+.hud-green  { color: var(--hud-green); }
+.hud-blue   { color: var(--hud-blue); }
+.hud-amber  { color: var(--hud-yellow); }
+
+/* The update afterglow — the visual language's write signature. A write
+   adds .is-lit (blue snaps on, no transition); tick lifts it a beat
+   later and the base transition decays the color back to rest. */
+.hud-write { transition: color 0.9s ease-out; }
+.hud-write.is-lit {
+  color: var(--hud-blue);
+  transition: none;
+}
+
+/* Annunciators — the checkbox fills while armed (tick cycles .is-armed
+   on the .hud-opt wrappers on irregular independent rhythms). */
+.hud-opt.is-armed .hud-check {
+  background-color: var(--hud-yellow);
+  border-color: var(--hud-yellow);
+}
+.hud-opt--dme.is-armed .hud-check {
+  background-color: var(--ink-dim);
+  border-color: var(--ink-dim);
+}
+
+/* ---------- frame chrome ---------- */
+
+.hud-topbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3.1vh;
+  background: linear-gradient(90deg,
+    rgba(28, 24, 19, 0) 0%,
+    rgba(28, 24, 19, 0.30) 35%,
+    rgba(28, 24, 19, 0.42) 100%);
+}
+
+.hud-footer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 6.6vh;
+  background: rgba(28, 24, 19, 0.055);
+}
+
+/* ---------- headline plate ---------- */
+
+.hud-plate {
+  position: absolute;
+  left: 6.5vw;
+  top: 6.9vh;
+  width: var(--hud-plate-w);   /* shared with the headline so it spans exactly */
+  height: 44.8vh;              /* plate bottom sits just below the horizon;
+                                  the headline (riding the overlay) docks
+                                  onto it when the scroll is settled */
+  background: linear-gradient(180deg,
+    rgba(28, 24, 19, 0.045),
+    rgba(28, 24, 19, 0.015));
+}
+
+.hud-colorbar {
+  display: flex;
+  width: 66%;
+  height: 1vh;
+}
+.hud-colorbar span         { flex: 1; }
+.hud-colorbar-green        { background: var(--hud-green); }
+.hud-colorbar-yellow       { background: var(--hud-yellow); }
+.hud-colorbar-red          { background: var(--hud-red); }
+.hud-colorbar-blue         { background: var(--hud-blue); }
+
+/* ---------- the dial ---------- */
+
+/* 100vmin square, centered — always fits both viewport dimensions.
+   ViewBox is calibrated so 1 unit = 1 source pixel at 1440p. */
+.hud-dial {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100vmin;
+  height: 100vmin;
+  transform: translate(-50%, -50%);
+}
+
+/* ---------- the contact field ---------- */
+
+/* The traffic plotted inside the dial (hudPanel.js: THE CONTACT FIELD).
+   Each contact is centered on its plotted point; tick writes the point
+   as a vmin-unit transform, so the field shares the dial's coordinate
+   system at any viewport size. */
+.hud-contacts {
+  position: absolute;
+  inset: 0;
+}
+
+.hud-contact {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35vh;
+  font-size: 0.82em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+  will-change: transform, opacity;  /* movers also fade at the coverage edge */
+}
+
+/* The tag box — bg-filled so it occludes the dial's rings underneath,
+   as in the source. */
+.hud-contact-tag {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 0.15vh 0.45em;
+}
+.hud-contact--alt .hud-contact-tag { border-radius: 3px; }
+
+/* Signal readouts — quieter flavor of the same tag */
+.hud-contact--db .hud-contact-tag {
+  color: var(--ink-dimmer);
+  font-size: 0.92em;
+}
+
+/* Glyph contacts — the assets/svg/ marks, rendered as currentColor
+   masks (an <img> would be opaque to CSS; the mask lets the hot-state
+   color flip work like every other contact). The url arrives per-glyph
+   via the --hud-glyph inline custom property. */
+.hud-contact--glyph { color: var(--ink-dim); }
+.hud-glyph {
+  display: block;
+  width: 2.3vh;
+  height: 2.3vh;
+  background-color: currentColor;
+  -webkit-mask: var(--hud-glyph) center / contain no-repeat;
+  mask: var(--hud-glyph) center / contain no-repeat;
+}
+
+/* The diamond-and-arrow traffic mark (inline SVG, currentColor) */
+.hud-contact-mark {
+  width: 2.1vh;
+  height: 1.05vh;
+  display: block;
+}
+
+/* Interrogated: the write-event blue, echoing the wind cell's hot state.
+   tick toggles the class and locks the contact onto its plotted point. */
+.hud-contact.is-hot,
+.hud-contact.is-hot .hud-contact-tag {
+  color: var(--hud-blue);
+}
+.hud-contact.is-hot .hud-contact-tag {
+  border-color: var(--hud-blue);
+  background: rgba(0, 184, 230, 0.12);
+}
+
+/* ---------- top rail readouts ---------- */
+
+.hud-status {
+  position: absolute;
+  left: 23vw;
+  top: 6.6vh;
+}
+
+/* The wind readout — value on a live highlight, the one "hot" cell on the
+   rail (brand blue = information). */
+.hud-wind {
+  color: var(--hud-blue);
+  background: rgba(0, 184, 230, 0.16);
+  padding: 0 0.3em;
+}
+
+.hud-hdg {
+  position: absolute;
+  left: 39.8vw;
+  top: 9.4vh;
+}
+
+.hud-gps {
+  position: absolute;
+  left: 60vw;
+  top: 9.6vh;
+}
+
+.hud-nav {
+  position: absolute;
+  right: 14vw;
+  top: 6.9vh;
+  text-align: right;
+}
+
+/* Syntax as ornament — rows of "/" glyphs as the corner texture. Real text
+   (it can flicker later); clipped to its block. */
+.hud-hatch {
+  position: absolute;
+  right: 0.8vw;
+  top: 6.9vh;
+  width: 12.5vw;
+  height: 30.5vh;
+  overflow: hidden;
+  font-size: clamp(8px, 1.35vh, 19px);
+  line-height: 1.62;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+}
+.hud-hatch span { display: block; white-space: nowrap; }
+
+/* ---------- mid readouts ---------- */
+
+/* The max() floor steps it right of the card on narrow viewports (the
+   card's half-width at this height stays under 29vmin); at wide aspects
+   the 69.5vw design position wins. Portrait viewports relocate the block
+   entirely — see PORTRAIT RELOCATIONS at the end of this file. */
+.hud-terr {
+  position: absolute;
+  left: max(69.5vw, calc(50% + 31vmin));
+  top: 57.4vh;
+}
+.hud-terr-2 { text-align: right; }
+
+/* ---------- left nav source ---------- */
+
+.hud-vor1 {
+  position: absolute;
+  left: 2.5vw;
+  bottom: calc(100% - var(--hud-rules-y));  /* bottom edge ON the shared
+                                               rule line; the box grows
+                                               UPWARD from it, so content
+                                               height can never move the
+                                               rule off the lockup */
+  min-width: 6vw;
+  padding: 0.7vh 0.6vw;
+  border: 1px solid var(--line);
+}
+.hud-vor1 > div:first-child { color: var(--ink); }
+
+/* The box's bottom rule, extended rightward into the drawing. A pseudo,
+   so it stays flush with the box's bottom border — which the anchoring
+   above pins to --hud-rules-y. Its far end is dial-clamped: the card's
+   half-width at this height is ~19vmin, so ending at 50vw − 24vmin keeps
+   it clear of the rim at any landscape aspect. */
+.hud-vor1::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  bottom: -1px;
+  height: 1px;
+  width: calc(47.5vw - 24vmin);
+  background: var(--line);
+}
+
+/* Structural leaders — the hairline rules that tie the nav boxes into the
+   drawing. Hairline weight only; emphasis is never thickness. */
+.hud-leader {
+  position: absolute;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Horizontally locked with the VOR rule via --hud-rules-y — the two read
+   as one rule passing behind the instrument, with mirrored ±24vmin dial
+   standoffs (at this height the rule clears the "15" numeral, so the
+   start no longer needs the wider berth). The far end stops at the radio
+   column's left edge: running further would strike through the column's
+   ACTIVE/STBY rows at this height. */
+.hud-leader--ils {
+  left: calc(50vw + 24vmin);
+  right: var(--hud-col-stop);
+  top: calc(var(--hud-rules-y) - 1px);
+}
+
+/* ---------- lower-left menu tree ---------- */
+
+.hud-menu-item { position: absolute; white-space: nowrap; }
+.hud-menu-anti   { left: 4.5vw;  top: 75.4vh; }
+.hud-menu-de     { left: 4.9vw;  top: 80vh;   }
+.hud-menu-nodev  { left: 4.7vw;  top: 84.6vh; }
+/* Column 2 rides --hud-menu-col2 (content-safe on narrow viewports);
+   the small per-item staggers from the source are kept as offsets.
+   VOR/ILS is additionally bottom-anchored just above the shared rule
+   line, wherever the lockup is tuned to. */
+.hud-menu-vorils { left: var(--hud-menu-col2);
+                   bottom: calc(100% - var(--hud-rules-y) + 0.5vh); }
+.hud-menu-adf    { left: calc(var(--hud-menu-col2) + 1vw);   top: 77.7vh; }
+.hud-menu-noovly { left: calc(var(--hud-menu-col2) + 0.1vw); top: 82.4vh; }
+
+/* The box around the standby modes (ADF / NO OVLY). Left tracks the
+   column; the em floor on width keeps it wrapping NO OVLY on narrow
+   viewports (at desktop the em floor ties the 6.1vw design width, so
+   nothing changes there). */
+.hud-menu-box {
+  position: absolute;
+  left: calc(var(--hud-menu-col2) - 1.3vw);
+  top: 75.6vh;
+  width: max(6.1vw, 7.6em);
+  height: 10.9vh;
+  border: 1px solid var(--line);
+}
+
+/* Connector stubs from the left margin to the first column */
+.hud-menu-rule {
+  position: absolute;
+  left: 2.5vw;
+  width: 1.7vw;
+  height: 1px;
+  background: var(--line);
+}
+.hud-menu-rule--1 { top: 76.4vh; }
+.hud-menu-rule--2 { top: 81vh;   }
+.hud-menu-rule--3 { top: 85.6vh; }
+
+/* ---------- right nav source + radio stack ---------- */
+
+.hud-radios {
+  position: absolute;
+  right: 2.2vw;
+  top: 66.9vh;
+  width: 17vw;
+  min-width: 210px;
+  display: grid;
+  row-gap: 0.28vh;
+  line-height: 1.3;            /* source pitch — tighter than the stage
+                                  default so the whole column clears the
+                                  scale bar below it */
+}
+
+/* The ILS2 nav source heads the column; everything below it is normal
+   flow, so the radio rows can never collide with it regardless of how
+   the em-based heights land. */
+.hud-radios-ils2 {
+  text-align: right;
+  margin-bottom: 0.8vh;
+}
+.hud-ils2-id { font-size: 1.15em; }
+
+/* ACTIVE / STBY headers and the boxed value rows share one grid shape:
+   left cell / swap glyph / right cell. Values follow the numeric grammar —
+   fixed fields, the value takes ink, boxes are hairline. */
+.hud-radios-hdr,
+.hud-radios-vals {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  column-gap: 0.6vw;
+}
+.hud-radios-hdr > :first-child { justify-self: start; padding-left: 0.9vw; }
+.hud-radios-hdr > :last-child  { justify-self: end;   padding-right: 0.9vw; }
+
+.hud-val {
+  border: 1px solid var(--line);
+  padding: 0.15vh 0;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+.hud-swap {
+  border: 1px solid var(--line);
+  font-size: 0.8em;
+  padding: 0 0.15vw;
+  color: var(--ink-dim);
+}
+
+/* Device name rows — centered, flanked by hairline rules */
+.hud-radios-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5vw;
+  white-space: nowrap;
+}
+.hud-radios-name::before,
+.hud-radios-name::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.hud-radios-opts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+}
+.hud-radios-opts > :last-child { justify-self: end; }
+
+/* ---------- small icon primitives ---------- */
+
+.hud-check {
+  display: inline-block;
+  width: 1.2vh;
+  height: 1.2vh;
+  border: 1px solid var(--line);
+  vertical-align: -0.1vh;
+}
+
+.hud-ring-icon {
+  display: inline-block;
+  width: 1.1vh;
+  height: 1.1vh;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  vertical-align: -0.1vh;
+}
+.hud-ring-icon--blue { color: var(--hud-blue); }
+
+/* A small upward-leaning chevron — the V/ILS2 glyph. Upward shape language
+   (avionics vocabulary). */
+.hud-dart-icon {
+  display: inline-block;
+  width: 0.9vh;
+  height: 0.9vh;
+  border-top: 1.5px solid var(--hud-blue);
+  border-right: 1.5px solid var(--hud-blue);
+  transform: rotate(-45deg);
+  vertical-align: -0.1vh;
+}
+
+/* ---------- under-dial range + traffic ---------- */
+
+/* vmin-locked to the dial so it keeps its position relative to the card at
+   any aspect ratio. Sits at the card's lower-right — off the lubber line
+   and just below the bearing pointer's tail, where it reads as that
+   pointer's range block — because centered-under-the-dial collided with
+   the card's bottom numerals.
+
+   The min() ceiling keeps it clear of the radio column on narrow
+   viewports, where the vmin anchor drifts into the column's territory:
+   the bound is the column's actual left edge (97.8vw minus its
+   max(17vw, 210px) width) minus this block's own text width. At wide
+   aspects the dial anchor always wins. Portrait viewports relocate the
+   block entirely — see PORTRAIT RELOCATIONS at the end of this file. */
+.hud-range {
+  position: absolute;
+  left: min(calc(50% + 24vmin), calc(97.8vw - max(17vw, 210px) - 8.5em));
+  top: calc(50% + 30.5vmin);
+  text-align: left;
+}
+
+/* ---------- bottom scale bar ---------- */
+
+.hud-scale {
+  position: absolute;
+  left: 2.5vw;
+  right: var(--hud-col-stop);  /* stops with the ILS leader at the radio
+                                  column's edge — full width was clipping
+                                  the bottom ACTIVE/STBY value boxes */
+  top: 89.5vh;
+  height: 1px;
+  background: var(--line);
+}
+/* The live segment takes weight — indicators are not rules. It tracks the
+   bearing pointer's idle hunt (tick writes translateX on it). */
+.hud-scale-seg {
+  position: absolute;
+  left: 47.5vw;                /* vw units are viewport-absolute, so these
+                                  offsets read as global positions minus the
+                                  bar's own 2.5vw left inset */
+  top: -1px;
+  width: 11.3vw;
+  height: 3px;
+  background: rgba(28, 24, 19, 0.45);
+}
+.hud-scale-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 1vh;
+  background: rgba(28, 24, 19, 0.45);
+}
+.hud-scale-tick--l { left: 36.4vw; }
+.hud-scale-tick--r { left: 59.2vw; }
+
+/* ---------- footer readouts ---------- */
+
+.hud-url {
+  position: absolute;
+  left: 50%;
+  bottom: 2.6vh;
+  transform: translateX(-50%);
+  padding: 0.3vh 1.6vw;
+  background: rgba(28, 24, 19, 0.08);
+  color: var(--ink-dim);
+  letter-spacing: 0.18em;
+  font-size: 0.9em;
+}
+
+.hud-end {
+  position: absolute;
+  right: 2vw;
+  bottom: 2.7vh;
+  letter-spacing: 0.3em;
+}
+
+/* =============================================================================
+   PORTRAIT RELOCATIONS
+   -----------------------------------------------------------------------------
+   Below ~5:6 the dial (vmin-sized) leaves the band above it open, while
+   everything below it is fully spoken for (menu tree, VOR1, radio stack).
+   The two dial-adjacent readouts therefore move up beside the hatch
+   block, joining the right rail's right-aligned column under LAM/BRG.
+
+   This is a composition change, not a collision guard — hence a real
+   breakpoint rather than a clamp. The 5:6 cut is chosen so that at the
+   widest qualifying aspect the blocks sit just above the card's rim;
+   squarer windows keep the landscape placement, which the content-safe
+   clamps keep collision-free (if cramped).
+   ========================================================================== */
+@media (max-aspect-ratio: 5/6) {
+  .hud-terr {
+    left: auto;
+    right: 15.5vw;              /* 2.2vw standoff from the hatch block */
+    top: 20.5vh;
+    text-align: right;
+  }
+  .hud-range {
+    left: auto;
+    right: 15.5vw;
+    top: 27vh;
+    text-align: right;
+  }
+}

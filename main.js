@@ -47,6 +47,7 @@ import { initMusicPlayer } from "./musicPlayer.js";
 import "./turnPanel.js";
 import "./dotsPanel.js";
 import "./wallPanel.js";
+import "./hudPanel.js";
 //import "./gamePanel.js";
 import "./desktopPanel.js";
 import "./desktopImage.js";
@@ -946,23 +947,31 @@ const PANELS = [
     // infiniteStyles.css :root). contents: [] authored explicitly so
     // filling them later is an edit, not a structural addition.
     { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ff4d00", contents: [],
-      // Locked demo — SOFT gate: this password ships to the browser in
-      // plaintext. A deterrent, not security (same as the shop gate).
       locked: true, password: "opensesame" },
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ffbb00", contents: [] },
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00d150", contents: [] },
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00b8e6", contents: [] },
+
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ffbb00", contents: [], 
+      locked: true, password: "opensesame" 
+    },
+
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00d150", contents: [], 
+      locked: true, password: "opensesame" 
+    },
+    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00b8e6", contents: [], 
+      locked: true, password: "opensesame" 
+    },
 
     { type: "image", name: "photo", src: "images/base/full/4full.webp", thumb: "images/base/thumb/4thumb.webp" },
 
     // The greeting — opens automatically on page load (openOnLoad),
     // positioned upper-right. x/y are fractions of the desktop surface;
     // w/h are pixels. Content is placeholder voice — rewrite freely.
-    { type: "md", name: "hello", lineColor: "#000000", fillColor: "#ffbb00",
+    { type: "md", name: "hello", lineColor: "#000000", fillColor: "#ffffff",
       openOnLoad: { x: 0.58, y: 0.05, w: 480, h: 340 },
-      content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- drag things. open things.\n- drop them into folders.\n\nnothing persists — reload resets the room.\n\nstatus: _live_\n" },
+      content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- drag things. open things.\n- drop things into folders.\n\nnothing persists — reload resets the room.\n\nstatus: _locked_\n\nThe content on this page is currently under construction" },
   ],
 },
+
+{ type: "hud", headline: "[THANK.YOU]", url: "calilei 2026" },
 
 //{
 //    type: "game",
