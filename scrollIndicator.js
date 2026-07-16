@@ -254,15 +254,25 @@ export function initScrollIndicator() {
 
   const cycle = N * STEP;   // one full loop, in strip pixels
   let lastActive = -1;      // change-detector for the discrete-state writes
+  let lastYStr = "";        // change-detector for the continuous transforms
+                            //   (both reticles derive from y alone; cycle is
+                            //   constant, so one cache guards the pair)
 
   registerFrameHook((dt) => {
     const af = getActiveFloat();   // wrapped [0, N)
 
     // Continuous position — direct map, no easing (see header). toFixed
     // keeps the style string stable-length; sub-hundredth-px is invisible.
+    // Settled-value guard: when activeFloat hasn't moved, both transforms
+    // are byte-identical — skip the writes (same discipline as lastActive
+    // on the discrete block below).
     const y = (af + 0.5) * STEP;
-    reticle.style.transform      = `translate3d(0, ${y.toFixed(2)}px, 0)`;
-    reticleClone.style.transform = `translate3d(0, ${(y - cycle).toFixed(2)}px, 0)`;
+    const yStr = y.toFixed(2);
+    if (yStr !== lastYStr) {
+      reticle.style.transform      = `translate3d(0, ${yStr}px, 0)`;
+      reticleClone.style.transform = `translate3d(0, ${(y - cycle).toFixed(2)}px, 0)`;
+      lastYStr = yStr;
+    }
 
     // Discrete state — the nearest panel. Math.round(af) can yield N right
     // at the top of the wrap; the double-mod folds it back to 0 (the same

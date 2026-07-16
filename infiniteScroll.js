@@ -72,19 +72,28 @@ let activeFloat = 0;              // wrapped scroll position in panels [0, N).
    PANEL-TYPE REGISTRY
    -----------------------------------------------------------------------------
    A type registers itself with:
-     registerPanelType("name", { buildDOM, init, tick })
+     registerPanelType("name", { buildDOM, init, tick, selfDrivenOpacity })
    - buildDOM(panel, index) -> HTMLElement
        Returns the type's overlay node. The core appends it to #infinite-overlays
-       and sets data-index. The core OWNS the node's opacity / --shift /
-       .is-active (writes them every frame); the type owns everything else
-       INSIDE the node. Required.
+       and sets data-index. The core OWNS the node's --shift / .is-active, and
+       its opacity too unless the type declares selfDrivenOpacity (below); all
+       core writes are change-detected, so a settled scroll writes nothing. The
+       type owns everything else INSIDE the node. Required.
    - init(index, overlay)
        Called once after all overlays are appended. The type wires up listeners,
        reads .clientWidth/Height, etc. Optional.
    - tick(index, overlay, presence_i, dist_i, dt, t)
-       Called every frame, AFTER the core has written presence-driven opacity
-       and --shift. A type that wants to drive its own opacity (self-driven
-       fade) writes it here — last-write-wins. Optional.
+       Called every frame, AFTER the core's presence-driven writes. A type that
+       wants to drive its own opacity (self-driven fade) writes it here —
+       last-write-wins. Optional.
+   - selfDrivenOpacity: true
+       Declares that tick() owns the overlay's opacity. The core then skips its
+       presence-driven opacity default for this type's overlays entirely — the
+       channel has exactly ONE writer, which is what lets the tick keep a
+       settled-value guard (skip the write when its rounded value is unchanged)
+       without the core's default leaking through on scroll frames. All five
+       live types declare it. Optional; omitting it keeps the zero-per-frame-
+       code default for presence-driven types.
    --------------------------------------------------------------------------- */
 const panelTypes = new Map();
 export function registerPanelType(name, def) {
@@ -172,7 +181,12 @@ export function registerFrameHook(fn) {
    caller any way to write them — preserving Invariant 1 (only onScroll writes
    activeFloat).
    --------------------------------------------------------------------------- */
-let lastPresence = [];           // most recent presence array, written by tick()
+let lastPresence = [];           // the PUBLISHED presence buffer — the read
+                                 //   side of the step-(2) double buffer (see
+                                 //   the buffer block above tick()). Swapped,
+                                 //   never assigned fresh, by tick() at the
+                                 //   step-(4)→(5) boundary; reallocated only
+                                 //   in start().
 export function getPresence(index) {
   return lastPresence[index] || 0;
 }
@@ -268,15 +282,56 @@ function activeIndex() {
    --------------------------------------------------------------------------- */
 let lastT = 0;
 
+/* Step-(3) change detection — see the comment inside tick(). */
+let lastWrittenFloat = NaN;       // activeFloat at the last written frame
+let lastWrittenShift = 0;         // viewport height at the last written frame
+const lastOpacityStr  = [];       // per-overlay last-written opacity string
+const lastActiveState = [];       // per-overlay last-written .is-active bool
+const coreOwnsOpacity = [];       // per-overlay: false when the type declared
+                                  //   selfDrivenOpacity (filled in buildAll)
+const panelDefs = [];             // per-panel RESOLVED type def (filled in
+                                  //   buildAll; null when the type is missing).
+                                  //   Types are immutable after start(), so the
+                                  //   per-frame panelTypes.get(string) lookup in
+                                  //   step (4) is resolved once here instead.
+                                  //   Consequence to know about: re-registering
+                                  //   a type name after start() does NOT
+                                  //   retarget existing panels (registration
+                                  //   happens at import time, before start —
+                                  //   the overwrite path in registerPanelType
+                                  //   exists for pre-start collisions only).
+
+/* Step-(2) buffers — double-buffered presence + a dist scratch, allocated once
+   in start(). Previously `new Array(N)` ×2 per frame: two allocations + GC
+   churn 60×/sec on the hottest path, forever, scaling with panel count.
+   WHY TWO presence buffers and not one: the publish contract. `lastPresence`
+   (declared with the read-only views above) must keep pointing at the LAST
+   COMPLETED frame's values all the way through steps (2)–(4) — a getter
+   called from a panel tick reads the previous frame, exactly as it always
+   has — and flip to this frame's values only at the step-(4)→(5) boundary.
+   A single reused buffer would leak half-written values to mid-frame getter
+   calls; the swap preserves the timing contract with zero allocation.
+   `dist` is never published, so one scratch suffices. */
+let presenceBuf = new Float64Array(0);  // write side; swapped with lastPresence
+let distBuf = new Float64Array(0);      // per-frame scratch, never escapes tick()
+
 function tick() {
   const now = performance.now() / 1000;
   const dt = Math.min(now - lastT, 0.05);   // clamp big gaps (hidden tab)
   lastT = now;
   const t = now;
 
-  const SHIFT = window.innerHeight;          // overlay travels a full viewport
-  const presence = new Array(N);
-  const dist = new Array(N);
+  const SHIFT = vh;                          // overlay travels a full viewport
+                                             //   (vh is resize-cached; reading
+                                             //   window.innerHeight here would
+                                             //   be a per-frame forced-layout-
+                                             //   class read for the same value)
+  // (2) Fill the reused buffers in place (allocated once in start() — see
+  //     the buffer block above for the double-buffer publish contract).
+  //     Local aliases keep the rest of this function reading presence[i] /
+  //     dist[i] exactly as before.
+  const presence = presenceBuf;
+  const dist = distBuf;
   for (let i = 0; i < N; i++) {
     let d = i - activeFloat;
     d = ((d % N) + N) % N;
@@ -286,44 +341,75 @@ function tick() {
     presence[i] = f * f * (3 - 2 * f);       // smoothstep
   }
 
-  const active = activeIndex();
-
-  // (3) Presence-driven writes. A self-driven type WILL overwrite this opacity
-  //     in step (4); that's intentional — having step (3) always run keeps a
-  //     panel type that doesn't self-drive working with zero per-frame code.
-  for (let i = 0; i < N; i++) {
-    const ov = overlays[i];
-    if (!ov) continue;
-    ov.style.opacity = presence[i].toFixed(3);
-    ov.style.setProperty("--shift", `${(dist[i] * SHIFT).toFixed(1)}px`);
-    // The active panel gets .is-active. The presence threshold is very
-    // permissive (0.05) — we want the class set whenever the panel is
-    // the nearest integer, regardless of whether scroll has settled
-    // exactly on its centerpoint. The previous threshold (0.5) caused a
-    // subtle interactivity bug: scrolling could rest at a position where
-    // a panel was the active integer but presence was below 0.5, leaving
-    // .is-active off and the panel's buttons unclickable. 0.05 keeps the
-    // mid-transition exclusion (a panel barely fading in shouldn't be
-    // interactive yet) while never failing during normal "settled" scroll.
-    ov.classList.toggle("is-active", i === active && presence[i] > 0.05);
+  // (3) Presence-driven writes. For types WITHOUT selfDrivenOpacity, the
+  //     opacity default written here keeps them working with zero per-frame
+  //     code. Types WITH the flag own their opacity channel in step (4), and
+  //     the core doesn't touch it (see the PANEL-TYPE REGISTRY).
+  //
+  //     CHANGE DETECTION: everything written here derives from exactly two
+  //     inputs — activeFloat and SHIFT. If neither moved since the last
+  //     written frame (the settled steady state, i.e. most of any session),
+  //     every write would re-write an identical value, so the whole block is
+  //     skipped and a settled page dirties no style at all from the core.
+  //     On dirty frames, --shift genuinely changes for every overlay (written
+  //     unconditionally), while the per-overlay caches still skip opacity /
+  //     .is-active writes for panels whose rounded values are stable.
+  if (activeFloat !== lastWrittenFloat || SHIFT !== lastWrittenShift) {
+    const active = activeIndex();
+    for (let i = 0; i < N; i++) {
+      const ov = overlays[i];
+      if (!ov) continue;
+      if (coreOwnsOpacity[i]) {
+        const op = presence[i].toFixed(3);
+        if (op !== lastOpacityStr[i]) {
+          ov.style.opacity = op;
+          lastOpacityStr[i] = op;
+        }
+      }
+      ov.style.setProperty("--shift", `${(dist[i] * SHIFT).toFixed(1)}px`);
+      // The active panel gets .is-active. The presence threshold is very
+      // permissive (0.05) — we want the class set whenever the panel is
+      // the nearest integer, regardless of whether scroll has settled
+      // exactly on its centerpoint. The previous threshold (0.5) caused a
+      // subtle interactivity bug: scrolling could rest at a position where
+      // a panel was the active integer but presence was below 0.5, leaving
+      // .is-active off and the panel's buttons unclickable. 0.05 keeps the
+      // mid-transition exclusion (a panel barely fading in shouldn't be
+      // interactive yet) while never failing during normal "settled" scroll.
+      const isAct = i === active && presence[i] > 0.05;
+      if (isAct !== lastActiveState[i]) {
+        ov.classList.toggle("is-active", isAct);
+        lastActiveState[i] = isAct;
+      }
+    }
+    lastWrittenFloat = activeFloat;
+    lastWrittenShift = SHIFT;
   }
 
   // (4) Per-type per-frame hook. Each registered type runs once per panel of
   //     that type. A type whose entry has no tick() (e.g. a future static
-  //     type) simply contributes nothing here.
+  //     type) simply contributes nothing here. panelDefs[i] is the type def
+  //     resolved once in buildAll — same def the Map lookup used to return,
+  //     without the per-panel-per-frame string-keyed get.
   for (let i = 0; i < N; i++) {
     const ov = overlays[i];
     if (!ov) continue;
-    const def = panelTypes.get(PANELS[i].type);
+    const def = panelDefs[i];
     if (def && def.tick) {
       try { def.tick(i, ov, presence[i], dist[i], dt, t); }
       catch (e) { console.error(`panel ${i} (${PANELS[i].type}) tick failed`, e); }
     }
   }
 
-  // Publish the presence array so frame hooks (e.g. scene system) can read it
-  // through getPresence(). This is the ONLY write to lastPresence.
-  lastPresence = presence;
+  // Publish the frame's presence by SWAPPING the buffers: lastPresence takes
+  // this frame's filled buffer; the retired buffer becomes next frame's write
+  // side. This is the ONLY write to lastPresence, and it keeps the getters'
+  // timing contract bit-identical to the old fresh-allocation scheme —
+  // through steps (2)–(4) getters saw the previous frame; from here (step 5,
+  // the frame hooks) they see this frame.
+  const retired = lastPresence;
+  lastPresence = presenceBuf;
+  presenceBuf = retired;
 
   // (5) Frame hooks. Run after panel ticks so consumers see the freshest state.
   //     Each hook is fully isolated — a throwing hook can't take down others.
@@ -360,6 +446,8 @@ function buildAll() {
       fallback.dataset.index = i;
       overlaysEl.appendChild(fallback);
       overlays.push(fallback);
+      coreOwnsOpacity.push(true);
+      panelDefs.push(null);   // no def to resolve; step (4) skips this panel
       return;
     }
     const node = def.buildDOM(p, i);
@@ -373,6 +461,9 @@ function buildAll() {
     if (!node.classList.contains("infinite-overlay")) node.classList.add("infinite-overlay");
     overlaysEl.appendChild(node);
     overlays.push(node);
+    coreOwnsOpacity.push(!def.selfDrivenOpacity);
+    panelDefs.push(def);   // resolved once; read by start()'s init pass and
+                           //   tick() step (4) — see the panelDefs declaration
   });
 }
 
@@ -406,6 +497,14 @@ export function start(panels) {
   PANELS = panels;
   N = PANELS.length;
 
+  // Allocate the step-(2) buffers now that N is known — BOTH presence
+  // buffers, so the publish swap rotates two typed arrays (never the
+  // module-initial []). Zero-filled: getPresence(i) before the first tick
+  // completes returns 0, same as it always did.
+  presenceBuf = new Float64Array(N);
+  lastPresence = new Float64Array(N);
+  distBuf = new Float64Array(N);
+
   scroller = document.getElementById("infinite-scroller");
   overlaysEl = document.getElementById("infinite-overlays");
   if (!scroller || !overlaysEl) {
@@ -418,7 +517,7 @@ export function start(panels) {
   // Init each type ONCE per panel of that type, AFTER all overlays exist
   // (so a type that wants to query siblings can).
   for (let i = 0; i < N; i++) {
-    const def = panelTypes.get(PANELS[i].type);
+    const def = panelDefs[i];
     if (def && def.init) {
       try { def.init(i, overlays[i]); }
       catch (e) { console.error(`panel ${i} (${PANELS[i].type}) init failed`, e); }

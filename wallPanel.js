@@ -588,6 +588,9 @@ function scheduleIdle(fn) {
 const PANEL_REF = "__wallPanelRef__";
 
 registerPanelType("wall", {
+  // tick() owns this overlay's opacity; the core skips its presence default.
+  selfDrivenOpacity: true,
+
 
   buildDOM(panel /*, index */) {
     const overlay = document.createElement("div");
@@ -763,13 +766,19 @@ registerPanelType("wall", {
     if (!state) return;
 
     // Self-driven fade — same pattern as turnPanel.js (see handoffGate.md §4).
-    // Ease `grow` toward the gate's verdict; last-write opacity on BOTH
-    // the overlay AND the textWall so the two layers enter/leave as one.
+    // Ease `grow` toward the gate's verdict; one alpha drives BOTH the overlay
+    // AND the textWall so the two layers enter/leave as one — and one settled-
+    // value guard covers both writes (the type declares selfDrivenOpacity, so
+    // this tick is the overlay channel's only writer; settled walls write
+    // nothing, which matters here — the textWall subtree is ~4,500 spans).
     const target = isClearToEnter(index) ? 1 : 0;
     state.grow += (target - state.grow) * (1 - Math.exp(-FADE_SPEED * dt));
     const alpha = state.grow.toFixed(3);
-    overlay.style.opacity = alpha;
-    state.textWall.style.opacity = alpha;
+    if (alpha !== state.lastAlpha) {
+      overlay.style.opacity = alpha;
+      state.textWall.style.opacity = alpha;
+      state.lastAlpha = alpha;
+    }
 
     // If the wall faded out while a primitive still thinks the cursor
     // is inside, wind it down here — the mousemove handler skips

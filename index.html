@@ -7,6 +7,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Calilei</title>
 
+<!-- =============================================================================
+     RESOURCE HINTS — earliest lines in <head> after the metas, on purpose.
+     -----------------------------------------------------------------------------
+     PRECONNECT: three.js arrives via the import map below and pdfjs via a
+     dynamic import() in pdfModal.js — both from unpkg. Without this hint the
+     TCP+TLS handshake to that origin starts only when the module graph
+     reaches the import, on a cold connection. `crossorigin` matches how
+     module scripts are fetched (CORS mode); a preconnect whose credentials
+     mode mismatches the eventual request is silently wasted.
+
+     FONT PRELOADS: without these, each .woff2 is discovered only after
+     fonts.css is fetched AND parsed AND the first styled text needs the face
+     — the tail end of a 33-stylesheet waterfall. Preloading starts the
+     fetches immediately, which shrinks the font-display:swap flash and feeds
+     every module that waits on font arrival (the dots HUD's canvas repaint,
+     the wall's fonts.ready re-fit).
+
+     Only faces visible AT FIRST PAINT are preloaded — panel 0 plus the
+     persistent instruments:
+       Glitched-Book           body face sitewide + the dots HUD canvas text
+       HornetDisplay-Regular   dots kicker, scroll indicator, music player
+       HornetDisplay-Bold      dots title
+       Glitched-Medium         dots nameplate ("Glitched" w400 resolves to
+                               the 500 face — no 400 is declared)
+     Everything else (Gridnik, the remaining Glitched weights) belongs to
+     panels, modals, and views that aren't on screen at load; preloading
+     those would compete with the hints above for startup bandwidth.
+     `crossorigin` is REQUIRED on font preloads even same-origin (fonts are
+     always CORS-mode fetches) — omitting it double-fetches every file.
+
+     COUPLED WITH: fonts.css (paths + faces — a font file rename must update
+     both) and the import map below (the unpkg origin).
+     ========================================================================== -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+
+<link rel="preload" as="font" type="font/woff2" href="fonts/Glitched-Book.woff2" crossorigin />
+<link rel="preload" as="font" type="font/woff2" href="fonts/HornetDisplay-Regular.woff2" crossorigin />
+<link rel="preload" as="font" type="font/woff2" href="fonts/HornetDisplay-Bold.woff2" crossorigin />
+<link rel="preload" as="font" type="font/woff2" href="fonts/Glitched-Medium.woff2" crossorigin />
+
 <!-- Typography. fonts.css declares the Glitched family from local .woff2
      files in /fonts/. It MUST load first so subsequent stylesheets can
      reference "Glitched" / "Glitched Book" by name. -->

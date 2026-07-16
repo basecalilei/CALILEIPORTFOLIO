@@ -1532,6 +1532,9 @@ function fitWindowToContent(state, win, naturalW, naturalH) {
 const PANEL_REF = "__desktopPanelRef__";
 
 registerPanelType("desktop", {
+  // tick() owns this overlay's opacity; the core skips its presence default.
+  selfDrivenOpacity: true,
+
 
   buildDOM(panel /*, index */) {
     const overlay = document.createElement("div");
@@ -1752,18 +1755,39 @@ registerPanelType("desktop", {
     // Write to the SCREEN so the values inherit only to the screen
     // subtree (the four frame children + .desktop-surface). The
     // html-overlay sibling stays unaffected.
-    state.screen.style.setProperty("--x-scale", xScale.toFixed(4));
-    state.screen.style.setProperty("--y-split", ySplit.toFixed(4));
+    //
+    // Settled-value guards on everything below: these custom properties
+    // INHERIT into the whole screen subtree (icons, windows, taskbar), so
+    // an unguarded write is a per-frame style invalidation of all of it.
+    // Every value derives from `grow`, whose ease converges to an exact
+    // fixed point — the rounded strings settle within a few frames of the
+    // visual settle, after which the tick writes nothing.
+    const xs = xScale.toFixed(4);
+    const ys = ySplit.toFixed(4);
+    if (xs !== state.lastXs || ys !== state.lastYs) {
+      state.screen.style.setProperty("--x-scale", xs);
+      state.screen.style.setProperty("--y-split", ys);
+      state.lastXs = xs;
+      state.lastYs = ys;
+    }
 
     // Opacity SNAP-IN on the OVERLAY. The dark frame lines should
     // appear sharp on the light surface — no muddy fade — so we snap
     // overlay opacity to 1 the moment grow leaves zero by a hair.
-    overlay.style.opacity = smoothstep(0, 0.04, grow).toFixed(3);
+    const snapOp = smoothstep(0, 0.04, grow).toFixed(3);
+    if (snapOp !== state.lastSnapOp) {
+      overlay.style.opacity = snapOp;
+      state.lastSnapOp = snapOp;
+    }
 
     // GRADUAL FADE on the HTML OVERLAY (the scroll-indicator line).
     // turnPanel-style — opacity = grow directly. Effective rendered
     // alpha = overlay.opacity × htmlOverlay.opacity = (~1) × grow.
-    state.htmlOverlay.style.opacity = grow.toFixed(3);
+    const hudOp = grow.toFixed(3);
+    if (hudOp !== state.lastHudOp) {
+      state.htmlOverlay.style.opacity = hudOp;
+      state.lastHudOp = hudOp;
+    }
 
     // INTERACTION GATING — same pattern as turnPanel.js. .is-clear flips
     // on at INTERACT_THRESHOLD so drags can't fire on a half-built

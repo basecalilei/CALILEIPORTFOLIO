@@ -291,6 +291,20 @@ const ANN_LEADER_GAP_PX = 8;        // leader stops short of the cross — the
 // keeps the old look if Hornet ever fails to load.
 const ANN_FONT_FAMILY = '"Hornet Display", "Glitched Book", ui-monospace, monospace';
 const ANN_LETTER_SPACING = "0.08em"; // Tier 3 spec (visualLanguage.md)
+
+// Thousands separator for the ROTATED odometer readout. Replaces
+// toLocaleString("en-US"), which routes through Intl machinery on every
+// call — needless weight for fixed en-US grouping of a non-negative
+// integer, in a string that rebuilds every probed frame. Plain digit
+// grouping: walk back from the end in threes.
+function groupThousands(n) {
+  const s = String(n);
+  let out = s.slice(-3);
+  for (let i = s.length - 3; i > 0; i -= 3) {
+    out = s.slice(Math.max(0, i - 3), i) + "," + out;
+  }
+  return out;
+}
 // Extension/retraction — machinery motion, fast and eased. Out is faster
 // than in (release should feel snappy, same asymmetry as the vortex).
 const PROBE_IN_SPEED = 14.0;        // s⁻¹ exponential ease, extend
@@ -436,6 +450,61 @@ function loadGltf(url) {
   });
   gltfCache.set(url, promise);
   return promise;
+}
+
+/* -----------------------------------------------------------------------------
+   DEFERRED LOAD SCHEDULING — keep GLB fetches off the startup critical path
+   -----------------------------------------------------------------------------
+   Scene factories run at bootstrap (threeArray.js), which used to mean every
+   turn panel's GLB fetch + main-thread parse started AT PAGE LOAD, competing
+   with first-paint assets (fonts, the dots scene, panel-0 imagery) while the
+   user is looking at panel 0.
+
+   Instead, each instance queues its load here and it starts on an IDLE SLICE
+   after first paint. Slices are pumped ONE LOAD PER SLICE (the same reasoning
+   as wallPanel's chunked init): GLTFLoader parses on the main thread, and
+   staggering the fetch starts spreads the parses out instead of landing all
+   three in the same frame window.
+
+   The timeout bounds the deferral: if the main thread never goes idle (a
+   busy tab, a slow device), loads still start within IDLE_LOAD_TIMEOUT_MS.
+   Safari has no requestIdleCallback; a short fixed delay stands in — it only
+   needs to clear first paint + the module graph, not be precise.
+
+   Late arrival is safe BY CONSTRUCTION: every instance starts on the
+   fallback mesh and swaps when its GLB lands (the block in the factory), so
+   deferral changes sequencing, not correctness. The accepted trade: a user
+   who scrolls to a turn panel faster than its GLB can load briefly sees the
+   fallback box. The first-approach kick in update() bounds that window — see
+   the factory's MODEL CREATION block.
+   --------------------------------------------------------------------------- */
+const IDLE_LOAD_TIMEOUT_MS = 4000;
+const idleLoadQueue = [];
+let idleLoadPumpArmed = false;
+
+function requestIdleSlice(fn) {
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(fn, { timeout: IDLE_LOAD_TIMEOUT_MS });
+  } else {
+    setTimeout(fn, 500);
+  }
+}
+
+function queueIdleLoad(fn) {
+  idleLoadQueue.push(fn);
+  if (idleLoadPumpArmed) return;
+  idleLoadPumpArmed = true;
+  requestIdleSlice(pumpIdleLoads);
+}
+
+function pumpIdleLoads() {
+  const fn = idleLoadQueue.shift();
+  if (fn) fn();   // a no-op if the first-approach kick already started it
+  if (idleLoadQueue.length) {
+    requestIdleSlice(pumpIdleLoads);
+  } else {
+    idleLoadPumpArmed = false;
+  }
 }
 
 /* -----------------------------------------------------------------------------
@@ -988,9 +1057,25 @@ registerSceneType("turn", (ctx) => {
   applyShading(currentModel);
   writeFootprint();
 
-  // Try to load the GLB if a file is specified. On success, swap the
-  // fallback out and re-collect fade materials from the new model.
-  if (panel && panel.file) {
+  // Load the GLB if a file is specified — DEFERRED, not eager (see the
+  // DEFERRED LOAD SCHEDULING block at module level for the full why). Two
+  // triggers race, whichever fires first wins, the flag makes the loser a
+  // no-op:
+  //   1. an idle slice after first paint (the normal path — the model is
+  //      ready long before the user scrolls to it), or
+  //   2. the first update() call — the scene un-culls only when its panel
+  //      first approaches (presence crosses SCENE_CULL), so this kick is
+  //      the insurance for "user started scrolling before idle ever fired".
+  // On arrival, swap the fallback out and re-collect fade materials from
+  // the new model.
+  //
+  // No file → the flag starts settled so beginModelLoad (and update()'s
+  // kick check) short-circuits forever.
+  let modelLoadStarted = !(panel && panel.file);
+
+  function beginModelLoad() {
+    if (modelLoadStarted) return;
+    modelLoadStarted = true;
     loadGltf(panel.file)
       .then((gltf) => {
         holder.remove(currentModel);
@@ -1007,6 +1092,8 @@ registerSceneType("turn", (ctx) => {
         console.warn(`turnScene: failed to load "${panel.file}" for panel ${panelIndex}; using fallback.`, err);
       });
   }
+
+  if (!modelLoadStarted) queueIdleLoad(beginModelLoad);
 
 
   // ---- PROBE ANNOTATIONS (hover-to-measure readouts) ----------------------
@@ -1578,6 +1665,13 @@ registerSceneType("turn", (ctx) => {
     // heading persists even at zero scale, so a re-arrival comes back to
     // whatever heading was last set.
     update({ dt, t }) {
+      // FIRST-APPROACH KICK. threeArray only calls update() once this
+      // scene un-culls, i.e. its panel is approaching for the first time —
+      // if the idle-slice load hasn't started by now, start it immediately
+      // (see the MODEL CREATION block). Settles to a false compare after
+      // the first kick; for fileless scenes it starts settled.
+      if (!modelLoadStarted) beginModelLoad();
+
       // The handoff-gate target: 1 if we're clear to enter, 0 otherwise.
       // Both growScale and growOpacity ease toward this SAME target value;
       // they differ only in WHICH SPEED CONSTANT they use, and whether the
@@ -1724,16 +1818,15 @@ registerSceneType("turn", (ctx) => {
         (instantVelDeg - displayVelDegPerSec) *
         (1 - Math.exp(-HUD_VELOCITY_SMOOTH_SPEED * dt));
 
-      // ANGLE (deg, signed, normalized to (-180, 180]). Sway oscillates
-      // around the user's heading, so the signed range keeps idle motion
-      // showing as small numbers near 0 instead of jumping to 350° / 10°.
-      let angleDeg = currentY * 180 / Math.PI;
-      angleDeg = ((angleDeg % 360) + 540) % 360 - 180;
-
-      const angleStr    = Math.round(angleDeg).toString();
-      const velStr      = displayVelDegPerSec.toFixed(1);
-      const rotationStr = Math.round(cumulativeRotationRad * 180 / Math.PI)
-        .toLocaleString("en-US");
+      // NOTE: the integrators above (prevHolderY, cumulativeRotationRad,
+      // displayVelDegPerSec) are STATEFUL and must run every frame — skip
+      // a frame and the odometer under-counts, the velocity ease decays
+      // from a stale sample. Their DISPLAY formatting, by contrast, is
+      // pure and only consumed by updateAnnotations — so the string
+      // builds (and the angle normalization that feeds one of them) live
+      // inside the annVis gate below, next to their one consumer. The
+      // probe apparatus is retracted almost all of the time; the settled
+      // path pays for math, never for strings.
 
       // PROBE STATE. Self-heal first: if the scene is effectively
       // invisible (user scrolled away mid-hover), drop the hover latch —
@@ -1848,6 +1941,21 @@ registerSceneType("turn", (ctx) => {
       hotDotMaterial.opacity =
         ANN_DIAL_DOT_COUNT > 0 ? ANN_DIAL_HOT_ALPHA * appVis : 0;
       if (annVis > 0.001) {
+        // READOUT FORMATTING — moved from the unconditional path above
+        // (see the NOTE there): these strings exist only for the probe
+        // apparatus, so they're built only while it's deployed.
+        //
+        // ANGLE (deg, signed, normalized to (-180, 180]). Sway oscillates
+        // around the user's heading, so the signed range keeps idle motion
+        // showing as small numbers near 0 instead of jumping to 350° / 10°.
+        let angleDeg = currentY * 180 / Math.PI;
+        angleDeg = ((angleDeg % 360) + 540) % 360 - 180;
+
+        const angleStr    = Math.round(angleDeg).toString();
+        const velStr      = displayVelDegPerSec.toFixed(1);
+        const rotationStr =
+          groupThousands(Math.round(cumulativeRotationRad * 180 / Math.PI));
+
         updateAnnotations(angleStr, velStr, rotationStr, sceneVis, dt, t,
                           floatY * growScale, currentY);
       } else {

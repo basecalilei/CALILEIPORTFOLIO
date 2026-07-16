@@ -521,6 +521,9 @@ function createDragSurface(panelIndex, overlay) {
 const PANEL_REF = "__turnPanelRef__";   // private property name on the overlay
 
 registerPanelType("turn", {
+  // tick() owns this overlay's opacity; the core skips its presence default.
+  selfDrivenOpacity: true,
+
 
   buildDOM(panel /*, index */) {
     const overlay = document.createElement("div");
@@ -634,11 +637,19 @@ registerPanelType("turn", {
       // 60vmin in turnStyles.css keeps the surface functional.
     }
 
-    // Self-driven fade — same pattern as emptyPanel.js (see handoffGate.md §4).
-    // Ease `grow` toward the gate's verdict; last-write the opacity.
+    // Self-driven fade — ease `grow` toward the gate's verdict, write opacity
+    // only when the rounded value changed (settled panels write nothing).
+    // Safe because this type declares selfDrivenOpacity: the core skips its
+    // opacity default here, so this tick is the channel's ONLY writer and the
+    // cache is the DOM truth. lastOpacity starts undefined -> first frame
+    // always writes. Same pattern as emptyPanel.js (see handoffGate.md §4).
     const target = isClearToEnter(index) ? 1 : 0;
     state.grow += (target - state.grow) * (1 - Math.exp(-FADE_SPEED * dt));
-    overlay.style.opacity = state.grow.toFixed(3);
+    const op = state.grow.toFixed(3);
+    if (op !== state.lastOpacity) {
+      overlay.style.opacity = op;
+      state.lastOpacity = op;
+    }
 
     // Feed the hover driver — it owns the visibility gate, the fade-out
     // wind-down, and the settle self-heal (see overlayHover.js).

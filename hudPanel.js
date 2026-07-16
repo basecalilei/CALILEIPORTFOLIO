@@ -689,6 +689,9 @@ function buildStageHTML(url, contacts) {
 const PANEL_REF = "__hudPanelRef__";
 
 registerPanelType("hud", {
+  // tick() owns this overlay's opacity; the core skips its presence default.
+  selfDrivenOpacity: true,
+
 
   buildDOM(panel /*, index */) {
     /* The overlay carries the scroll-linked pair — the horizon and the
@@ -845,9 +848,15 @@ registerPanelType("hud", {
        layers enter/leave as one. */
     const target = isClearToEnter(index) ? 1 : 0;
     state.grow += (target - state.grow) * (1 - Math.exp(-FADE_SPEED * dt));
+    // Settled-value guard — the same discipline as lastDist/lastHdg/lastRange
+    // below, applied to the fade pair. The type declares selfDrivenOpacity,
+    // so this tick is the overlay channel's only writer.
     const alpha = state.grow.toFixed(3);
-    overlay.style.opacity = alpha;
-    state.stage.style.opacity = alpha;
+    if (alpha !== state.lastAlpha) {
+      overlay.style.opacity = alpha;
+      state.stage.style.opacity = alpha;
+      state.lastAlpha = alpha;
+    }
 
     /* All motion is gated on visibility — far-away panels pay nothing.
        On re-entry the first, still-imperceptible visible frame re-syncs

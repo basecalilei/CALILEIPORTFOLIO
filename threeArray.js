@@ -63,6 +63,12 @@ import {
 /* -----------------------------------------------------------------------------
    TUNING CONSTANTS
    --------------------------------------------------------------------------- */
+let renderedLastFrame = false;    // did anything render last frame? Drives the
+                                  //   conditional clear in updateScenes (one
+                                  //   transition clear on the rendered->empty
+                                  //   edge, then the canvas goes untouched).
+let sceneLive = new Uint8Array(0);// reused per-frame cull verdicts (pre-pass)
+
 const SCENE_CULL = 0.004;   // a scene whose presence AND weight() are both
                             //   below this contributes nothing this frame:
                             //   no update, no render, zero cost. Matched to
@@ -173,10 +179,12 @@ export function bootstrapScenes(panels) {
     alpha: true,                   // transparent canvas: page bg shows through
     powerPreference: "high-performance",
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, DPR_CAP));
   renderer.setClearColor(0x000000, 0);   // fully transparent clear
   renderer.autoClear = false;             // we control clears per frame
 
+  // resizeRenderer() also applies the pixel ratio (capped at DPR_CAP) — and
+  // re-applies it on every subsequent resize, which is what keeps the ratio
+  // honest when the window moves between displays with different DPRs.
   resizeRenderer();
   window.addEventListener("resize", onWindowResize, { passive: true });
 
@@ -273,6 +281,40 @@ function buildScene(i, decl) {
     return;
   }
 
+  // PERSISTENT UPDATE CTX — the envelope handed to hooks.update() every
+  // frame, built ONCE here and mutated in place by updateScenes. Previously
+  // a fresh ~13-field object literal PLUS a fresh isClearToEnter arrow
+  // closure were allocated per active scene per frame — steady GC churn on
+  // the hot path for an envelope whose stable fields never change and whose
+  // closure only ever captured the fixed `i`.
+  //
+  // CONTRACT (documented in threeArray.md §8): the ctx is valid for the
+  // DURATION OF THE update() CALL ONLY. A scene type must never retain the
+  // reference expecting a snapshot — next frame the volatile fields are
+  // overwritten in place. (Both live scene types destructure per call.)
+  //
+  // Built AFTER the factory ran, and from buildCtx.camera, so a factory that
+  // replaced its build ctx's camera is honored here — the same channel the
+  // stash below reads. updateScenes also re-asserts ctx.camera from the
+  // stash every frame, which keeps an update-time write to ctx.camera a
+  // silent no-op, exactly as it was when the envelope was rebuilt fresh.
+  const updateCtx = {
+    THREE,
+    renderer,
+    scene,
+    camera: buildCtx.camera,
+    width: initialSize.w,
+    height: initialSize.h,
+    panel: PANELS[i],
+    panelIndex: i,
+    presence: 0,
+    activeFloat: 0,
+    active: false,
+    isClearToEnter: () => isClearToEnter(i),
+    dt: 0,
+    t: 0,
+  };
+
   scenes[i] = {
     type: opts.type,
     opts,
@@ -280,6 +322,7 @@ function buildScene(i, decl) {
     scene,
     camera: buildCtx.camera, // the factory may have replaced ctx.camera
     hooks,
+    updateCtx,
     lastW: initialSize.w,
     lastH: initialSize.h,
   };
@@ -302,15 +345,40 @@ function currentRegionSize(anchor) {
   return { w: Math.max(1, r.width), h: Math.max(1, r.height) };
 }
 
+// Module-level scratch for currentRegionRect — refilled on every call, so the
+// per-frame per-scene {x,y,w,h} literal this used to return is gone.
+// CONTAINMENT RULE (what makes one shared scratch safe): the rect is consumed
+// entirely within the caller's loop iteration — numbers are copied out into
+// s.lastW/H, the ctx's width/height, and the scissor call — and is NEVER
+// retained or handed to scene hooks as an object. Keep it that way: if a
+// future consumer needs to hold a rect across iterations or frames, give it
+// its own copy, don't stash this one.
+const regionRectScratch = { x: 0, y: 0, w: 1, h: 1 };
+
 function currentRegionRect(anchor) {
-  if (!anchor) return { x: 0, y: 0, w: window.innerWidth, h: window.innerHeight };
+  const out = regionRectScratch;
+  if (!anchor) {
+    // Fullscreen: the region IS the canvas, and canvasW/canvasH cache exactly
+    // window.innerWidth/Height (resizeRenderer refreshes them on every
+    // resize). The live viewport reads this path used to do are on the
+    // forced-layout-read list — cheap at rAF time, but per-frame reads of
+    // resize-constant values the module already caches.
+    out.x = 0;
+    out.y = 0;
+    out.w = canvasW;
+    out.h = canvasH;
+    return out;
+  }
+  // Anchored: a LIVE read every frame, by design — the anchor-follows-overlay
+  // contract means the rect moves mid-transition (--shift), so caching here
+  // would go stale. (No anchored scene exists in the current composition;
+  // when one ships, profile the post-step-(3) forced-recalc this read implies.)
   const r = anchor.getBoundingClientRect();
-  return {
-    x: r.left,
-    y: r.top,
-    w: Math.max(1, r.width),
-    h: Math.max(1, r.height),
-  };
+  out.x = r.left;
+  out.y = r.top;
+  out.w = Math.max(1, r.width);
+  out.h = Math.max(1, r.height);
+  return out;
 }
 
 /* -----------------------------------------------------------------------------
@@ -324,6 +392,14 @@ function currentRegionRect(anchor) {
 function resizeRenderer() {
   canvasW = window.innerWidth;
   canvasH = window.innerHeight;
+  // Re-apply the pixel ratio on EVERY resize, not just at bootstrap: dragging
+  // the window between displays with different DPRs fires resize but used to
+  // keep the stale ratio — started on a 2x display and moved to a 1x external,
+  // every scene rendered 4x the needed pixels for the rest of the session.
+  // A DPR change always arrives with a resize event, so this line is the
+  // whole fix. Order matters: pixel ratio before setSize (the drawing buffer
+  // is sized as CSS px x current ratio).
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, DPR_CAP));
   renderer.setSize(canvasW, canvasH, false);
 }
 
@@ -341,28 +417,63 @@ function onWindowResize() {
    Walks every scene, decides whether to skip it, and (if not) sets its
    scissor + viewport and renders it.
 
-   ORDER per scene:
-     - read presence[i] and weight() (if any)
-     - skip if BOTH below SCENE_CULL (the cull rule per project decision)
-     - measure region (lazy); if size changed, call scene.resize()
-     - call scene.update(ctx) — scene mutates its graph
-     - set scissor + viewport to the region; render
-   We clear the WHOLE canvas exactly ONCE at the top of the frame (color +
-   depth), because autoClear is off. Per-scene we then only need to clear
-   the depth buffer if the scene cares — but since scenes don't overlap
-   (mutual scissor regions), they don't depth-conflict, so no per-scene
-   depth clear is needed. (The previous build needed per-scene depth clears
-   because scenes overlapped during handoff; this build's design decision
-   was no overlap, so the simpler clear logic suffices.)
+   ORDER per frame:
+     - PRE-PASS: read presence[i] and weight() for every scene, store the
+       cull verdict (BOTH below SCENE_CULL = culled — the cull rule per
+       project decision). weight() is called exactly once per scene per
+       frame, here.
+     - CLEAR: once, full canvas (color + depth; autoClear is off) — but only
+       on frames where at least one scene will render, plus ONE transition
+       clear on the rendered->empty edge to erase the last rendered frame.
+       The GL clear itself is near-free; what the skip buys is compositor
+       idle: an unconditional clear marks the fullscreen (transparent)
+       canvas dirty every frame, forcing a re-composite 60x/sec while the
+       user sits on the sceneless panels (wall / desktop / hud). On
+       empty->empty frames the canvas is now untouched.
+     - per live scene: measure region (lazy resize) -> update(ctx) ->
+       scissor + viewport -> render.
+   No per-scene depth clear is needed: scenes don't overlap (mutual scissor
+   regions), so they don't depth-conflict. (The previous build needed
+   per-scene depth clears because scenes overlapped during handoff; this
+   build's design decision was no overlap, so the simpler clear suffices.)
    --------------------------------------------------------------------------- */
 function updateScenes(dt, t) {
   if (!initialized || !renderer) return;
   const N = getPanelCount();
 
-  // Clear once, full canvas. Color clear honors clearAlpha=0 → transparent.
-  renderer.setScissorTest(false);
-  renderer.setViewport(0, 0, canvasW, canvasH);
-  renderer.clear(true, true, false);   // color, depth, no stencil
+  // PRE-PASS — cull verdicts before touching the renderer, so the clear
+  // below can be skipped on frames where nothing renders. CULL rule: both
+  // presence AND weight below threshold = scene is invisible and not in the
+  // middle of a self-driven exit animation.
+  if (sceneLive.length !== N) sceneLive = new Uint8Array(N);
+  let anyLive = false;
+  for (let i = 0; i < N; i++) {
+    const s = scenes[i];
+    if (!s) { sceneLive[i] = 0; continue; }
+    const presence = getPresence(i);
+    let weight = 0;
+    if (s.hooks.weight) {
+      try { weight = s.hooks.weight(); }
+      catch (e) { console.error(`Scene ${i} weight() threw`, e); }
+    }
+    const live = presence >= SCENE_CULL || weight >= SCENE_CULL;
+    sceneLive[i] = live ? 1 : 0;
+    if (live) anyLive = true;
+  }
+
+  // CLEAR — once, full canvas (color clear honors clearAlpha=0 →
+  // transparent), only when something renders this frame OR rendered last
+  // frame (the transition clear that erases the final rendered image).
+  // Empty→empty frames skip it entirely so the canvas stays clean and the
+  // compositor can idle — see the ORDER comment above.
+  if (anyLive || renderedLastFrame) {
+    renderer.setScissorTest(false);
+    renderer.setViewport(0, 0, canvasW, canvasH);
+    renderer.clear(true, true, false);   // color, depth, no stencil
+  }
+  renderedLastFrame = anyLive;
+
+  if (!anyLive) return;   // nothing to walk, nothing to render
 
   renderer.setScissorTest(true);
 
@@ -370,18 +481,9 @@ function updateScenes(dt, t) {
 
   for (let i = 0; i < N; i++) {
     const s = scenes[i];
-    if (!s) continue;
+    if (!s || !sceneLive[i]) continue;
 
     const presence = getPresence(i);
-    let weight = 0;
-    if (s.hooks.weight) {
-      try { weight = s.hooks.weight(); }
-      catch (e) { console.error(`Scene ${i} weight() threw`, e); }
-    }
-
-    // CULL: both presence AND weight below threshold = scene is invisible
-    // and not in the middle of a self-driven exit animation. Skip everything.
-    if (presence < SCENE_CULL && weight < SCENE_CULL) continue;
 
     // MEASURE the scene's region, lazily detect a size change, fire resize().
     const rect = currentRegionRect(s.anchor);
@@ -389,6 +491,12 @@ function updateScenes(dt, t) {
       s.lastW = rect.w;
       s.lastH = rect.h;
       if (s.hooks.resize) {
+        // This literal is DELIBERATELY still allocated fresh: resize is
+        // edge-triggered (size actually changed), so it's cold, and its
+        // envelope has a different shape than the update ctx — sharing the
+        // persistent ctx here would hand resize hooks per-frame fields
+        // (presence, dt, ...) the resize contract doesn't promise are
+        // current. Don't "optimize" this into the update ctx.
         try {
           s.hooks.resize({
             THREE, renderer, scene: s.scene, camera: s.camera,
@@ -405,19 +513,24 @@ function updateScenes(dt, t) {
       }
     }
 
-    // UPDATE: hand the scene a fresh ctx with all per-frame state.
+    // UPDATE: hand the scene its PERSISTENT ctx (built once in buildScene)
+    // with this frame's state written in place. Valid for the duration of
+    // the call only — see the contract at the ctx's construction.
     if (s.hooks.update) {
-      try {
-        s.hooks.update({
-          THREE, renderer, scene: s.scene, camera: s.camera,
-          width: rect.w, height: rect.h,
-          panel: PANELS[i], panelIndex: i,
-          presence, activeFloat,
-          active: isActive(i),
-          isClearToEnter: () => isClearToEnter(i),
-          dt, t,
-        });
-      } catch (e) { console.error(`Scene ${i} update() threw`, e); }
+      const c = s.updateCtx;
+      c.camera = s.camera;    // re-assert from the stash: keeps the envelope
+                              //   truthful and an update-time ctx.camera
+                              //   write a no-op (matching the old fresh-
+                              //   literal behavior)
+      c.width = rect.w;       // numbers copied OUT of the shared rect scratch
+      c.height = rect.h;
+      c.presence = presence;
+      c.activeFloat = activeFloat;
+      c.active = isActive(i);
+      c.dt = dt;
+      c.t = t;
+      try { s.hooks.update(c); }
+      catch (e) { console.error(`Scene ${i} update() threw`, e); }
     }
 
     // SCISSOR + VIEWPORT to this scene's region, then render.
