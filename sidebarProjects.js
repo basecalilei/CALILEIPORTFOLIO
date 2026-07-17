@@ -114,7 +114,7 @@ const PROJECTS = [
   title: "MANNEQUIN TECHPACK SYSTEM",
   date:  "05-02-26",
   type:  "TECHNICAL DESIGN",
-  tools: ["CLO3D", "Blender"],
+  tools: ["CLO3D", "Blender", "Illustrator", "Photoshop"],
   note:  "The end-to-end techpack system I built for Noabrands Fusion. Reliable production documentation to run our mannequins through overseas manufacturers in China and Mexico across form, hardware, and finish",
   thumb: "images/projects/noabrandsTechpack/thumb/1thumb.webp",
   media: `
@@ -268,7 +268,7 @@ const PROJECTS = [
   title: "FUSION BRAND SYSTEM",
   date:  "04-28-26",
   type:  "BRAND IDENTITY",
-  tools: ["Illustrator", "Blender"],
+  tools: ["Illustrator", "Photoshop", "Blender", "ComfyUI"],
   note:  "A new branding system proposed for Noabrands Fusion; logomark, logotype and the visual identity built to carry them. The word itself drove the concept: the Fusion of humans and technical design. All of it about the people behind the fabrication.",
   thumb: "images/projects/noabrandsBrand/thumb/1thumb.webp",
   media: `
@@ -642,7 +642,7 @@ const PROJECTS = [
   title: "THE MATCHUP",
   date:  "03-08-26",
   type:  "3D DESIGN",
-  tools: ["Blender", "ZBrush", "Substance Painter", "Unreal Engine"],
+  tools: ["Blender", "ZBrush", "Substance Painter", "Unreal Engine", "Houdini"],
   note:  "During my round-one interview with Noabrands, I was asked to return for round-two prepared to showcase skill in anatomy. I created a collections of mannequins, and presented them through a basketball story staged as a showroom. This project was designed to showcase my experience with designing the human form, pose authoring, and a wider range of 3D design.",
   thumb: "images/projects/noabrandsMatchup/thumb/1thumb.webp",
   media: `
