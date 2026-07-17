@@ -140,7 +140,20 @@
    cycle (manual skips always wrap regardless).
    ========================================================================== */
 const TRACKS = [
-  { src: "assets/beats/necktat.mp3", cover: "assets/beats/necktatcover.png", title: "NECKTAT" },
+  { src: "assets/tracks/CALILEI.mp3", title: "CALILEI.mp3" },
+  { src: "assets/tracks/EXODUS.mp3", title: "EXODUS.mp3" },
+  { src: "assets/tracks/NUCLEAR.mp3", title: "NUCLEAR.mp3" },
+  { src: "assets/tracks/WINGS.mp3",  title: "WINGS.mp3" },
+  { src: "assets/tracks/2055.mp3", title: "2055.mp3" },
+  { src: "assets/tracks/BROTHERS.mp3", title: "BROTHERS.mp3" },
+  { src: "assets/tracks/RIDDANCE.mp3", title: "RIDDANCE.mp3" },
+  { src: "assets/tracks/COLORS.mp3", title: "COLORS.mp3" },
+  { src: "assets/tracks/BELIEVE.mp3", title: "BELIEVE.mp3" },
+  { src: "assets/tracks/BLEED.mp3", title: "BLEED.mp3" },
+  { src: "assets/tracks/RAINDOWN.mp3", title: "RAINDOWN.mp3" },
+  { src: "assets/tracks/COMET.mp3", title: "COMET.mp3" },
+  { src: "assets/tracks/LOCATION.mp3", title: "LOCATION.mp3" },
+  { src: "assets/tracks/FIELDS.mp3", title: "FIELDS.mp3" },
   // { src: "assets/beats/track2.mp3", cover: "assets/beats/track2cover.png", title: "TRACK.02" },
   // { src: "assets/beats/track3.mp3", title: "TRACK.03" },
 ];

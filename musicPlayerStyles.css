@@ -5,7 +5,8 @@
      .music-player [data-state]  — fixed bottom-right row: disc | readout | transport
        .mp-disc                  — the record: circular, spins while playing
          .mp-disc-art            — cover-art <img>; hidden per-track when the
-                                   track has no cover or it fails → ink disc
+                                   track has no cover or it fails → grey disc
+                                   + ::before index tick
          .mp-disc-hub            — the spindle hole
        .mp-readout               — Hornet instrument stack
          .mp-state               — the state announcement (/ NOW.PLAYING ...)
@@ -78,9 +79,10 @@ body.sidebar-is-open .music-player {
 }
 
 /* -----------------------------------------------------------------------------
-   THE DISC — a 44px record. The ink background IS the coverless fallback:
-   art layers on top when the current track authors a cover that loads, so a
-   missing or failed cover degrades to a plain record with no empty-state
+   THE DISC — a 44px record. The light-grey background is the coverless
+   fallback surface: art layers on top when the current track authors a cover
+   that loads, so a missing or failed cover degrades to a plain grey record
+   (with the ::before state-colored index tick below) — no empty-state
    branching. overflow:hidden clips the art to the circle.
    --------------------------------------------------------------------------- */
 .mp-disc {
@@ -90,7 +92,10 @@ body.sidebar-is-open .music-player {
   height: 44px;
   border-radius: 50%;
   overflow: hidden;
-  background: var(--ink);
+  background: #d6d6d3;                    /* light-grey platter; opaque so it
+                                            stays distinct from the frosted
+                                            --sheet-bg panel, the hairline
+                                            border draws the rim */
   border: 1px solid var(--line);
 
   animation: mp-spin 5.6s linear infinite;
@@ -134,6 +139,51 @@ body.sidebar-is-open .music-player {
   background: var(--bg);
   border: 1px solid var(--line);
 }
+
+/* -----------------------------------------------------------------------------
+   THE COVERLESS INDEX TICK — the fallback's spin made legible.
+   A plain disc is rotationally symmetric, so its spin is invisible; only
+   asymmetric cover art reveals rotation. When a track authors no cover (art
+   hidden), this ::before is the disc's one asymmetric mark — a single radial
+   reference tick riding the platter, so a coverless record visibly turns.
+
+   Color reads the SAME data-state the readout reads (one writer, many CSS
+   readers): the tick carries the state's color exactly as .mp-state's mapping
+   does — green go / dim paused / blue awaiting-input / red warn — so the empty
+   disc becomes a second state lamp, not a missing-art apology. It takes weight
+   (2px on an otherwise-hairline face) because, per the visual language, weight
+   is what marks the LIVE element on an instrument. Green and blue are DEEPENED
+   from --brand-green / --brand-blue here: those two go soft on the light-grey
+   face, so the tick tunes them for its surface while .mp-state keeps the
+   canonical tokens against the frosted panel — same meaning, two surfaces
+   (visualLanguage's "tune per use").
+
+   Painted between the grey field and the art: ::before precedes .mp-disc-art
+   in tree order, so an authored cover simply covers it — same degrade-by-
+   layering the fallback already uses, no empty-state branching. The hub paints
+   last, over the tick's inner end, seating it at the spindle like a real
+   reference line. No new motion: it's a child region of .mp-disc, so it rides
+   the SAME 5.6s spin — nothing to phase-lock, and pause freezes it in place
+   with the platter.
+   --------------------------------------------------------------------------- */
+.mp-disc::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 4px;                        /* gaps off the rim, per the mark-spacing rule */
+  width: 2px;
+  height: 13px;                    /* spindle-out toward the rim, short of it */
+  margin-left: -1px;               /* center the 2px stroke on the disc axis */
+  border-radius: 1px;
+  background: #0092b8;             /* resting = standby/info; deepened --brand-blue */
+}
+/* One color per state, by meaning — mirrors .mp-state's mapping. Green/blue
+   deepened for the light face; paused/error read fine on their tokens. Red
+   stays warn only, the single meaning this component reserves it for. */
+.music-player[data-state="playing"] .mp-disc::before { background: #00a840; }          /* deepened --brand-green */
+.music-player[data-state="paused"]  .mp-disc::before { background: var(--ink-dim); }
+.music-player[data-state="standby"] .mp-disc::before { background: #0092b8; }           /* deepened --brand-blue */
+.music-player[data-state="error"]   .mp-disc::before { background: var(--brand-red); }
 
 /* -----------------------------------------------------------------------------
    THE READOUT — instrument tier, both lines (a state and a title both
