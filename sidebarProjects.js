@@ -111,7 +111,7 @@ const HOVER_WAVE_RADIUS = 5;
 const PROJECTS = [
   
   {
-  title: "NOABRANDS — TECHPACK SYSTEM",
+  title: "MANNEQUIN TECHPACK SYSTEM",
   date:  "05-02-26",
   type:  "TECHNICAL DESIGN",
   tools: ["CLO3D", "Blender"],
@@ -265,7 +265,7 @@ const PROJECTS = [
 },
 
 {
-  title: "NOABRANDS — BRAND SYSTEM",
+  title: "FUSION BRAND SYSTEM",
   date:  "04-28-26",
   type:  "BRAND IDENTITY",
   tools: ["Illustrator", "Blender"],
@@ -414,11 +414,11 @@ const PROJECTS = [
 },
 
   {
-  title: "NOABRANDS — TEAM USA",
+  title: "FUSION × TEAM USA 2026",
   date:  "04-11-26",
   type:  "APPAREL DESIGN",
   tools: ["Blender", "ZBrush", "CLO3D", "Substance Painter"],
-  note:  "Marketing creative for Noabrands to launch a collection of six soccer mannequins we produced for Nike, timed to the World Cup. Rather than render the mannequins alone, I designed and built the whole team around them — a full Fusion x Nike, Team USA kit spanning apparel, footwear, match balls, bags, and the brand system — so the display product had a world to live in.",
+  note:  "Marketing creative for Noabrands to launch a collection of six soccer mannequins we produced for Nike, timed to the World Cup. A full Fusion x Nike, Team USA kit spanning apparel, footwear, match balls, bags, and the brand system; a world for the display product to live in.",
   thumb: "images/projects/noabrandsTeamUsa/thumb/1thumb.webp",
   media: `
     <h3>FUSION × NIKE — TEAM USA</h3>
@@ -639,7 +639,7 @@ const PROJECTS = [
  },
 
   {
-  title: "NOABRANDS — THE MATCHUP",
+  title: "THE MATCHUP",
   date:  "03-08-26",
   type:  "3D DESIGN",
   tools: ["Blender", "ZBrush", "Substance Painter", "Unreal Engine"],
@@ -942,7 +942,7 @@ const PROJECTS = [
 
 
   {
-  title: "NIKE TRAINING — SPEED",
+  title: "NIKE TRAINING: SPEED",
   date:  "03-01-26",
   type:  "APPAREL DESIGN",
   tools: ["ZBrush", "CLO3D", "Substance Painter", "Blender"],
