@@ -34,6 +34,15 @@
    which delegates to focusWindow — the same code path used by clicking
    the window itself.
 
+   It also registers itself as the panel's MINIMIZE TARGET PROVIDER
+   (setMinimizeTargetProvider): when a window minimizes or restores, the
+   panel asks "where is this item's slot?" and the taskbar answers with
+   the slot's rect so the window can fly to/from it. Answering a
+   geometry question is read-only — the provider hands measurements out
+   and writes nothing — so the reader contract holds. If this module is
+   deleted, the panel falls back to a bottom-center pseudo-slot; nothing
+   breaks.
+
    FULL REBUILD ON EACH NOTIFY
    The slot list is rebuilt from scratch on every change, no diffing.
    With <10 open windows in practice the savings from incremental
@@ -56,7 +65,11 @@
        .desktop-taskbar-clock-time, .desktop-taskbar-clock-date.
    ========================================================================== */
 
-import { subscribeWindowsChanged, focusWindowById } from "./desktopPanel.js";
+import {
+  subscribeWindowsChanged,
+  focusWindowById,
+  setMinimizeTargetProvider,
+} from "./desktopPanel.js";
 
 /* -----------------------------------------------------------------------------
    PUBLIC API
@@ -113,6 +126,20 @@ export function buildTaskbar(state) {
   // Then subscribe for future changes.
   render(state, list);
   subscribeWindowsChanged(state, () => render(state, list));
+
+  // Tell the panel where minimized windows fly to: this window's slot.
+  // The lookup runs against OUR list element at flight time (slots are
+  // rebuilt on every notify, so caching an element would go stale — a
+  // fresh query is always current). Handing geometry out is read-only,
+  // so this stays within the reader contract: the taskbar still never
+  // writes panel state. If the slot isn't rendered for any reason we
+  // return null and the panel uses its own fallback target.
+  setMinimizeTargetProvider(state, (itemId) => {
+    const slot = list.querySelector(
+      `.desktop-taskbar-slot[data-id="${CSS.escape(itemId)}"]`
+    );
+    return slot ? slot.getBoundingClientRect() : null;
+  });
 
   return bar;
 }

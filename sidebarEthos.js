@@ -43,6 +43,16 @@
      cursor light up in hover's tints while the typewriter continues
      revealing characters elsewhere.
 
+   FIRST PLAY-THROUGH ONLY
+     The typewriter is a first-visit moment, not a toll on every visit.
+     A module-level hasPlayedThrough flag flips when BOTH typewriters
+     reach natural completion within one entry (onComplete never fires
+     on cancel, so bailing out mid-type leaves it false and the next
+     entry replays). Entries after that skip the entry animation — the
+     authored text is simply visible — and hover attaches directly,
+     auto-detecting STANDALONE mode since no typewriter spans exist to
+     borrow. Session-scoped by design: a page reload starts fresh.
+
    COUPLED WITH
      - sidebarEthosStyles.css: emits .sidebar-view-ethos and inner classes.
      - sidebar.js: imports `ethosView` and includes it in initSidebar.
@@ -61,6 +71,12 @@ import { createCancelGroup } from "./cancels.js";
 const cancels = createCancelGroup();
 
 const HOVER_WAVE_RADIUS = 5;
+
+// Set once, when BOTH typewriters reach natural completion within a
+// single entry. Later entries skip the entry animation (see FIRST
+// PLAY-THROUGH ONLY in the header). Deliberately session-scoped — a
+// reload replays; persist this to localStorage if once-ever is wanted.
+let hasPlayedThrough = false;
 
 /* -----------------------------------------------------------------------------
    THE VIEW
@@ -111,11 +127,32 @@ export const ethosView = {
     const title = el.querySelector(".sidebar-ethos-title");
     const body  = el.querySelector(".sidebar-ethos-body");
 
+    if (hasPlayedThrough) {
+      // Replay visits: no entry animation — the authored text is
+      // already fully visible. Hover still attaches; with no typewriter
+      // spans in the DOM it auto-detects STANDALONE mode and owns its
+      // own spans (and restores them on cancel).
+      if (title) cancels.add(startHoverWave(title, { waveRadius: HOVER_WAVE_RADIUS }));
+      if (body)  cancels.add(startHoverWave(body,  { waveRadius: HOVER_WAVE_RADIUS }));
+      return;
+    }
+
+    // First visit (or a retry after an aborted one): the full layered
+    // lifecycle. Completion is tracked per-entry — both typewriters must
+    // reach natural completion in THIS entry for the play-through to
+    // count. onComplete never fires on cancel, so an exit mid-type
+    // can't decrement `remaining` into a stale completion later.
+    let remaining = (title ? 1 : 0) + (body ? 1 : 0);
+    const onOneComplete = () => {
+      remaining--;
+      if (remaining === 0) hasPlayedThrough = true;
+    };
+
     // Typewriters registered first → tick first each frame → produce the
     // baseline color (reveal flashes or ink) that hover then overrides
     // for chars near the cursor.
-    if (title) cancels.add(startTypewriter(title));
-    if (body)  cancels.add(startTypewriter(body));
+    if (title) cancels.add(startTypewriter(title, { onComplete: onOneComplete }));
+    if (body)  cancels.add(startTypewriter(body,  { onComplete: onOneComplete }));
 
     // Hovers registered second → tick after typewriters → write their
     // tints last each frame for lit chars. Layered mode auto-detected.

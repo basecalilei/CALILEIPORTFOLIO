@@ -50,17 +50,33 @@
      onEnter fires when the view becomes visible to the user; onExit fires
      when it stops being visible. VISIBILITY (not "is this the active view")
      is the gate. Concretely:
-       - sidebar opens onto this view               → onEnter
+       - sidebar opens (always onto the initial view —
+         see OPEN RESET below)                      → onEnter
        - sidebar closes from this view              → onExit
        - user navigates here (sidebar already open) → onEnter
        - user navigates away (sidebar still open)   → onExit
      What does NOT fire onEnter/onExit:
        - initial mount of the shell (sheet is off-screen — user can't see it)
-       - programmatic view changes while the sidebar is closed
-     Both hooks can fire many times across a session — opening and closing
-     the sidebar without navigating still re-fires onEnter/onExit on the
-     active view. Hooks must therefore be cheap and idempotent: cancel any
-     in-flight work in onExit, restart cleanly in onEnter.
+       - programmatic view changes while the sidebar is closed — including
+         the open-time reset (same rule: it runs while the sheet is closed)
+     Both hooks can fire many times across a session — repeatedly opening
+     and closing re-fires onEnter/onExit on the initial view each time.
+     Hooks must therefore be cheap and idempotent: cancel any in-flight
+     work in onExit, restart cleanly in onEnter.
+
+   OPEN RESET
+     Every open lands on the initial view (home). The sidebar is a menu,
+     not a document with a saved place: closing from About and reopening
+     presents the menu again, not About. Implemented as a silent, instant
+     switchTo(initialName) at the top of openSidebar, BEFORE isOpen flips
+     — the hook gating keeps the swap invisible (no onExit fires on the
+     last-viewed view; its onExit already ran at close), and skipFade
+     keeps it from cross-fading during the slide-in. Consequence: view
+     state never survives a close, so "navigate while closed, see it on
+     next open" is no longer a supported pattern. If a deep-link ("open
+     the sidebar onto view X") is ever wanted, build it as an explicit
+     openSidebarTo(name) that bypasses this reset — don't pre-navigate
+     while closed.
 
    SHELL CHROME
      The shell renders two pieces of universal chrome on the sheet:
@@ -111,6 +127,8 @@ let viewContainer = null;  // holds all view DOM, only one visible at a time
 
 const viewEntries = [];    // [{ name, el, def }, ...]
 let activeEntry = null;    // currently visible view entry, or null
+let initialName = null;    // resolved at init; openSidebar resets to it
+                           // on every open (see OPEN RESET in the header)
 
 // Outside-click and Escape listeners — attached on open, removed on close.
 // Kept as module-level references so we can both add and remove the SAME
@@ -136,7 +154,8 @@ export function initSidebar({ views, initial }) {
 
   // Pick the initial view. Fall back to the first registered view if the
   // caller's `initial` doesn't match anything — better than starting blank.
-  const initialName = initial && viewEntries.some(v => v.name === initial)
+  // Kept at module scope: openSidebar resets to this name on every open.
+  initialName = initial && viewEntries.some(v => v.name === initial)
     ? initial
     : viewEntries[0].name;
   switchTo(initialName, /* skipFade */ true);
@@ -144,6 +163,17 @@ export function initSidebar({ views, initial }) {
 
 export function openSidebar() {
   if (!mounted || isOpen) return;
+
+  // OPEN RESET (see the header): every open starts at the initial view.
+  // Ordering is the whole trick — this runs while isOpen is still false,
+  // so switchTo's hook gating keeps the swap silent (no onExit on the
+  // last-viewed view; its onExit already ran when the sidebar closed),
+  // and skipFade makes it instant, so no cross-fade plays during the
+  // slide-in. The onEnter at the bottom of this function then fires on
+  // the initial view exactly as if it had been active all along.
+  // switchTo no-ops if the initial view is already active.
+  switchTo(initialName, /* skipFade */ true);
+
   isOpen = true;
   sheet.classList.add("is-open");
   trigger.setAttribute("aria-expanded", "true");
@@ -324,11 +354,10 @@ function buildViews(views) {
    Lifecycle hooks (onEnter/onExit) only fire when the sidebar is open —
    see VIEW CONTRACT in the file header. switchTo still flips opacity and
    pointer-events regardless of isOpen, so the view-stack DOM state stays
-   consistent; only the user-facing animation hooks are gated. If a view
-   transition happens while the sidebar is closed (initial mount or any
-   future programmatic nav), the new view will be visibly active by the
-   time the user next opens the sidebar — and openSidebar's onEnter call
-   fires at that point.
+   consistent; only the user-facing animation hooks are gated. Two paths
+   lean on this: the initial mount, and openSidebar's OPEN RESET — both
+   switch views while the sheet is closed, and in both cases the view is
+   already visibly in place when openSidebar's onEnter call fires.
    --------------------------------------------------------------------------- */
 
 function switchTo(name, skipFade = false) {

@@ -68,6 +68,10 @@
      - infiniteScroll.js: registerPanelType, registerWeight, isClearToEnter.
      - desktopDraggable.js: makeDraggable.
      - desktopStyles.css: emits all .desktop-* classes used here.
+     - desktopTaskbar.js: buildTaskbar (mounted in init); in the other
+       direction the taskbar consumes subscribeWindowsChanged +
+       focusWindowById and registers the minimize flight target via
+       setMinimizeTargetProvider.
      - main.js: importing this file installs the "desktop" type.
    ========================================================================== */
 
@@ -172,6 +176,49 @@ const WIN_STACK_OFFSET   = 28;     // each newly-opened window offsets from
 const HEADER_H           = 36;     // window header (drag handle) height. Used
                                    //   for clamping — title bar must stay
                                    //   inside the viewport.
+
+/* -----------------------------------------------------------------------------
+   WINDOW FLIGHT — the minimize / restore animation
+   -----------------------------------------------------------------------------
+   Minimizing a window flies it into its taskbar slot (shrink + fade
+   toward the slot's rect); restoring flies it back out. Exits are
+   slightly quicker than entrances and accelerate away; entrances
+   decelerate in — the standard asymmetry that makes put-away feel snappy
+   and bring-back feel settled.
+
+   The flight is run with the Web Animations API (el.animate), NOT a CSS
+   transition and NOT a rAF ease. Reasons, in order of importance:
+
+     - The window's position channel IS the inline `transform`
+       (applyWindowGeometry writes it on every drag frame). A CSS
+       transition on transform would tween every drag write. WAAPI's
+       effect overrides the inline style only while the flight runs and
+       releases it on finish — no classes, no transitionend
+       bookkeeping, no inline-style residue.
+     - The keyframes carry `visibility: "visible"` on both ends, so the
+       minimize flight stays painted even though the underlying
+       `.is-minimized` style is already `visibility: hidden` — state
+       flips instantly (see minimizeWindow), and when the effect ends
+       the element snaps to its true hidden state on its own.
+     - The project's hand-roll-your-ease rule is for scroll-coupled,
+       dt-driven animation (the grow channel). A fire-and-forget
+       one-shot between two settled DOM states is what the platform
+       API is for.
+
+   Interruption: a new flight samples getComputedStyle BEFORE cancelling
+   the in-flight one and uses the sampled values as its from-keyframe, so
+   rapid minimize/restore toggles reverse smoothly from wherever the
+   window visually is.
+   --------------------------------------------------------------------------- */
+const FLIGHT_MINIMIZE_MS   = 230;
+const FLIGHT_RESTORE_MS    = 280;
+const FLIGHT_MINIMIZE_EASE = "cubic-bezier(0.5, 0, 0.85, 0.4)";  // accelerate away
+const FLIGHT_RESTORE_EASE  = "cubic-bezier(0.15, 0.6, 0.25, 1)"; // decelerate in
+
+// Honoured by startWindowFlight: when the user prefers reduced motion the
+// flight is skipped entirely, which reproduces the pre-flight behavior
+// (instant hide / instant show) exactly.
+const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)");
 
 /* -----------------------------------------------------------------------------
    PER-INSTANCE STATE
@@ -744,6 +791,52 @@ export function subscribeWindowsChanged(state, fn) {
 }
 
 /* -----------------------------------------------------------------------------
+   MINIMIZE TARGET PROVIDER
+   -----------------------------------------------------------------------------
+   Where does a minimizing window fly TO? The honest answer — "its taskbar
+   slot" — belongs to the taskbar, and the taskbar is a reader: the panel
+   never imports from it and never queries its DOM shape (slot class
+   names and data attributes are the taskbar's internals). So the
+   geometry arrives the same way everything else crosses this boundary:
+   through a registered channel. The taskbar (or any future reader — a
+   dock, a window shelf) calls setMinimizeTargetProvider at build time
+   with `(itemId) => DOMRect | null`.
+
+   Providing geometry is read-only, so the reader contract holds: the
+   provider hands measurements OUT and writes nothing.
+
+   One provider slot, last write wins — one flight destination exists at
+   a time, and no second candidate reader does today. If two ever
+   genuinely compete, growing this into a first-non-null-wins list is a
+   contained change inside resolveMinimizeTarget.
+
+   If no provider is registered, or it returns null (slot not rendered,
+   taskbar module deleted), resolveMinimizeTarget falls back to a
+   pseudo-slot at the bottom-center of the screen — the flight still
+   reads as "put away," and deleting the taskbar leaves minimize fully
+   working. That's the deletability guarantee this indirection buys.
+   --------------------------------------------------------------------------- */
+export function setMinimizeTargetProvider(state, fn) {
+  state.minimizeTargetProvider = fn;
+}
+
+function resolveMinimizeTarget(state, itemId) {
+  const provided = state.minimizeTargetProvider?.(itemId) ?? null;
+  if (provided && provided.width > 0) return provided;
+
+  // Fallback pseudo-slot: bottom-center of the screen, taskbar-sized.
+  // Viewport coordinates, same as a real slot rect — one downstream
+  // conversion path in startWindowFlight either way.
+  const s = state.screen.getBoundingClientRect();
+  return {
+    left:   s.left + s.width / 2 - 70,
+    top:    s.bottom - 44,
+    width:  140,
+    height: 30,
+  };
+}
+
+/* -----------------------------------------------------------------------------
    WINDOW LIFECYCLE HOOKS
    -----------------------------------------------------------------------------
    A small helper used by minimize / restore / close to invoke any file-type
@@ -776,24 +869,137 @@ function fireHooks(fns, label) {
   }
 }
 
+/* -----------------------------------------------------------------------------
+   THE FLIGHT
+   -----------------------------------------------------------------------------
+   Computes the shrink-into-slot transform and runs it. Called by
+   minimizeWindow ("out") and restoreWindow ("in") AFTER their state
+   change — state is always instantaneous; the flight is paint only.
+
+   COORDINATE SPACE. The slot rect arrives in viewport pixels, but the
+   flight transform operates in the surface's local space — and between
+   grow 0.7 (interaction unlock) and 1.0 the screen subtree can still
+   carry residual --x-scale, so viewport pixels ≠ local pixels. All
+   viewport measurements are divided by the surface's measured scale
+   factor (rect size / offset size) to land in local space. At rest the
+   factor is 1 and the division is a no-op.
+
+   The window's own rect is never read. Its untransformed layout box is
+   position:absolute at 0,0 in the surface, so its layout center is just
+   (offsetWidth/2, offsetHeight/2), and with the default 50%/50%
+   transform-origin, `translate3d(tx,ty,0) scale(sx,sy)` puts the visual
+   center at layoutCenter + (tx,ty) with the shrink symmetric around it.
+   Deriving the target from layout rather than from a getBoundingClientRect
+   keeps the math correct even when a previous flight is mid-air.
+   --------------------------------------------------------------------------- */
+function startWindowFlight(state, win, direction) {
+  // Reduced motion: no flight. State has already changed instantly, so
+  // skipping here reproduces the pre-flight behavior exactly.
+  if (REDUCED_MOTION.matches) return;
+  if (typeof win.el.animate !== "function") return;
+
+  const el = win.el;
+
+  // If a flight is already running (rapid toggle), sample where the
+  // window visually is BEFORE cancelling, so the new flight departs from
+  // there instead of teleporting to an endpoint.
+  let sampled = false;
+  let fromTransform = `translate3d(${win.x}px, ${win.y}px, 0)`;
+  let fromOpacity = direction === "out" ? 1 : 0;
+  if (win.flight && win.flight.playState === "running") {
+    const cs = getComputedStyle(el);
+    if (cs.transform && cs.transform !== "none") fromTransform = cs.transform;
+    fromOpacity = parseFloat(cs.opacity);
+    sampled = true;
+    win.flight.cancel();
+  }
+  win.flight = null;
+
+  // Surface scale factor: viewport size / layout size. 1 when the panel
+  // is settled; <1 mid-assembly. Guard against a zero-size layout (can't
+  // happen once a window is open, but division by zero is forever).
+  const surfaceRect = state.surface.getBoundingClientRect();
+  const kx = state.surface.offsetWidth  ? surfaceRect.width  / state.surface.offsetWidth  : 1;
+  const ky = state.surface.offsetHeight ? surfaceRect.height / state.surface.offsetHeight : 1;
+
+  // Slot center + size, converted viewport → surface-local.
+  const slot = resolveMinimizeTarget(state, win.itemId);
+  const slotCx = (slot.left + slot.width  / 2 - surfaceRect.left) / kx;
+  const slotCy = (slot.top  + slot.height / 2 - surfaceRect.top)  / ky;
+  const sx = Math.max(0.02, (slot.width  / kx) / el.offsetWidth);
+  const sy = Math.max(0.02, (slot.height / ky) / el.offsetHeight);
+
+  // Translate that puts the window's visual center on the slot's center.
+  const tx = slotCx - el.offsetWidth  / 2;
+  const ty = slotCy - el.offsetHeight / 2;
+
+  const atSlot  = `translate3d(${tx}px, ${ty}px, 0) scale(${sx}, ${sy})`;
+  const atRest  = `translate3d(${win.x}px, ${win.y}px, 0)`;
+
+  // Both directions keep visibility:visible across the whole flight —
+  // for "out" this is what paints the window over the underlying
+  // .is-minimized hidden state until the effect ends. pointer-events
+  // stays none in-flight so the shrinking window can't catch a stray
+  // click (minimized means non-interactive, and mid-flight counts).
+  // Opacity holds near-full through most of the flight and collapses at
+  // the end (or the reverse), so the landing/departure at the slot reads
+  // as the window becoming the slot, not as a crossfade.
+  const out = direction === "out";
+  const keyframes = out
+    ? [
+        { transform: fromTransform, opacity: fromOpacity, visibility: "visible", pointerEvents: "none", offset: 0 },
+        { opacity: Math.min(fromOpacity, 0.9),            visibility: "visible", pointerEvents: "none", offset: 0.6 },
+        { transform: atSlot,        opacity: 0,           visibility: "visible", pointerEvents: "none", offset: 1 },
+      ]
+    : [
+        { transform: sampled ? fromTransform : atSlot, opacity: fromOpacity, visibility: "visible", pointerEvents: "none", offset: 0 },
+        { opacity: 0.9,                                   visibility: "visible", pointerEvents: "none", offset: 0.4 },
+        { transform: atRest,        opacity: 1,           visibility: "visible", pointerEvents: "none", offset: 1 },
+      ];
+
+  const flight = el.animate(keyframes, {
+    duration: out ? FLIGHT_MINIMIZE_MS : FLIGHT_RESTORE_MS,
+    easing:   out ? FLIGHT_MINIMIZE_EASE : FLIGHT_RESTORE_EASE,
+    fill: "none",
+  });
+
+  win.flight = flight;
+  const clear = () => { if (win.flight === flight) win.flight = null; };
+  flight.onfinish = clear;
+  flight.oncancel = clear;
+}
+
 function minimizeWindow(state, win) {
   // No-op if already minimized; lets callers fire this freely without
   // guarding. The .is-minimized class sets visibility: hidden in CSS,
   // which preserves layout but stops paint + pointer events — so the
   // minimized window can't be clicked or dragged while hidden, and
   // doesn't intercept the surface's wheel/click pass-through either.
+  //
+  // The state change is INSTANT; the flight painted afterwards is
+  // cosmetic (its keyframes hold visibility:visible over the hidden
+  // base state until it lands — see startWindowFlight).
   if (win.minimized) return;
   win.minimized = true;
   win.el.classList.add("is-minimized");
 
   // Fire file-type minimize hooks AFTER the class toggle — by the time
-  // a hook runs, the window has already finished its visual transition
-  // to minimized state. A media file type's pause-on-minimize callback
-  // is the canonical use. Hooks fire BEFORE the panel-level notify so
-  // file-type state settles before panel-level readers (taskbar) react.
+  // a hook runs, the window's STATE transition is complete (the flight
+  // may still be painting; a media type's pause-on-minimize therefore
+  // freezes the last frame, which shrinks into the slot — deliberate,
+  // it's what real desktops do). Hooks fire BEFORE the panel-level
+  // notify so file-type state settles before panel-level readers
+  // (taskbar) react.
   fireHooks(win.onMinimizeFns, "onMinimize");
 
   notifyWindowsChanged(state);
+
+  // Flight last: the notify above rebuilds the taskbar's slots, and the
+  // provider should measure the slot in its post-change visual state
+  // (position is identical either way — minimize changes no slot's
+  // membership or order — but this ordering keeps the measurement
+  // honest if slot geometry ever becomes state-dependent).
+  startWindowFlight(state, win, "out");
 }
 
 function restoreWindow(state, win) {
@@ -811,6 +1017,9 @@ function restoreWindow(state, win) {
   fireHooks(win.onRestoreFns, "onRestore");
 
   notifyWindowsChanged(state);
+
+  // Fly back out of the slot to the resting position.
+  startWindowFlight(state, win, "in");
 }
 
 export function focusWindowById(state, itemId) {
@@ -970,6 +1179,10 @@ function openWindowFor(state, item, authored = null) {
     // via .is-minimized class); restoreWindow sets back to false. New
     // windows always open visible — minimize is a user action only.
     minimized: false,
+    // The in-flight minimize/restore Animation, or null. Owned entirely
+    // by startWindowFlight (set, sampled on interrupt, cleared on
+    // finish/cancel); closeWindow cancels it as teardown hygiene.
+    flight: null,
     onMinimizeFns: [],
     onRestoreFns: [],
     onCloseFns: [],
@@ -1074,6 +1287,11 @@ function closeWindow(state, win) {
       userResized: win.userResized,
     };
   }
+
+  // A removed element's animations are cancelled by the browser anyway;
+  // the explicit cancel just avoids retaining a finished Animation
+  // object on a record that's about to be dropped.
+  win.flight?.cancel();
 
   win.el.remove();
   state.windows.delete(win.itemId);
@@ -1620,6 +1838,11 @@ registerPanelType("desktop", {
       // the only reader is the taskbar (built below in this init).
       // Future readers register via subscribeWindowsChanged.
       windowsChangedSubscribers: [],
+      // Where minimized windows fly to: (itemId) => DOMRect | null,
+      // registered by the taskbar via setMinimizeTargetProvider. Null
+      // until a reader provides one; resolveMinimizeTarget falls back
+      // to a bottom-center pseudo-slot so the flight works taskbar-less.
+      minimizeTargetProvider: null,
     };
     instances.set(index, state);
 

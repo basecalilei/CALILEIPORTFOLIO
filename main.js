@@ -946,32 +946,50 @@ const PANELS = [
     // Four empty folders, one per brand primary (tokens from
     // infiniteStyles.css :root). contents: [] authored explicitly so
     // filling them later is an edit, not a structural addition.
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ff4d00", contents: [],
-      locked: true, password: "opensesame" },
 
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#ffbb00", contents: [], 
+    { type: "folder", name: "calileiMusic", lineColor: "#000000", fillColor: "#ff4d00", 
+      contents: [
+      { type: "folder", name: "demos", lineColor: "#000000", fillColor: "#ff4d00", locked: true, password: "opensesame", contents: [] },
+      { type: "md", name: "calileiNotation.md", lineColor: "#000000", fillColor: "#00d150",  src: "assets/md/calileiNotation.md" },
+      { type: "md", name: "calileiVoice.md", lineColor: "#000000", fillColor: "#ffbb00",  src: "assets/md/calileiVoice.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "lineCombo.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/lineCombo.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "comboBounce.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/comboBounce.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "phoneticAppeal.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/phoneticAppeal.md" },
+      { type: "md", name: "callResponse.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/callResponse.md" },
+      { type: "md", name: "rhymingWords.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/rhymingWords.md" },
+      { type: "md", name: "prosodyMeter.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/prosodyMeter.md" },
+      { type: "md", name: "vividDiction.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/vividDiction.md" },
+      ],
+    },
+
+    { type: "folder", name: "texWax", lineColor: "#000000", fillColor: "#ffbb00", contents: [], 
       locked: true, password: "opensesame" 
     },
 
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00d150", contents: [], 
-      locked: true, password: "opensesame" 
-    },
-    { type: "folder", name: "folder", lineColor: "#000000", fillColor: "#00b8e6", contents: [], 
+    { type: "folder", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150", contents: [], 
       locked: true, password: "opensesame" 
     },
 
-    { type: "image", name: "photo", src: "images/base/full/4full.webp", thumb: "images/base/thumb/4thumb.webp" },
+    { type: "folder", name: "calileiLabel", lineColor: "#000000", fillColor: "#00b8e6", contents: [], 
+      locked: true, password: "opensesame" 
+    },
+
+    { type: "folder", name: "moodBoard", lineColor: "#000000", fillColor: "#dadada", contents: [], 
+      locked: true, password: "opensesame" 
+    },
+
+    { type: "image", name: "calilei.jpg", src: "images/base/full/4full.webp", thumb: "images/base/thumb/4thumb.webp" },
 
     // The greeting — opens automatically on page load (openOnLoad),
     // positioned upper-right. x/y are fractions of the desktop surface;
     // w/h are pixels. Content is placeholder voice — rewrite freely.
-    { type: "md", name: "hello", lineColor: "#000000", fillColor: "#ffffff",
+    { type: "md", name: "hello.md", lineColor: "#000000", fillColor: "#ffffff",
       openOnLoad: { x: 0.58, y: 0.05, w: 480, h: 340 },
       content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- drag things. open things.\n- drop things into folders.\n\nnothing persists — reload resets the room.\n\nstatus: _locked_\n\nThe content on this page is currently under construction" },
   ],
 },
 
-{ type: "hud", headline: "[THANK.YOU]", url: "calilei 2026" },
+{ type: "hud", headline: "THANK.YOU", url: "calilei 2026" },
 
 //{
 //    type: "game",

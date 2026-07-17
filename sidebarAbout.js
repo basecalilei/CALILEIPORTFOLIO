@@ -22,8 +22,10 @@
           through the sheet's scroll container automatically). "Seen
           once" semantics: scrolling past unrevealed steps can never
           deadlock the chain — passed steps catch up off-screen.
-     Decisions on record: the sequence replays on every view entry, and
-     there is deliberately no skip affordance (yet).
+     Decisions on record: the sequence plays on every entry UNTIL its
+     first natural completion — after that, entries land with the
+     content already revealed (see FIRST PLAY-THROUGH ONLY below).
+     There is deliberately no mid-play skip affordance (yet).
 
      TWO STEP KINDS (auto-detected: contains <img> → figure):
        - type: startTypewriter reveals the text with organic timing.
@@ -78,6 +80,21 @@
        the state classes; the primitive cancels restore the text nodes.
        The DOM is never left partially hidden.
 
+     FIRST PLAY-THROUGH ONLY
+       The gated reveal is a first-read moment. A module-level
+       hasPlayedThrough flag flips in stepDone when the LAST step
+       finishes — which, because steps are seen-gated, means the reader
+       scrolled the whole view. Later entries skip the sequence: no
+       pending classes, no observer, no scrollTop reset (that reset
+       exists only to serve the gate's geometry — a returning reader
+       keeps their place like any normal page), and hover attaches
+       immediately in STANDALONE mode to the same targets the sequence
+       would have given it (HOVER_SELECTORS minus figure-kind elements,
+       mirroring the step-kind rule). Session-scoped: a reload replays.
+       An exit mid-sequence leaves the flag false, so the next entry
+       replays from the top; resuming from a partial read is a possible
+       future refinement, deliberately not built.
+
      STYLING RULE FOR ANIMATED SUBTREES
        Unchanged and still load-bearing: the primitives wrap EVERY text
        node inside a target — including the whitespace between authored
@@ -113,6 +130,14 @@ import { createCancelGroup } from "./cancels.js";
    --------------------------------------------------------------------------- */
 
 const cancels = createCancelGroup();
+
+// Set once, at the first natural completion of the FULL gated sequence.
+// Because every step is seen-gated, completion implies the reader
+// scrolled the entire view. Later entries skip the sequence and land
+// revealed (see FIRST PLAY-THROUGH ONLY in the header). Deliberately
+// session-scoped — a reload replays; persist this to localStorage if
+// once-ever is wanted.
+let hasPlayedThrough = false;
 
 // Wave radius for the hover layer. The primitive's default is 35;
 // smaller reads as more focal/subtle, which suits permanent copy.
@@ -320,6 +345,25 @@ export const aboutView = {
   onEnter(el) {
     cancels.cancelAll();
 
+    if (hasPlayedThrough) {
+      // Replay visits: no sequence, no pending classes — the authored
+      // DOM is already fully visible. Two deliberate differences from
+      // a first visit:
+      //   - scrollTop is NOT reset. The reset below exists purely to
+      //     serve the gate's geometry; with no gate, a returning
+      //     reader keeps their place like any normal page.
+      //   - hover attaches immediately (STANDALONE mode — no
+      //     typewriter spans exist for it to borrow) rather than
+      //     per-step on typing completion. The img filter mirrors the
+      //     sequence's step-kind rule: figure-kind elements never get
+      //     hover in the animated path, so they don't get it here.
+      for (const target of el.querySelectorAll(HOVER_SELECTORS.join(", "))) {
+        if (target.querySelector("img")) continue;
+        cancels.add(startHoverWave(target, { waveRadius: HOVER_WAVE_RADIUS }));
+      }
+      return;
+    }
+
     // Always re-enter at the top: the sequence lives in read order from
     // the top, and the scroll container otherwise preserves the previous
     // visit's position — a returning reader would land at the bottom,
@@ -380,6 +424,12 @@ export const aboutView = {
 
     function stepDone() {
       running = false;
+      // The final step just finished → the reader played the whole
+      // sequence through. Recorded at module scope so future entries
+      // skip straight to revealed content. Can't fire post-teardown:
+      // typewriter completions are disposed-guarded upstream, and
+      // figure timers are cleared in the teardown cancel.
+      if (nextIdx >= steps.length) hasPlayedThrough = true;
       tryAdvance();
     }
 

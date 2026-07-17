@@ -213,7 +213,7 @@ import { registerPanelType, registerWeight, isClearToEnter } from "./infiniteScr
 const FADE_SPEED = 12.0;
 
 /* Content defaults — overridable per PANELS entry (see CONTENT AUTHORING). */
-const DEFAULT_HEADLINE = "[THANK.YOU]";
+const DEFAULT_HEADLINE = "THANK.YOU";
 const DEFAULT_URL      = "www.calilei.com";
 
 /* ---- scroll-driven motion ----

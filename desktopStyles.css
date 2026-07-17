@@ -713,9 +713,13 @@
 
 /* Minimized state: visibility: hidden preserves geometry (so restore
    puts the window back exactly where it was) while removing paint and
-   pointer events. Not display:none because we want the layout snapshot
-   preserved and because if minimize ever grows an animation, the
-   transition needs a positioned element to interpolate from. */
+   pointer events. Not display:none — the layout snapshot must survive,
+   and the minimize flight (startWindowFlight in desktopPanel.js) needs
+   a positioned element to interpolate: its WAAPI keyframes hold
+   visibility: visible OVER this rule while the window flies into its
+   taskbar slot, and when the effect ends the element snaps to the
+   hidden state below on its own. No flight classes exist in CSS on
+   purpose — the animation is entirely effect-level. */
 .desktop-window.is-minimized {
   visibility: hidden;
 }
