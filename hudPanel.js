@@ -303,14 +303,14 @@ const DEFAULT_CONTACTS = [
   { t: "alt", s: "+14", x:  -42, y:  265 },
   { t: "alt", s: "-09", x:  141, y:  310, trk: 335, spd: 26 },
   /* waypoint / project fiducials */
-  { t: "id", s: "AMOX",      x: 237, y: -51 },
-  { t: "id", s: "UXS99",     x: 263, y:  16 },
-  { t: "id", s: "ORB2025",   x: 157, y:  42 },
-  { t: "id", s: "D.ZERO",    x: 234, y:  47 },
+  { t: "id", s: "FREE.BIRZ",      x: 237, y: -51 },
+  { t: "id", s: "CRUDE",     x: 263, y:  16 },
+  { t: "id", s: "FUSION",   x: 157, y:  42 },
+  { t: "id", s: "TEXWAX",    x: 234, y:  47 },
   { t: "id", s: "ARCSYS",    x: 234, y:  78 },
-  { t: "id", s: "CORXBASE",  x: 197, y: 232 },
+  { t: "id", s: "____",  x: 197, y: 232 },
   { t: "id", s: "AZULI",     x: 179, y: 265 },
-  { t: "id", s: "FREE.BIRZ", x: 216, y: 297 },
+  { t: "id", s: "BASE", x: 216, y: 297 },
   /* signal readouts */
   { t: "db", s: "-57.98",  x: 213, y: 106 },
   { t: "db", s: "-67.34",  x: 246, y: 134 },
@@ -328,7 +328,7 @@ const DEFAULT_CONTACTS = [
   { t: "glyph", n: 6,  x: -170, y:  170, orb: -3.8, tum:  40 },
   { t: "glyph", n: 7,  x:  -60, y:  300, trk:  20, spd: 16, tum:  45 },
   { t: "glyph", n: 8,  x:  300, y: -230, trk: 265, spd: 21, tum: -35 },
-  { t: "glyph", n: 9,  x:  120, y:  366 },
+  { t: "glyph", n: 9,  x:  20, y:  166, orb:  5.8 },
   { t: "glyph", n: 10, x:  366, y:  120, orb:  1.8 },
 ];
 

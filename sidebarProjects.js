@@ -112,7 +112,7 @@ const PROJECTS = [
   
   {
   title: "NOABRANDS — TECHPACK SYSTEM",
-  date:  "06-08-26",
+  date:  "05-02-26",
   type:  "TECHNICAL DESIGN",
   tools: ["CLO3D", "Blender"],
   note:  "The end-to-end techpack system I built for Noabrands Fusion. Reliable production documentation to run our mannequins through overseas manufacturers in China and Mexico across form, hardware, and finish",
@@ -266,10 +266,10 @@ const PROJECTS = [
 
 {
   title: "NOABRANDS — BRAND SYSTEM",
-  date:  "04-01-26",
+  date:  "04-28-26",
   type:  "BRAND IDENTITY",
   tools: ["Illustrator", "Blender"],
-  note:  "A new branding system proposed for Noabrands Fusion — logomark, logotype and the visual identity built to carry them. The word itself drove the concept: a perfect circle and a flawed one, inorganic and organic, machine and human. Fusion is a fabrication studio where designers use technology to build products, so the identity pairs the rigid language of technical drawing — measurement lines, alignment marks, grids — against blue and red color fields, fades and organic shapes. All of it about the people behind the fabrication.",
+  note:  "A new branding system proposed for Noabrands Fusion; logomark, logotype and the visual identity built to carry them. The word itself drove the concept: the Fusion of humans and technical design. All of it about the people behind the fabrication.",
   thumb: "images/projects/noabrandsBrand/thumb/1thumb.webp",
   media: `
     <h3>FUSION — 2026 BRAND SYSTEM</h3>
@@ -292,10 +292,10 @@ const PROJECTS = [
        > That was the whole concept.
        <br>
        <br>
-       > Fusion is a fabrication studio where designers use technology to develop products. The fusion, to me, was the coming together of the digital and physical sides of what we did — 3D design in software on one end, hands-on fabrication on the other.
+       > Fusion is a fabrication studio where designers use technology to develop products. The fusion, to me, was the coming together of the digital and physical sides of what we did. 3D design in software on one end, hands-on fabrication on the other.
        <br>
        <br>
-       > So the system pairs the rigid design language of technical drawings — measurement lines, alignment marks, grids — with blue and red color fields, fades, gradients and organic shapes.
+       > So the system pairs the rigid design language of technical drawings; measurement lines, alignment marks, grids; with blue and red color fields, fades, gradients and organic shapes.
        <br>
        <br>
        > The people behind the fabrication, and the juxtaposition between the technical and the human nature of the work.
@@ -311,7 +311,7 @@ const PROJECTS = [
        <br>
        - Before and after: the old enclosed monogram, and what replaced it.
        <br>
-       - The new mark is an orbit — a hard center held inside softer rings, the machine and the human in one form.
+       - The new mark is an orbit; a hard center held inside softer rings, the machine and the human in one form.
        <br>
        - The logotype was rebuilt alongside it, rounded and evenly weighted.
        <br>
@@ -328,7 +328,7 @@ const PROJECTS = [
        <br>
        - Two circles. One drawn by a machine, one drawn by a hand.
        <br>
-       - <strong>INFORMATION</strong> and <strong>HUMAN</strong> — the perfect circle and the flawed one.
+       - <strong>INFORMATION</strong> and <strong>HUMAN</strong> ;the perfect circle and the flawed one.
        <br>
        - Every other decision in the system comes out of this page.
        <br>
@@ -348,7 +348,7 @@ const PROJECTS = [
     <p>// <strong>THE TECHNICAL SIDE</strong>
        <br>
        <br>
-       - Measurement lines, alignment marks, grids — the mark drawn to rule so it can be broken deliberately everywhere else.
+       - Measurement lines, alignment marks, grids; the mark drawn to rule so it can be broken deliberately everywhere else.
        <br>
        - And on the blueprint, red annotation in someone's handwriting. The technical language, with a person still holding the pen.
        <br>
@@ -363,7 +363,7 @@ const PROJECTS = [
        <br>
        - Rendered soft and dimensional, laid over a dimensioned technical form.
        <br>
-       - Blue running to red across the word — the two halves of the studio in one lockup.
+       - Blue running to red across the word; the two halves of the studio in one lockup.
        <br>
        <br>
        --------------------------------------
@@ -376,7 +376,7 @@ const PROJECTS = [
     <p>// <strong>MACHINE / HUMAN</strong>
        <br>
        <br>
-       - The mannequin holding the mark — jointed arms, articulated hands, cradling a soft red field.
+       - The mannequin holding the mark; jointed arms, articulated hands, cradling a soft red field.
        <br>
        - The clearest statement in the system: the manufactured body, holding the human thing.
        <br>
@@ -391,7 +391,7 @@ const PROJECTS = [
        <br>
        - Figures rendered as color and motion, resolved just enough to read as people.
        <br>
-       - The line the whole identity hangs on — the people behind the fabrication.
+       - The line the whole identity hangs on; the people behind the fabrication.
        <br>
        <br>
        --------------------------------------
@@ -415,7 +415,7 @@ const PROJECTS = [
 
   {
   title: "NOABRANDS — TEAM USA",
-  date:  "06-11-26",
+  date:  "04-11-26",
   type:  "APPAREL DESIGN",
   tools: ["Blender", "ZBrush", "CLO3D", "Substance Painter"],
   note:  "Marketing creative for Noabrands to launch a collection of six soccer mannequins we produced for Nike, timed to the World Cup. Rather than render the mannequins alone, I designed and built the whole team around them — a full Fusion x Nike, Team USA kit spanning apparel, footwear, match balls, bags, and the brand system — so the display product had a world to live in.",
@@ -428,7 +428,7 @@ const PROJECTS = [
        > NOABRANDS builds display — mannequins, fixtures and props — under the FUSION line. The job was to promote a collection of six soccer mannequins we produced for Nike, and to time it to the World Cup.
        <br>
        <br>
-       > So I didn't render the mannequins alone. I built the whole team around them: a full Fusion × Nike, Team USA kit, with Fusion sitting front-of-shirt as the sponsor — the display brand fielding its own side.
+       > So I didn't render the mannequins alone. I built the whole team around them: a full Fusion × Nike, Team USA kit, with Fusion sitting front-of-shirt as the sponsor.
        <br>
        <br>
        > One system, three colorways, carried across every asset so the collection reads as a single drop.
@@ -437,7 +437,7 @@ const PROJECTS = [
        > Produced end to end:
        <br>
        <br>
-       - Hard goods modeled in Blender, forms sculpted in ZBrush
+       - Assets modeled in Blender, or sculpted in ZBrush
        <br>
        - Apparel patterned and cloth-simulated in CLO3D
        <br>
@@ -473,7 +473,7 @@ const PROJECTS = [
        <br>
        - USA across the chest; Fusion and Noabrands marks kept quiet.
        <br>
-       - The travel half of the kit — worn to the pitch, not on it.
+       - The travel half of the kit; worn to the pitch, not on it.
        <br>
        <br>
        --------------------------------------
@@ -501,7 +501,6 @@ const PROJECTS = [
        <br>
        - The actual product: the six soccer mannequins, posed mid-play.
        <br>
-       - Volley, sprint, slide, bicycle kick — each authored to hold tension head to toe.
        <br>
        - Everything else in this project exists to sell these.
        <br>
@@ -542,7 +541,7 @@ const PROJECTS = [
        <br>
        - Nike × Fusion × USA footwear packaging, colorway-coded to the boot inside.
        <br>
-       - Full retail treatment: size tab, spec label and the globe motif.
+       - Full retail treatment: size tab, spec label, etc.
        <br>
        <br>
        --------------------------------------
@@ -622,7 +621,7 @@ const PROJECTS = [
        <br>
        - Patch-front caps, one per colorway.
        <br>
-       - USA, the Fusion lockup and the globe motif, rotated across the three.
+       - USA, the Fusion lockup and the atom motif, rotated across the three.
        <br>
        <br>
        --------------------------------------
@@ -630,7 +629,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/noabrandsTeamUsa/full/14full.webp" alt="The Fusion brand system on flags" loading="lazy" decoding="async">
-    <p>// <strong>BRAND SYSTEM</strong>
+    <p>// <strong>THE FLAGS</strong>
        <br>
        <br>
        - The Fusion identity flown out: monogram, full lockup, the Fusion × USA mark and a repeat pattern.
@@ -641,7 +640,7 @@ const PROJECTS = [
 
   {
   title: "NOABRANDS — THE MATCHUP",
-  date:  "03-05-26",
+  date:  "03-08-26",
   type:  "3D DESIGN",
   tools: ["Blender", "ZBrush", "Substance Painter", "Unreal Engine"],
   note:  "During my round-one interview with Noabrands, I was asked to return for round-two prepared to showcase skill in anatomy. I created a collections of mannequins, and presented them through a basketball story staged as a showroom. This project was designed to showcase my experience with designing the human form, pose authoring, and a wider range of 3D design.",
@@ -944,7 +943,7 @@ const PROJECTS = [
 
   {
   title: "NIKE TRAINING — SPEED",
-  date:  "03-10-26",
+  date:  "03-01-26",
   type:  "APPAREL DESIGN",
   tools: ["ZBrush", "CLO3D", "Substance Painter", "Blender"],
   note:  "Eight looks that I designed and patterned to present during my round two interview for an apparel designer roll at Nike Training.",
