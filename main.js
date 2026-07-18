@@ -115,7 +115,7 @@ const PANELS = [
   <p class="turn-kicker">PORTFOLIO ENTRY / 01</p>
   <div class="turn-static">
     <h1 class="turn-title">BASE</h1>
-    <p class="turn-body">> ROOTED IN SOIL<br>> POINTED AT THE STARS</p>
+    <p class="turn-body">> ROOTED IN SOIL<br>> AIMED FOR THE STARS</p>
   </div>
   <div class="turn-controls">
     <button class="turn-btn turn-btn--ghost turn-btn--minor" data-action="info">OPEN INFO</button>
