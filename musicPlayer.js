@@ -140,9 +140,9 @@
    cycle (manual skips always wrap regardless).
    ========================================================================== */
 const TRACKS = [
-  { src: "assets/tracks/CALILEI.mp3", title: "CALILEI.mp3" },
+  { src: "assets/tracks/NUCLEAR.mp3", title: "CALILEI.mp3" },
+  { src: "assets/tracks/SO LOW.mp3", title: "SO LOW.mp3" },
   { src: "assets/tracks/EXODUS.mp3", title: "EXODUS.mp3" },
-  { src: "assets/tracks/NUCLEAR.mp3", title: "NUCLEAR.mp3" },
   { src: "assets/tracks/WINGS.mp3",  title: "WINGS.mp3" },
   { src: "assets/tracks/2055.mp3", title: "2055.mp3" },
   { src: "assets/tracks/BROTHERS.mp3", title: "BROTHERS.mp3" },
