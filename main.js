@@ -96,7 +96,7 @@ const PANELS = [
   <div class="dots-static">
     <h1 class="dots-title">WELCOME</h1>
     <p class="dots-body">> THANK YOU<br>> FOR BEING HERE</p>
-    <p class="dots-nameplate"><br>| CAL.CALILEI<br>| DESIGNER<br>| DENVER, CO</p>
+    <p class="dots-nameplate"><br>| CAL.CALILEI<br>| DESIGNER<br>| LOS ANGELES, CA</p>
   </div>
   <p class="dots-meta">LOCAL // <span class="dots-time">--:--:--</span></p>
   <p class="dots-meta">[SESSION]&nbsp;&nbsp;0x<span class="dots-session">----</span></p>
@@ -1001,7 +1001,7 @@ const PANELS = [
     // w/h are pixels. Content is placeholder voice — rewrite freely.
     { type: "md", name: "hello.md", lineColor: "#000000", fillColor: "#ffffff",
       openOnLoad: { x: 0.58, y: 0.05, w: 480, h: 340 },
-      content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- drag things. open things.\n- drop things into folders.\n\nnothing persists — reload resets the room.\n\nstatus: _locked_\n\nThe content on this page is currently under construction" },
+      content: "## //HELLO.[DESKTOP]\n\n> welcome to my desk.\n\n- this a virtual desktop written in vanilla javascript\n- drag things. open things. drop things into folders.\n- resize windows. minimize windows. explore freely\n\nnothing persists — reload resets the room.\n\nstatus: _limited_\n\n> the content on this page is currently under construction" },
   ],
 },
 
