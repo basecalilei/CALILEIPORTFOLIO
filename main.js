@@ -48,13 +48,13 @@ import "./turnPanel.js";
 import "./dotsPanel.js";
 import "./wallPanel.js";
 import "./hudPanel.js";
-//import "./gamePanel.js";
 import "./desktopPanel.js";
 import "./desktopImage.js";
 import "./desktopNote.js";
 import "./desktopAudio.js";
 import "./desktopVideo.js";
 import "./desktopMd.js";
+import "./desktopGame.js";
 
 import "./pdfModal.js";
 
@@ -950,24 +950,40 @@ const PANELS = [
     { type: "folder", name: "calileiMusic", lineColor: "#000000", fillColor: "#ff4d00", 
       contents: [
       { type: "folder", name: "demos", lineColor: "#000000", fillColor: "#ff4d00", locked: true, password: "opensesame", contents: [] },
-      { type: "md", name: "calileiNotation.md", lineColor: "#000000", fillColor: "#00d150",  src: "assets/md/calileiNotation.md" },
-      { type: "md", name: "calileiVoice.md", lineColor: "#000000", fillColor: "#ffbb00",  src: "assets/md/calileiVoice.md", locked: true, password: "opensesame"  },
-      { type: "md", name: "lineCombo.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/lineCombo.md", locked: true, password: "opensesame"  },
-      { type: "md", name: "comboBounce.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/comboBounce.md", locked: true, password: "opensesame"  },
-      { type: "md", name: "phoneticAppeal.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/phoneticAppeal.md" },
-      { type: "md", name: "callResponse.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/callResponse.md" },
-      { type: "md", name: "rhymingWords.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/rhymingWords.md" },
-      { type: "md", name: "prosodyMeter.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/prosodyMeter.md" },
-      { type: "md", name: "vividDiction.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/vividDiction.md" },
+      { type: "md", name: "calileiNotation.md", lineColor: "#000000", fillColor: "#00d150",  src: "assets/md/calileiMusic/calileiNotation.md" },
+      { type: "md", name: "calileiVoice.md", lineColor: "#000000", fillColor: "#ffbb00",  src: "assets/md/calileiMusic/calileiVoice.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "lineCombo.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/lineCombo.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "comboBounce.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/comboBounce.md", locked: true, password: "opensesame"  },
+      { type: "md", name: "phoneticAppeal.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/phoneticAppeal.md" },
+      { type: "md", name: "callResponse.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/callResponse.md" },
+      { type: "md", name: "rhymingWords.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/rhymingWords.md" },
+      { type: "md", name: "prosodyMeter.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/prosodyMeter.md" },
+      { type: "md", name: "vividDiction.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiMusic/vividDiction.md" },
       ],
     },
 
-    { type: "folder", name: "texWax", lineColor: "#000000", fillColor: "#ffbb00", contents: [], 
+    { type: "folder", name: "texWax", lineColor: "#000000", fillColor: "#ffbb00", 
+      contents: [
+      
+      ], 
       locked: true, password: "opensesame" 
     },
 
-    { type: "folder", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150", contents: [], 
-      locked: true, password: "opensesame" 
+    { type: "folder", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150", 
+      contents: [
+      { type: "game",      name: "calileiGame", lineColor: "#000000", fillColor: "#00d150" },
+      { type: "inspector", name: "inspector",   lineColor: "#000000", fillColor: "#00d150" },
+      { type: "md", name: "calileiGame.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/calileiGame.md" },
+      { type: "md", name: "predevPlan.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/predevPlan.md" },
+      { type: "md", name: "secondHalfPlan.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/secondHalfPlan.md" },
+      { type: "md", name: "emergence.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/emergence.md" },
+      { type: "md", name: "tick.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/tick.md" },
+      { type: "md", name: "stateMachine.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/stateMachine.md" },
+      { type: "md", name: "physics.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/physics.md" },
+      { type: "md", name: "dataModel.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/dataModel.md" },
+      { type: "md", name: "collision.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/collision.md" },
+      { type: "md", name: "input.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/input.md" },
+      ], 
     },
 
     { type: "folder", name: "calileiLabel", lineColor: "#000000", fillColor: "#00b8e6", contents: [], 
@@ -991,14 +1007,6 @@ const PANELS = [
 
 { type: "hud", headline: "THANK.YOU", url: "calilei 2026" },
 
-//{
-//    type: "game",
-//    debug: true,
-//    html: `
-//      <p class="game-kicker">PLAYABLE / CALILEIGAME</p>
-//      <p class="game-hint">WASD / ARROWS move &middot; SPACE jump &middot; DOWN crouch / drop</p>
-//    `,
-//  },
 
 ];
 

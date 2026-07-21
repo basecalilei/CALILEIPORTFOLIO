@@ -1071,6 +1071,38 @@ export function focusWindowById(state, itemId) {
 }
 
 /* -----------------------------------------------------------------------------
+   PROGRAMMATIC OPEN — open (or focus) an item's window by authored name.
+   -----------------------------------------------------------------------------
+   The programmatic sibling of the icon double-click, routed through the
+   SAME openWindowFor path (idempotent: an already-open window is restored
+   and focused, not duplicated). By NAME because names are the authored
+   vocabulary; the flat items Map (§5) makes the scan reach nested items
+   too. First match wins across instances — authored names are expected
+   to be unique per desk. Returns true if an item was found.
+
+   `authored` is optional PIXEL geometry ({ x?, y?, w?, h? }) passed
+   straight into openWindowFor's authored channel — the same slot the
+   openOnLoad pass uses, with the same precedence (the USER's layout — a
+   real drag or resize — still wins). Callers pass pixels, not the
+   openOnLoad fractions — resolution is an openOnLoad concern.
+
+   Consumers: file-type modules that pair windows (desktopGame opens its
+   inspector beside the match); future deep links; a future "shortcut"
+   type.
+   --------------------------------------------------------------------------- */
+export function openItemWindowByName(name, authored = null) {
+  for (const [, state] of instances) {
+    for (const item of state.items.values()) {
+      if (item.name === name) {
+        openWindowFor(state, item, authored);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/* -----------------------------------------------------------------------------
    WINDOW DOM
    -----------------------------------------------------------------------------
    A frosted-glass shell with a header (drag handle + minimize + close
@@ -1095,13 +1127,13 @@ function defaultWindowSize(item) {
 }
 
 function openWindowFor(state, item, authored = null) {
-  // `authored` is optional pixel geometry ({ x?, y?, w?, h? }) from an
-  // openOnLoad spec, resolved by init's openOnLoad pass. It slots into
-  // the precedence chain BELOW windowState: in practice windowState is
-  // always null when this path runs (the pass fires once, at init,
-  // before any user interaction), but keeping windowState first means
-  // the precedence reads the same everywhere — the user's session
-  // layout always wins.
+  // `authored` is optional pixel geometry ({ x?, y?, w?, h? }) — from an
+  // openOnLoad spec (resolved by init's openOnLoad pass) or from a
+  // programmatic open (openItemWindowByName, e.g. desktopGame placing
+  // its paired inspector). It can therefore arrive at ANY point in the
+  // session, not just at init — which is why the precedence below gates
+  // remembered windowState behind actual user intent (userMoved /
+  // userResized) before letting it shadow an authored placement.
 
   // Idempotent: if a window for this item is already open, restore it
   // from minimized (if it was) and bring it to the front.
@@ -1112,17 +1144,23 @@ function openWindowFor(state, item, authored = null) {
     return;
   }
 
-  // Determine initial size + position. Persisted windowState wins if
-  // present (preserves user's last layout for this item this session).
+  // Determine initial size + position. The precedence honors INTENT:
+  // the user's layout (a real resize / a real drag, tracked by
+  // userResized / userMoved) always wins; an explicit authored geometry
+  // (openOnLoad, or a programmatic open like desktopGame's paired
+  // inspector) beats a merely-remembered machine placement; a
+  // remembered placement still beats defaults, so a plain reopen
+  // restores the window where it was. Without the userMoved gate, a
+  // stagger slot persisted by closeWindow would shadow authored
+  // placement for the rest of the session.
+  const ws = item.windowState;
   const def = defaultWindowSize(item);
-  const w = item.windowState?.w ?? authored?.w ?? def.w;
-  const h = item.windowState?.h ?? authored?.h ?? def.h;
+  const w = (ws?.userResized ? ws.w : null) ?? authored?.w ?? ws?.w ?? def.w;
+  const h = (ws?.userResized ? ws.h : null) ?? authored?.h ?? ws?.h ?? def.h;
 
-  // Position: persisted state wins, else authored, else stagger from a
-  // fresh slot.
   const slot = state.windows.size;
-  const x = item.windowState?.x ?? authored?.x ?? (40 + slot * WIN_STACK_OFFSET);
-  const y = item.windowState?.y ?? authored?.y ?? (40 + slot * WIN_STACK_OFFSET);
+  const x = (ws?.userMoved ? ws.x : null) ?? authored?.x ?? ws?.x ?? (40 + slot * WIN_STACK_OFFSET);
+  const y = (ws?.userMoved ? ws.y : null) ?? authored?.y ?? ws?.y ?? (40 + slot * WIN_STACK_OFFSET);
 
   const el = document.createElement("div");
   el.className = `desktop-window desktop-window--${item.type}`;
@@ -1175,6 +1213,11 @@ function openWindowFor(state, item, authored = null) {
     x, y, w, h,
     zIndex: 0,
     userResized: item.windowState?.userResized || authoredSize,
+    // Position's twin of userResized: set only by a real header drag
+    // (wireWindowDrag's onDragEnd). Authored position does NOT set it —
+    // there is no consumer that should treat a machine-chosen position
+    // as the user's choice.
+    userMoved: item.windowState?.userMoved || false,
     // Visible by default. minimizeWindow sets true (visibility: hidden
     // via .is-minimized class); restoreWindow sets back to false. New
     // windows always open visible — minimize is a user action only.
@@ -1285,6 +1328,7 @@ function closeWindow(state, win) {
     item.windowState = {
       x: win.x, y: win.y, w: win.w, h: win.h,
       userResized: win.userResized,
+      userMoved: win.userMoved,
     };
   }
 
@@ -1321,6 +1365,8 @@ function wireWindowDrag(state, win) {
 
     onDragEnd: () => {
       win.el.classList.remove("is-dragging");
+      win.userMoved = true;   // a real drag — this position is now the
+                              //   user's layout; sticks via windowState
     },
   });
 }

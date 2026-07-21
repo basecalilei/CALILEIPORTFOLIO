@@ -84,7 +84,7 @@
      roles than that, emphasis doubles up: *italic* reuses the bold red, set
      apart by slant; blockquotes reuse the quiet --ink-dim, comment-style. */
   --md-text:   #e6e7ec;                 /* body ink — light (no var fits dark bg)   */
-  --md-marker: var(--ink-dim);          /* #, **, `, >, -, []() — quiet symbols     */
+  --md-marker: var(--brand-blue);          /* #, **, `, >, -, []() — quiet symbols     */
   --md-head:   var(--brand-yellow);     /* headings                                 */
   --md-strong: var(--brand-red);        /* **bold**                                 */
   --md-em:     var(--brand-red);        /* *italic* — same hue, slant sets it apart */

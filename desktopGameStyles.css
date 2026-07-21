@@ -1,0 +1,318 @@
+/* =============================================================================
+   desktopGameStyles.css — styles for the "game" + "inspector" FILE TYPES
+   -----------------------------------------------------------------------------
+   COUPLED WITH desktopGame.js: emits both class families it builds —
+
+     .desktop-game-glyph            — game icon SVG wrapper
+     .desktop-game-surface          — the focusable field the game lives on
+     .desktop-game-canvas           — the 960×540 backing store, display-scaled
+     .desktop-game-hint             — "CLICK TO PLAY", visible until :focus
+
+     .desktop-inspector-glyph       — inspector icon SVG wrapper
+     .desktop-inspector-wrap        — window content: strip + body column
+     .desktop-inspector-strip{-r,-y,-g,-b} — 4px brand strip (video motif)
+     .desktop-inspector-body        — scrollable readout column
+     .desktop-inspector-empty(-hint)— the no-match state
+     .desktop-inspector-live        — the bound-match readout
+     .desktop-inspector-section     — MATCH / fighters band / HISTORY groups
+     .desktop-inspector-fighters    — sideways-scrolling row of fighters
+     .desktop-inspector-fighter     — one fixed-width fighter column
+     .desktop-inspector-kicker      — Hornet Bold section labels
+     .desktop-inspector-row/-k/-v   — label / token-holder rows
+     .desktop-inspector-t           — a value token (JS toggles the
+                                       modifier classes below)
+     .desktop-inspector-state       — the state token (yellow, fixed role)
+     .desktop-inspector-frame       — the frame-counter marquee (accent)
+     .is-go / .is-warn / .is-info / .is-dim — role palette modifiers
+     .desktop-inspector-flash       — restartable blink (state changes,
+                                       damage changes, landed hits)
+     .desktop-inspector-history/-hrow — the 4-column tick table
+
+   THE SCALING CONTRACT (game — carried over from the retired gameStyles)
+     The canvas backing store is native 960×540; this stylesheet only
+     scales the ELEMENT. object-fit: contain preserves 16:9 under any
+     manual window resize (letterbox lands on the surface's field color);
+     image-rendering keeps the game's pixels honest. Never size the game
+     by changing the canvas attributes.
+
+   THE FIELD COLOR
+     #f5f5f5 — MUST match the renderer's BACKGROUND_COLOR (vendored
+     calileiGame/src/render/renderer.js). The surface paints it so the
+     beat before frame zero and any letterbox under a manual resize are
+     indistinguishable from the game's own field. If the game repo
+     changes its field, change this. (The retired gameStyles assumed the
+     pre-Phase-13 dark field; the renderer went light.)
+
+   THE FOCUS MODEL (game — pure CSS half)
+     The hint is visible whenever the surface is NOT focused — one label
+     serves as both the fresh-open invitation and the paused-state cue;
+     its disappearance IS the focus indicator, which is why the default
+     outline is suppressed rather than restyled.
+
+   THE INSTRUMENT VOICE (inspector)
+     The window shell supplies the frosted glass and hairline edge; this
+     sheet dresses the readout as a live instrument in the site's
+     language. Hornet Display Bold kickers, Foundry Gridnik data, the
+     ink ramp for structure — and the brand primaries doing semantic
+     work per visualLanguage.md's roles:
+       green  = go    (grounded, any held input bit, shield on)
+       red    = warn  (airborne, damage, spent air jumps, pending hit)
+       blue   = info  (facing, moving velocity, live stick deflection)
+       yellow = the action state — the value that IS the match
+       accent = the frame counter, the panel's pulse
+     JS toggles the role classes; color transitions are eased so the
+     panel flickers like an instrument, not a strobe.
+   ========================================================================== */
+
+/* ---------- icon glyphs ---------- */
+
+.desktop-game-glyph,
+.desktop-inspector-glyph {
+  width: 40px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.desktop-game-glyph svg,
+.desktop-inspector-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* =============================================================================
+   GAME WINDOW
+   ========================================================================== */
+
+.desktop-game-surface {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #f5f5f5;        /* the renderer's field — see THE FIELD COLOR */
+  /* The hint's visibility is the focus indicator (see header); a ring
+     around the whole game field would double the window's chrome. */
+  outline: none;
+  cursor: pointer;
+}
+
+.desktop-game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;        /* preserve 16:9 whatever the window shape */
+  image-rendering: pixelated; /* crisp rectangles at any display scale */
+}
+
+/* ---------- the hint ----------
+   Overlaid dead-center, never intercepts the click that dismisses it.
+   Hornet Display at instrument size — the same voice as the site's other
+   HUD readouts. Brand-green: the "go" primary (visualLanguage.md role:
+   go / "next"), matching the game icon's fill, legible on the light
+   field. */
+.desktop-game-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-family: "Hornet Display", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--brand-green);
+  opacity: 1;
+  transition: opacity 160ms var(--ease);
+}
+
+.desktop-game-surface:focus .desktop-game-hint {
+  opacity: 0;
+}
+
+/* =============================================================================
+   INSPECTOR WINDOW
+   ========================================================================== */
+
+.desktop-inspector-wrap {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- brand strip ----------
+   The four-color instrument mark, 4px — desktopVideo's motif, reused so
+   the family reads as one kit. */
+.desktop-inspector-strip {
+  display: flex;
+  flex: 0 0 4px;
+}
+.desktop-inspector-strip > div { flex: 1; }
+.desktop-inspector-strip-r { background: var(--brand-red); }
+.desktop-inspector-strip-y { background: var(--brand-yellow); }
+.desktop-inspector-strip-g { background: var(--brand-green); }
+.desktop-inspector-strip-b { background: var(--brand-blue); }
+
+/* ---------- body ---------- */
+
+.desktop-inspector-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+
+/* ---------- empty state ---------- */
+
+.desktop-inspector-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.desktop-inspector-empty-hint {
+  font-family: "Glitched Book", sans-serif;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+/* ---------- sections ----------
+   A full blank line of air between MATCH / FIGHTER 0 / FIGHTER 1 /
+   HISTORY, with a hairline riding the seam. */
+.desktop-inspector-section {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.desktop-inspector-section:first-child {
+  border-top: none;
+  padding-top: 4px;
+}
+
+/* ---------- kickers ----------
+   Section heads carry the panel's weight: Hornet Display Bold (the
+   declared bold face), a step larger than the data, ink-strong so
+   MATCH / FIGHTER 0 / FIGHTER 1 anchor the wall of moving figures. */
+.desktop-inspector-kicker {
+  font-family: "Hornet Display", ui-monospace, monospace;
+  font-weight: bold;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-strong);
+  margin-bottom: 8px;
+}
+
+/* ---------- the frame marquee ----------
+   The always-moving number — the panel's pulse, in the accent. */
+.desktop-inspector-frame {
+  font-size: 15px;
+  color: var(--accent);
+}
+
+/* ---------- the fighters band ----------
+   Per-fighter columns side by side so both fighters and the history
+   below them are visible at once at desktop widths. Columns are fixed
+   width — value tokens wrap within them — and the ROW scrolls sideways
+   when the window is narrower than its columns (the user's escape hatch
+   at small sizes, not the desktop default). */
+.desktop-inspector-fighters {
+  display: flex;
+  gap: 0 24px;
+  overflow-x: auto;
+  padding-bottom: 4px;    /* keeps a scrollbar off the last row of data */
+}
+
+.desktop-inspector-fighter {
+  flex: 0 0 280px;
+  min-width: 0;
+}
+
+/* ---------- stat rows ----------
+   Dim label column, then a flex run of value tokens. Foundry Gridnik
+   carries the data (bold is the family's only declared weight); grid
+   alignment replaces the canvas overlay's space-padding. */
+.desktop-inspector-row {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 0 8px;
+  font-family: "Foundry Gridnik", ui-monospace, monospace;
+  font-weight: bold;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1.8;
+}
+
+.desktop-inspector-k {
+  color: var(--ink-dim);
+}
+
+.desktop-inspector-v {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-width: 0;
+}
+
+/* ---------- tokens: the role palette ----------
+   Base ink; JS toggles exactly one role modifier per token. The color
+   transition makes 60Hz role changes read as instrument flicker. */
+.desktop-inspector-t {
+  color: var(--ink);
+  transition: color 120ms var(--ease);
+  white-space: nowrap;
+}
+
+.desktop-inspector-t.is-go   { color: var(--brand-green); }
+.desktop-inspector-t.is-warn { color: var(--brand-red); }
+.desktop-inspector-t.is-info { color: var(--brand-blue); }
+.desktop-inspector-t.is-dim  { color: var(--ink-dimmer); }
+
+/* The action state — yellow by role, always. Reads darker than the raw
+   primary would on the frosted white, so it stays legible at 11px. */
+.desktop-inspector-state {
+  color: var(--brand-yellow);
+}
+
+/* ---------- the blink ----------
+   Restarted from JS (remove → reflow → add) on state changes, damage
+   changes, and landed hits. An opacity blink rather than a color pulse:
+   it works over every role color, and reads as an instrument LED. */
+@keyframes desktopInspectorBlink {
+  0%   { opacity: 0.1; }
+  100% { opacity: 1; }
+}
+
+.desktop-inspector-flash {
+  animation: desktopInspectorBlink 220ms var(--ease);
+}
+
+/* ---------- history table ----------
+   Four columns: frame / state (sf) / pos / vel+ground. Newest row first,
+   lifted to full ink with its frame cell in the accent; older ticks
+   recede down the ramp. */
+.desktop-inspector-history {
+  font-family: "Foundry Gridnik", ui-monospace, monospace;
+  font-weight: bold;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  line-height: 1.85;
+}
+
+.desktop-inspector-hrow {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr 1fr;
+  gap: 0 6px;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+
+.desktop-inspector-hrow:first-child {
+  color: var(--ink);
+}
+
+.desktop-inspector-hrow:first-child span:first-child {
+  color: var(--accent);
+}

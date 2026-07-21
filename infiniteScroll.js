@@ -315,8 +315,14 @@ const panelDefs = [];             // per-panel RESOLVED type def (filled in
 let presenceBuf = new Float64Array(0);  // write side; swapped with lastPresence
 let distBuf = new Float64Array(0);      // per-frame scratch, never escapes tick()
 
-function tick() {
-  const now = performance.now() / 1000;
+function tick(rafNow) {
+  // rAF's own timestamp: frame-start, vsync-aligned — same time origin as
+  // performance.now() (so lastT's start() initialization stays valid), but
+  // free of callback-start scheduling jitter. The exponential easings never
+  // cared; any fixed-timestep consumer downstream (a locked-rate simulation
+  // hosted in a panel or window) turns that jitter into tick-count beats.
+  // Frame-start time is simply the more correct dt for every consumer.
+  const now = rafNow / 1000;
   const dt = Math.min(now - lastT, 0.05);   // clamp big gaps (hidden tab)
   lastT = now;
   const t = now;
