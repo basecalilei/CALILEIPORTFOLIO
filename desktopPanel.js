@@ -343,6 +343,57 @@ function autoLayoutIcons(items, containerW, containerH, startIndex = 0) {
 }
 
 /* -----------------------------------------------------------------------------
+   FOLDER WINDOW SIZING — size a folder's window to its contents
+   -----------------------------------------------------------------------------
+   Folders have no file type, so they can't declare a defaultWindow the way
+   files do, and they never call fitToContent. Left at a flat default, a folder
+   with more icons than the default grid fits spills columns past the window's
+   right edge — the icons are absolutely positioned and the content area doesn't
+   scroll, so the overflow is simply clipped and the user has to hand-resize.
+
+   This picks a row count that keeps the grid near the default window's aspect,
+   derives the column count from it, and sizes the window to the resulting grid
+   — clamped UP to the comfortable default (small folders don't shrink) and DOWN
+   to the viewport-fraction cap (huge folders stop growing), mirroring
+   fitWindowToContent's clamp policy.
+
+   Sync note: autoLayoutIcons derives its own colHeight from the window height
+   returned here, and the height<->rows arithmetic inverts exactly, so the grid
+   it lays out matches the one this sized for. If either formula changes, keep
+   the two in step. A folder with more icons than fit even at the viewport cap
+   will still clip its last column — a scrolling content area is the separate,
+   larger change that case needs.
+   --------------------------------------------------------------------------- */
+function folderWindowSize(count, surfaceW, surfaceH) {
+  const n = Math.max(1, count);
+
+  const cellW = ICON_W + ICON_GAP_X;
+  const cellH = ICON_H + ICON_GAP_Y;
+  const pad2  = ICON_PAD * 2;
+
+  const maxW = surfaceW * WIN_VIEWPORT_FRAC;
+  const maxH = surfaceH * WIN_VIEWPORT_FRAC;
+
+  // Rows that keep the grid's aspect close to the default window's. Solving
+  // (cols/rows)*(cellW/cellH) ≈ targetAspect with cols≈n/rows gives this.
+  const targetAspect = WIN_DEFAULT_W / WIN_DEFAULT_H;
+  let rows = Math.round(Math.sqrt((n * cellH) / (targetAspect * cellW)));
+  // Never more rows than items, and never taller than the viewport cap allows
+  // (autoLayoutIcons would clamp colHeight to this anyway — keep them agreed).
+  const maxRows = Math.max(1, Math.floor((maxH - pad2 + ICON_GAP_Y) / cellH));
+  rows = Math.max(1, Math.min(rows, n, maxRows));
+  const cols = Math.ceil(n / rows);
+
+  const gridW = pad2 + cols * ICON_W + (cols - 1) * ICON_GAP_X;
+  const gridH = pad2 + rows * ICON_H + (rows - 1) * ICON_GAP_Y + HEADER_H;
+
+  return {
+    w: Math.min(Math.max(gridW, WIN_DEFAULT_W), Math.round(maxW)),
+    h: Math.min(Math.max(gridH, WIN_DEFAULT_H), Math.round(maxH)),
+  };
+}
+
+/* -----------------------------------------------------------------------------
    ICON DOM
    -----------------------------------------------------------------------------
    The outer wrapper is built by the panel; the inside (thumbnail / glyph /
@@ -1117,8 +1168,13 @@ export function openItemWindowByName(name, authored = null) {
    (which needs the effective size for edge clamping before the window
    exists).
    --------------------------------------------------------------------------- */
-function defaultWindowSize(item) {
-  if (item.type === "folder") return { w: WIN_DEFAULT_W, h: WIN_DEFAULT_H };
+function defaultWindowSize(state, item) {
+  if (item.type === "folder") {
+    const n = childrenOf(state, item.id).length;
+    const surfaceW = state.surface.clientWidth  || window.innerWidth  * 0.8;
+    const surfaceH = state.surface.clientHeight || window.innerHeight * 0.8;
+    return folderWindowSize(n, surfaceW, surfaceH);
+  }
   const ft = getFileType(item.type);
   return {
     w: ft?.defaultWindow?.width  ?? WIN_DEFAULT_W,
@@ -1154,7 +1210,7 @@ function openWindowFor(state, item, authored = null) {
   // stagger slot persisted by closeWindow would shadow authored
   // placement for the rest of the session.
   const ws = item.windowState;
-  const def = defaultWindowSize(item);
+  const def = defaultWindowSize(state, item);
   const w = (ws?.userResized ? ws.w : null) ?? authored?.w ?? ws?.w ?? def.w;
   const h = (ws?.userResized ? ws.h : null) ?? authored?.h ?? ws?.h ?? def.h;
 
@@ -1970,7 +2026,7 @@ registerPanelType("desktop", {
             // edge on a small viewport. Clamping uses the EFFECTIVE size
             // (authored, else the type default) — that's what the window
             // will actually open at.
-            const def = defaultWindowSize(item);
+            const def = defaultWindowSize(state, item);
             const effW = w ?? def.w;
             const effH = h ?? def.h;
 

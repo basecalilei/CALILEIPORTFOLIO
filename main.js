@@ -971,9 +971,9 @@ const PANELS = [
 
     { type: "folder", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150", 
       contents: [
-      { type: "game",      name: "calileiGame", lineColor: "#000000", fillColor: "#00d150" },
+      { type: "game", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150" },
       { type: "inspector", name: "inspector",   lineColor: "#000000", fillColor: "#00d150" },
-      { type: "md", name: "calileiGame.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/calileiGame.md" },
+      { type: "md", name: "calileiGame.md", lineColor: "#000000", fillColor: "#00d150",  src: "assets/md/calileiGame/calileiGame.md" },
       { type: "md", name: "predevPlan.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/predevPlan.md" },
       { type: "md", name: "secondHalfPlan.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/secondHalfPlan.md" },
       { type: "md", name: "emergence.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/calileiGame/emergence.md" },

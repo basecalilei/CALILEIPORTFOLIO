@@ -482,7 +482,14 @@
 /* The label below the glyph. Glitched font matches the project's voice;
    small + tight letter-spacing reads as "technical caption" rather than
    "rich text." Two-line clamp prevents long filenames from breaking the
-   grid. */
+   grid.
+
+   The clamp needs overflow:hidden, which clips at the box's padding edge —
+   right at the bottom of the last line box. This font's descenders (p, g,
+   j, y) reach past a line-height:1.2 line box, so without room they'd get
+   shaved. padding-bottom drops the clip edge a few px below the text,
+   freeing the descenders while leaving the tight inter-line spacing intact
+   (a line-height bump would loosen every line, not just make bottom room). */
 .desktop-icon-label {
   font-family: "Glitched Book", sans-serif;
   font-size: 0.68rem;
@@ -493,6 +500,7 @@
   max-width: 100%;
   pointer-events: none;
   overflow: hidden;
+  padding-bottom: 3px;                 /* descender room past the clamp clip */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
