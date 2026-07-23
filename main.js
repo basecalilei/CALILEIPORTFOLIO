@@ -981,7 +981,7 @@ const PANELS = [
       { type: "video", name: "storeDemo.mp4", src: "assets/videos/texWax/texwaxSiteDemo.mp4", pauseOnMinimize: true, playOnOpen: true, loop: true, },
       { type: "substrate", name: "texwaxSubstrate", lineColor: "#000000", fillColor: "#00b8e6"},
       { type: "md", name: "texwaxBrand.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/texWax/texwaxBrand.md" },
-      { type: "folder", name: "texwaxDocs", lineColor: "#000000", fillColor: "#ffffff", 
+      { type: "folder", name: "companyDocs", lineColor: "#000000", fillColor: "#ffffff", 
         contents: [
           { type: "md", name: "texwaxProduct.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/texWax/texwaxProduct.md" },
           { type: "md", name: "texwaxCommercial.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/texWax/texwaxCommercial.md", locked: true, password: "opensesame" },
