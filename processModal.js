@@ -98,6 +98,12 @@
      - processCards.js: sub-module providing the .process-card accordion
        behavior (attached to the content container at build, reset per
        populate). Cards are authored as plain HTML in a process's media.
+     - processLaunchGate.js: sub-module providing the .process-launch
+       soft password gate (attached to the content container at build,
+       reset per populate AND on close — unlike the cards it arms a
+       document-level listener while open, which must not outlive the
+       modal). Launch controls are authored as plain HTML in a process's
+       media, with the key on data-launch-key.
      - textScramble.js: provides startScramble for the title.
      - sidebarProcess.js: the caller — imports openProcessModal and invokes
        it from its icon-tile click handler.
@@ -106,6 +112,7 @@
 import { startScramble }      from "./textScramble.js";
 import { createCancelGroup }  from "./cancels.js";
 import { attachProcessCards } from "./processCards.js";
+import { attachProcessLaunch } from "./processLaunchGate.js";
 
 /* -----------------------------------------------------------------------------
    TUNABLES
@@ -166,6 +173,12 @@ const cancels = createCancelGroup();
 // content container once at build; reset per populate so an open card
 // never survives a repopulate as a dangling reference.
 let cards = null;
+
+// Soft-gate handle for authored .process-launch controls — attached to the
+// content container once at build; reset per populate (deterministic closed
+// state for incoming content) and on close (so the gate's document-level
+// pointerdown listener never outlives an open modal).
+let launch = null;
 
 /* =============================================================================
    PUBLIC API
@@ -272,6 +285,11 @@ function populate(index) {
   // for the incoming content, no dangling open-card reference.
   if (cards) cards.closeAll();
 
+  // Same reasoning for the launch gate: fold it before the swap so the
+  // incoming content starts closed and no prompt is left orphaned by the
+  // innerHTML replacement below.
+  if (launch) launch.reset();
+
   // Per-process accent, consumed by the stylesheet (hero edge bar, kicker,
   // the section break's tick).
   sheet.style.setProperty("--process-accent", process.accent || "var(--ink-dim)");
@@ -323,6 +341,12 @@ function closeProcessModal() {
   // user sees the close motion, so the visible "shrinking" portion shows
   // resolved text, not partial scramble.
   cancels.cancelAll();
+
+  // Fold the launch gate too. The cards need no close-time reset (populate
+  // handles them on the next open), but this gate arms a document-level
+  // pointerdown listener while open — leaving it live on a closed modal
+  // would be a leak, so tear it down here as well.
+  if (launch) launch.reset();
 
   if (keyHandler) {
     document.removeEventListener("keydown", keyHandler);
@@ -431,6 +455,11 @@ function build() {
   // Accordion behavior for authored .process-card blocks — one delegated
   // listener for the modal's lifetime; the cards themselves are pure HTML.
   cards = attachProcessCards(content);
+
+  // Soft password gate for authored .process-launch controls — one more
+  // delegated listener for the modal's lifetime; the controls themselves
+  // are pure HTML, and the prompt is built lazily on first press.
+  launch = attachProcessLaunch(content);
 
   // The hero — the process's letterhead: kicker, title, taglines. Built
   // once; text populated per open.

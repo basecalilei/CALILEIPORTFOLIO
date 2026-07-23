@@ -303,4 +303,15 @@ export const conditions = {
   // without a hitstun field (applyHitReaction defaults to 0).
   hitstunFinished: (fighter) =>
     fighter.stateFrame >= fighter.pendingHitstunFrames,
+
+  // KO'd. True when blastZoneSystem wrote pendingKO on the previous
+  // tick and no transition has consumed it yet. Universally placed as
+  // the FIRST transition in every state — ABOVE hitTaken, because a
+  // fighter past the blast line is dead before any same-frame hit can
+  // launch them. Consumed by the respawn effect, which clears
+  // pendingKO after using it. Same detect-flag-consume shape as the
+  // hitDetection → hitTaken → applyHitReaction pipeline: the system
+  // needs world-level data (stage.blastZones) that conditions can't
+  // see, so it detects and flags; the machine owns the state change.
+  kOd: (fighter) => fighter.pendingKO === true,
 };

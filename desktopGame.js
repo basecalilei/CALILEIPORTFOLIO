@@ -116,14 +116,23 @@
        simply being what it is, 60 times a second.
 
    THE BOX OVERLAY (the debug overlay's WORLD-SPACE half)
-     Hurtboxes/hitboxes are spatial draws over the fighters — they can
-     only live on the game canvas. Backtick toggles them, handled in the
-     surface's element-scoped keydown (fires only while the game is
-     focused, so the key never leaks site-wide — the wart the vendored
-     initOverlayInput's window-level listener had is structurally gone,
-     and initOverlayInput is not imported at all). The color editor is
-     retired entirely. The toggle is module-scope so it survives
-     close-and-reopen within a session.
+     Hurtboxes are spatial draws over the fighters — they can only live
+     on the game canvas. Backtick toggles them, handled in the surface's
+     element-scoped keydown (fires only while the game is focused, so the
+     key never leaks site-wide — the wart the vendored initOverlayInput's
+     window-level listener had is structurally gone, and initOverlayInput
+     is not imported at all). The color editor is retired entirely. The
+     toggle is module-scope so it survives close-and-reopen within a
+     session.
+
+     HITBOXES ARE NOT PART OF THIS TOGGLE. They were promoted out of the
+     debug layer into the game's own renderer — always drawn, in both
+     composition roots, because until real attack animations exist the
+     active hitbox IS the attack's visual. gameRender paints them; this
+     file does nothing to get them and cannot turn them off. One
+     consequence: hitboxes now land on the canvas BEFORE the hurtbox
+     draw below, so where the two overlap green sits over red — the
+     inverse of the old vendored-overlay order.
 
    THE VENDOR RULE (unchanged)
      ./calileiGame/src/** is a byte-identical copy of the game repo's src/
@@ -131,8 +140,9 @@
      repo, forever. Anything embed-shaped lives in THIS file. The game's
      own main.js sits unused in the vendored tree; input/keyboard.js and
      debug/overlay.js are not imported (window-level listeners); the
-     draw-only debug modules (hitboxes, hurtboxes, format) ARE imported —
-     importing vendored code is the point of vendoring it.
+     draw-only debug modules (hurtboxes, format) ARE imported —
+     importing vendored code is the point of vendoring it. (debug/
+     hitboxes.js no longer exists — that draw moved into the renderer.)
 
    WINDOW CONTENT DOM (game window):
 
@@ -199,10 +209,11 @@ import { states }                 from "./calileiGame/src/data/states/states.js"
 // (Phase 13) — so this module feeds an array shaped like the one the
 // standalone main.js builds, reusing this exact neutral for the dummy.
 import { NEUTRAL_SNAPSHOT }       from "./calileiGame/src/core/inputBuffer.js";
-// The debug pieces that survive the overlay's retirement: the world-space
-// box draws (canvas-only by nature) and the number formatters (reused so
-// the inspector's values read identically to the standalone overlay's).
-import { drawHitboxes }           from "./calileiGame/src/debug/hitboxes.js";
+// The debug pieces that survive the overlay's retirement: the hurtbox
+// world-space draw (canvas-only by nature) and the number formatters
+// (reused so the inspector's values read identically to the standalone
+// overlay's). Hitboxes are absent by design — the renderer draws them
+// unconditionally now; see THE BOX OVERLAY in the header.
 import { drawHurtboxes }          from "./calileiGame/src/debug/hurtboxes.js";
 import { fmt, signed, bit }       from "./calileiGame/src/debug/format.js";
 
@@ -248,8 +259,9 @@ const INSPECTOR_ITEM_NAME = "inspector";
 // HISTORY_FRAMES so the tool reads the same as the standalone one.
 const HISTORY_FRAMES = 20;
 
-// Backtick toggles the hurtbox/hitbox canvas overlay. Element-scoped —
-// only fires while the game surface is focused.
+// Backtick toggles the hurtbox canvas overlay. Element-scoped — only
+// fires while the game surface is focused. (Hitboxes are not toggleable;
+// the renderer always draws them — see THE BOX OVERLAY in the header.)
 const BOX_TOGGLE_KEY = "Backquote";
 
 // Keys whose browser default we suppress WHILE THE SURFACE IS FOCUSED —
@@ -269,7 +281,7 @@ const PREVENT_DEFAULT = new Set([
 let currentWorld = null;   // the open match's World, or null
 let inspectorUI = null;    // the inspector's DOM refs while open, or null
 let inspectorWin = null;   // the inspector's win handle while open, or null
-let boxesOn = false;       // hurtbox/hitbox canvas overlay (backtick);
+let boxesOn = false;       // hurtbox canvas overlay (backtick);
                            //   module-scope so it survives reopen
 
 // The rolling history ring: prebuilt row strings, newest first. Built at
@@ -814,12 +826,14 @@ registerFileType("game", {
 
       gameRender(world, ctx);
 
-      // The debug overlay's world-space half, canvas-composited. Order
-      // per the vendored overlay: hurt under hit, so a landed attack
-      // reads as red-on-green.
+      // The debug overlay's world-space half, canvas-composited.
+      // Hurtboxes only: gameRender has already painted the hitboxes
+      // (always-on, not ours to gate), so this draw lands on top and a
+      // landed attack reads as green-over-red — the inverse of the old
+      // vendored-overlay order. Both boxes are translucent, so the
+      // overlap stays readable either way.
       if (boxesOn) {
         drawHurtboxes(world, ctx);
-        drawHitboxes(world, ctx);
       }
 
       // The inspector rides the game's clock — see header. No-op when
@@ -859,7 +873,7 @@ registerFileType("game", {
         surface.blur();
         return;
       }
-      if (e.code === BOX_TOGGLE_KEY) {          // hurtbox/hitbox overlay
+      if (e.code === BOX_TOGGLE_KEY) {          // hurtbox overlay
         if (!e.repeat) boxesOn = !boxesOn;
         e.preventDefault();
         return;

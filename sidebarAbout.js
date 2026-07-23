@@ -73,6 +73,33 @@
        the cancels group stays typewriter-then-hover, which keeps
        cancellation restoring the DOM in the right order.
 
+     AUTO-FOLLOW — THE SHEET SCROLLS ITSELF
+       A smoothFollow instance (smoothFollow.js) eases el.scrollTop
+       toward the story as it advances, so a first read is hands-free.
+       It does not drive the chain — it SATISFIES THE SEEN-GATE: easing
+       the next pending step into view is what lets the observer fire,
+       which closes the loop and makes the sequence self-advancing.
+       Targeting is hold-then-advance: while a step reveals, the goal is
+       that step, seated at FOLLOW_ANCHOR_FRACTION and held through the
+       reveal (figures get their whole develop on screen); at stepDone
+       the goal hops to the next pending step. The motion is a constant-
+       rate crawl with a soft landing (velocity-clamped — a tall figure
+       takes LONGER, never moves faster; model rationale lives in the
+       utility's header) and is forward-only. The reader always wins:
+       any wheel/touch/key input disengages the follower instantly, and
+       it re-engages only at a step boundary after
+       FOLLOW_RESUME_IDLE_MS of reader silence — so a reader who
+       scrolls BACK and stays put keeps the sheet, and the story waits
+       for them exactly as it did before the follower existed. Targets
+       are measured fresh at every retarget: single photos and the hero
+       deliberately reserve no height before decode (see PHOTO FIGURES
+       in the CSS), so scrollHeight grows mid-sequence — but a step's
+       TOP depends only on content above it, all of which has decoded
+       by the stepDone that targets it. Replay entries (see FIRST
+       PLAY-THROUGH ONLY) never create a follower. Inert under
+       prefers-reduced-motion: the view degrades to reader-driven
+       scroll, today's behavior.
+
      TEARDOWN
        The sequencer registers its own cleanup in the cancels group
        alongside the primitives: view exit (or re-entry) mid-sequence
@@ -115,15 +142,18 @@
        option exists for this view's sequencer).
      - textHoverWave.js: provides startHoverWave (interaction, layered
        mode — borrows the typewriter's spans after each target types).
+     - smoothFollow.js: provides createSmoothFollow (the auto-follow
+       crawl; the view authors targeting, the utility owns the motion).
      - images/about/full/: 0full–9full.webp, numbered in order of
        appearance (0 portrait drawing, 1 portrait photograph — the two
        layers of FIG.01 — then 2 altitude image, 3–4 archive pair,
        5–8 fleet grid, 9 hero).
    ========================================================================== */
 
-import { startTypewriter }   from "./textTypewriter.js";
-import { startHoverWave }    from "./textHoverWave.js";
-import { createCancelGroup } from "./cancels.js";
+import { startTypewriter }    from "./textTypewriter.js";
+import { startHoverWave }     from "./textHoverWave.js";
+import { createCancelGroup }  from "./cancels.js";
+import { createSmoothFollow } from "./smoothFollow.js";
 
 /* -----------------------------------------------------------------------------
    MODULE-LEVEL STATE
@@ -159,6 +189,26 @@ const IN_VIEW_THRESHOLD = 0.1;
 // Raising the constant instead would slow every other figure's
 // advancement for a reason that only exists in one of them.
 const FIGURE_REVEAL_MS = 1000;
+
+/* -- auto-follow (see AUTO-FOLLOW in the header) -------------------------- */
+
+// Where a step seats in the sheet: its top rests this fraction of the
+// viewport down from the sheet's top edge. Upper third — comfortable
+// reading height, and a tall figure keeps its head well inside the fold
+// while its body runs past it.
+const FOLLOW_ANCHOR_FRACTION = 0.35;
+
+// The crawl ceiling, px/s — the single perceived-speed knob. Every hop,
+// one text line or a full-bleed figure, moves at most this fast, taking
+// longer rather than moving faster. Landing and ramp shaping keep the
+// utility's defaults.
+const FOLLOW_MAX_VPS = 420;
+
+// Reader silence required before the follower may re-engage at a step
+// boundary after manual scrolling. Long enough that a pause between
+// flicks of the same gesture doesn't re-arm it; short enough that the
+// story picks back up promptly once the reader settles.
+const FOLLOW_RESUME_IDLE_MS = 2500;
 
 // Every element that participates in the gated reveal sequence, as one
 // combined selector. DOCUMENT ORDER IS THE SEQUENCE — querySelectorAll
@@ -411,6 +461,50 @@ export const aboutView = {
 
     for (const s of steps) observer.observe(s.el);
 
+    /* ---- the auto-follower (see AUTO-FOLLOW in the header) ---- */
+
+    // Sequenced path only — replay entries returned above and keep the
+    // reader's own scroll position, so they never construct one.
+    const follow = createSmoothFollow(el, {
+      maxVelocity:  FOLLOW_MAX_VPS,
+      resumeIdleMs: FOLLOW_RESUME_IDLE_MS,
+    });
+    cancels.add(() => follow.cancel());
+
+    // The scrollTop that seats stepEl where the follower should stop:
+    // normally the reading anchor (step top FOLLOW_ANCHOR_FRACTION down
+    // the sheet), but never above the GATE FLOOR — the least scroll at
+    // which IN_VIEW_THRESHOLD of the step is inside the viewport, i.e.
+    // the offset that guarantees the observer fires. The floor only
+    // binds for a step taller than ~6.5 viewports (none exist); it is
+    // written out so the "the crawl always opens the gate" invariant is
+    // explicit rather than accidental. +8px clears the ratio boundary
+    // instead of parking exactly on it. Out-of-range values need no
+    // clamp here: the follower is forward-only and re-bounds against
+    // live scrollHeight every frame.
+    function followTargetFor(stepEl) {
+      const cr  = el.getBoundingClientRect();
+      const sr  = stepEl.getBoundingClientRect();
+      const top = sr.top - cr.top + el.scrollTop; // step top as a scroll offset
+      const H   = el.clientHeight;
+      const reading   = top - FOLLOW_ANCHOR_FRACTION * H;
+      const gateFloor = top + IN_VIEW_THRESHOLD * sr.height - H + 8;
+      return Math.max(reading, gateFloor);
+    }
+
+    // Hold-then-advance targeting: while a step is running, follow THAT
+    // step — the sheet seats it at the anchor and holds through its
+    // reveal; between steps, follow the next pending one — the crawl
+    // that opens its seen-gate. Measured fresh on every call (tops are
+    // stable by then — see the header — and staleness self-corrects at
+    // the next boundary).
+    function retargetFollow() {
+      if (disposed) return;
+      const idx = running ? nextIdx - 1 : nextIdx;
+      if (idx >= steps.length) return; // sequence complete — nothing to chase
+      follow.setTarget(followTargetFor(steps[idx].el));
+    }
+
     function tryAdvance() {
       if (disposed || running || nextIdx >= steps.length) return;
       const step = steps[nextIdx];
@@ -420,6 +514,11 @@ export const aboutView = {
       observer.unobserve(step.el);
       if (step.kind === "figure") runFigureStep(step);
       else                        runTypeStep(step);
+      // Hold: while this step reveals, the follower's goal is the step
+      // itself. If the crawl brought it here the goal barely moves; if
+      // the reader dragged it into view early, this gently seats it at
+      // the anchor while it types/develops.
+      retargetFollow();
     }
 
     function stepDone() {
@@ -431,6 +530,12 @@ export const aboutView = {
       // figure timers are cleared in the teardown cancel.
       if (nextIdx >= steps.length) hasPlayedThrough = true;
       tryAdvance();
+      // Advance: if tryAdvance just started the next step, this re-issues
+      // the goal it already set (idempotent). If it did NOT — the gate is
+      // waiting on "seen" — this is the crawl order: ease toward the
+      // pending step until the observer fires. The follower closing that
+      // gap is what makes the sequence self-advancing.
+      retargetFollow();
     }
 
     /* ---- the two step kinds ---- */

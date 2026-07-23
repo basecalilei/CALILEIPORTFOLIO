@@ -142,7 +142,10 @@ const HOVER_WAVE_RADIUS = 5;
                 .process-workflow (one pipeline step: head + body + shot),
                 .process-card (expandable workflow card — behavior wired by
                 processCards.js via processModal; author markup only),
-                .process-launch (hand-off control; NO HANDLER YET),
+                .process-launch (gated hand-off control — behavior wired by
+                processLaunchGate.js via processModal; author markup only,
+                with the soft access key on data-launch-key and the
+                hand-off name on data-launch),
                 .media-grid-2, plus styled p / h3 / ul / img / video.
                 Empty string = the modal shows the hero alone.
 
@@ -294,7 +297,7 @@ const PROCESSES = [
            additional processes, solvers, and theoretical foundations.</p>
       </div>
 
-      <button class="process-launch" type="button" data-launch="ipm">
+      <button class="process-launch" type="button" data-launch="ipm" data-launch-key="opensesame">
         <span class="process-launch-mark">[ I<i>.</i>P<i>.</i>M ]</span>
         <span class="process-launch-cue">/ CLICK TO EXPLORE THE FULL SYSTEM</span>
         <span class="process-launch-arrow" aria-hidden="true"></span>

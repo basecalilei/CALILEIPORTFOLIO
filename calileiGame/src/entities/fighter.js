@@ -38,6 +38,15 @@
 // overwrite it; stateFrame is reset to 0 by the Hitstun → Hitstun
 // re-transition, so the new hit's hitstun value starts a fresh
 // countdown.
+//
+// KO/respawn (Phase 19's substrate, pulled forward): adds spawnX/spawnY
+// — the creation-time (x, y), frozen so the respawn effect can restore
+// "the original spawn point" without knowing anything about the
+// composition root's SPAWN_* constants — and pendingKO, the blast-zone
+// scratchpad. blastZoneSystem writes pendingKO on a blast-zone
+// crossing; the kOd condition consumes it next tick; the respawn
+// effect clears it (and zeroes `damage` — the consumer the Phase 13
+// step 4 note above anticipated).
 
 import { createInputBuffer } from '../core/inputBuffer.js';
 
@@ -45,6 +54,8 @@ export function createFighter(config, x, y) {
   return {
     x,
     y,
+    spawnX: x,            // original spawn point — respawn target,
+    spawnY: y,            //   frozen at creation, never rewritten
     vx: 0,
     vy: 0,
     grounded: false,
@@ -57,6 +68,7 @@ export function createFighter(config, x, y) {
     hitConnected: new Set(),  // Phase 13 step 3 — attacker's per-attack victim record
     damage: 0,            // Phase 13 step 4 — percent accumulator
     pendingHitstunFrames: 0,  // Phase 13 step 5 — Hitstun's dynamic duration
+    pendingKO: false,     // blast-zone scratchpad — see KO/respawn note above
     config,
     inputBuffer: createInputBuffer(),
   };

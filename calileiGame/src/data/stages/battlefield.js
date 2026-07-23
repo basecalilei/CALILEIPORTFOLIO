@@ -16,9 +16,11 @@
 // Coordinate convention: Y-down, origin top-left. solid.top is the
 // smaller y; solid.bottom is the larger y.
 //
-// blastZones describes the kill-box surrounding the stage. Nothing reads
-// them yet — they exist here because they're part of the stage's identity
-// and belong with the geometry.
+// blastZones describes the kill-box surrounding the stage. Read by
+// blastZoneSystem: an anchor point outside this rect flags the fighter
+// for KO/respawn. Note bottom (640) equals the main floor's bottom — a
+// fighter standing on the stage is inside the box; only leaving the
+// stage's airspace crosses it.
 
 export const battlefield = {
   solids: [

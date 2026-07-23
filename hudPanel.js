@@ -305,7 +305,7 @@ const DEFAULT_CONTACTS = [
   /* waypoint / project fiducials */
   { t: "id", s: "FREE.BIRZ",      x: 237, y: -51 },
   { t: "id", s: "CRUDE",     x: 263, y:  16 },
-  { t: "id", s: "FUSION",   x: 157, y:  42 },
+  { t: "id", s: "USN",   x: 157, y:  42 },
   { t: "id", s: "TEXWAX",    x: 234, y:  47 },
   { t: "id", s: "ARCSYS",    x: 234, y:  78 },
   { t: "id", s: "____",  x: 197, y: 232 },

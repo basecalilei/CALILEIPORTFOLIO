@@ -42,8 +42,41 @@
 //                           of strings for ordered composition (state
 //                           machine extension anticipated in Phase 11).
 //
+//               THE UNIVERSAL PAIR: every state's first two transitions
+//               are kOd → Fall (respawn) then hitTaken → Hitstun
+//               (applyHitReaction), in that order — a blast-zone
+//               crossing preempts everything including a same-frame
+//               hit, and being hit preempts everything else. Listed
+//               explicitly per state rather than special-cased in the
+//               interpreter: repetition is the price of the machine
+//               staying generic.
+//
 //   render:     optional. Per-state visual overrides. Currently supports
 //               { color } to override fighter.config.color.
+//
+// THE STATE PALETTE
+//   Colors are not decorative — the fill answers "what is this fighter
+//   doing" at a glance, so the hue encodes the engine's own categories
+//   and the shade separates states within a category:
+//
+//     GREEN   grounded  — dark = low or braking (Squat, DashStop),
+//                         base = at rest or ordinary (Idle, Walk),
+//                         pale = the transitional frames still touching
+//                         the ground (JumpSquat, Land).
+//     BLUE    airborne  — dark = committed descent (FastFall),
+//                         pale = the committed dodge (AirDodge).
+//     YELLOW  attacking — one shade for every grounded attack, one for
+//                         every aerial. Directional variants share a
+//                         shade deliberately: the direction is legible
+//                         from the hitbox, not the body.
+//     RED     harmed    — Hitstun only, matching the hitbox hue that
+//                         caused it (renderer.js HITBOX_*).
+//
+//   The green/blue split follows `grounded`, not intent: JumpSquat and
+//   Land are green because the fighter IS grounded in them (friction
+//   applies, not gravity), even though they belong to the jump arc.
+//   Their pale shades are what carry the "leaving / arriving" reading.
+//   Hues are the brand primaries; shades are mixes toward black/white.
 //
 // Hitbox field reference (for character configs that declare hitboxes
 // under attacks[stateName].hitboxes):
@@ -72,6 +105,7 @@ export const states = {
     duration: 0,
     physics: { gravity: 1.0, friction: 1.0, horizontalMode: 'none' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',            to: 'Fall' },
       { when: 'jumpPressed',            to: 'JumpSquat' },
@@ -83,7 +117,7 @@ export const states = {
       { when: 'stickSlammed',           to: 'Dash', effect: 'commitFacingFromSlam' },
       { when: 'horizontalInput',        to: 'Walk' },
     ],
-    render: { color: '#dd5555' },
+    render: { color: '#00d150' },
   },
 
   Walk: {
@@ -91,6 +125,7 @@ export const states = {
     duration: 0,
     physics: { gravity: 1.0, friction: 0, horizontalMode: 'walk' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',            to: 'Fall' },
       { when: 'jumpPressed',            to: 'JumpSquat' },
@@ -102,7 +137,7 @@ export const states = {
       { when: 'stickSlammed',           to: 'Dash', effect: 'commitFacingFromSlam' },
       { when: 'noHorizontalInput',      to: 'Idle' },
     ],
-    render: { color: '#e06060' },
+    render: { color: '#38e07a' },
   },
 
   Squat: {
@@ -110,6 +145,7 @@ export const states = {
     duration: 0,
     physics: { gravity: 1.0, friction: 1.0, horizontalMode: 'none' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',            to: 'Fall' },
       { when: 'jumpPressed',            to: 'JumpSquat' },
@@ -127,7 +163,7 @@ export const states = {
       { when: 'lightAttackPressed',     to: 'LightNeutralGround' },
       { when: 'notCrouchInput',         to: 'Idle' },
     ],
-    render: { color: '#aa3333' },
+    render: { color: '#004f1e' },
   },
 
   JumpSquat: {
@@ -135,10 +171,11 @@ export const states = {
     duration: 3,
     physics: { gravity: 0, friction: 0, horizontalMode: 'none' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'durationElapsed', to: 'Fall', effect: 'applyJumpImpulse' },
     ],
-    render: { color: '#ee7755' },
+    render: { color: '#7aeaa5' },
   },
 
   Fall: {
@@ -151,6 +188,7 @@ export const states = {
       fallSpeedMax: 6.0,         // terminal velocity for normal fall
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       // grounded first — touching down beats both fast-fall and air-jump.
       { when: 'grounded',          to: 'Land',     effect: 'resetAirActions' },
@@ -175,7 +213,7 @@ export const states = {
       // is a discrete deliberate input; down can be held for many reasons.
       { when: 'fastFallTriggered', to: 'FastFall', effect: 'applyFastFall' },
     ],
-    render: { color: '#cc5555' },
+    render: { color: '#00b8e6' },
   },
 
   AirJump: {
@@ -188,6 +226,7 @@ export const states = {
       fallSpeedMax: 6.0,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',          to: 'Land',     effect: 'resetAirActions' },
       { when: 'canAirJump',        to: 'AirJump',  effect: 'applyAirJumpImpulse' },
@@ -200,7 +239,7 @@ export const states = {
       { when: 'canAirDodge',       to: 'AirDodge', effect: 'applyAirDodge' },
       { when: 'fastFallTriggered', to: 'FastFall', effect: 'applyFastFall' },
     ],
-    render: { color: '#ff7777' },
+    render: { color: '#4dd2f0' },
   },
 
   // Phase 8: FastFall. A descending commitment — once entered, the
@@ -222,6 +261,7 @@ export const states = {
                                   // external force that might push faster
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',   to: 'Land',    effect: 'resetAirActions' },
       // Air jump cancel of fast fall — recovery option. The impulse
@@ -241,7 +281,7 @@ export const states = {
       // fast-fall trajectory is replaced with the dodge trajectory.
       { when: 'canAirDodge', to: 'AirDodge', effect: 'applyAirDodge' },
     ],
-    render: { color: '#cc4444' },
+    render: { color: '#0083a3' },
   },
 
   // Phase 11: AirDodge. A committed 20-frame trajectory in a stick-
@@ -278,11 +318,12 @@ export const states = {
                                   // shield and press down instead.
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',         to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed',  to: 'Fall' },
     ],
-    render: { color: '#5577cc' },
+    render: { color: '#99e6f7' },
   },
 
   Land: {
@@ -290,6 +331,7 @@ export const states = {
     duration: 4,
     physics: { gravity: 1.0, friction: 1.0, horizontalMode: 'none', respectPlatforms: true, },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',            to: 'Fall' },
       { when: 'lightAttackPressedUp',   to: 'LightUpGround' },
@@ -299,7 +341,7 @@ export const states = {
       { when: 'stickSlammed',           to: 'Dash', effect: 'commitFacingFromSlam' },
       { when: 'durationElapsed',        to: 'Idle' },
     ],
-    render: { color: '#bb4444' },
+    render: { color: '#a5f0c2' },
   },
 
   Dash: {
@@ -307,6 +349,7 @@ export const states = {
     duration: 10,
     physics: { gravity: 1.0, friction: 0, horizontalMode: 'dash' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded', to: 'Fall' },
       { when: 'jumpPressed', to: 'JumpSquat' },
@@ -316,7 +359,7 @@ export const states = {
       { when: 'noHorizontalInput',      to: 'DashStop' },
       { when: 'durationElapsed',        to: 'Run' },
     ],
-    render: { color: '#ff8844' },
+    render: { color: '#00a33e' },
   },
 
   DashBack: {
@@ -324,6 +367,7 @@ export const states = {
     duration: 10,
     physics: { gravity: 1.0, friction: 0, horizontalMode: 'dash' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded', to: 'Fall' },
       { when: 'jumpPressed', to: 'JumpSquat' },
@@ -333,7 +377,7 @@ export const states = {
       { when: 'noHorizontalInput',      to: 'DashStop' },
       { when: 'durationElapsed',        to: 'Run' },
     ],
-    render: { color: '#ee6622' },
+    render: { color: '#008c33' },
   },
 
   Run: {
@@ -341,6 +385,7 @@ export const states = {
     duration: 0,
     physics: { gravity: 1.0, friction: 0, horizontalMode: 'dash' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded', to: 'Fall' },
       { when: 'jumpPressed', to: 'JumpSquat' },
@@ -349,7 +394,7 @@ export const states = {
       { when: 'stickReverseFromFacing', to: 'DashBack', effect: 'commitFacingFromSlam' },
       { when: 'noHorizontalInput',      to: 'DashStop' },
     ],
-    render: { color: '#ffaa44' },
+    render: { color: '#00c24a' },
   },
 
   DashStop: {
@@ -357,6 +402,7 @@ export const states = {
     duration: 4,
     physics: { gravity: 1.0, friction: 1.0, horizontalMode: 'none' },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',            to: 'Fall' },
       { when: 'jumpPressed',            to: 'JumpSquat' },
@@ -368,7 +414,7 @@ export const states = {
       { when: 'stickSlammed',           to: 'Dash', effect: 'commitFacingFromSlam' },
       { when: 'durationElapsed',        to: 'Idle' },
     ],
-    render: { color: '#aa5544' },
+    render: { color: '#006e2a' },
   },
 
   // Phase 12a.1: LightNeutralGround. The grounded neutral light attack
@@ -391,6 +437,7 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       // notGrounded first — defensive. A stationary jab shouldn't be
       // able to walk off, but if some future source state hands us a
@@ -398,7 +445,7 @@ export const states = {
       { when: 'notGrounded',     to: 'Fall' },
       { when: 'durationElapsed', to: 'Idle' },
     ],
-    render: { color: '#ffaa66' },
+    render: { color: '#ffbb00' },
   },
 
   // Phase 12a.2: LightSideGround. Forward tilt (f-tilt). Entered via
@@ -422,11 +469,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',     to: 'Fall' },
       { when: 'durationElapsed', to: 'Idle' },
     ],
-    render: { color: '#ff9966' },
+    render: { color: '#ffbb00' },
   },
 
   // Phase 12a.2: LightUpGround. Upward tilt (u-tilt). Vertical hitbox
@@ -449,11 +497,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',     to: 'Fall' },
       { when: 'durationElapsed', to: 'Idle' },
     ],
-    render: { color: '#ffbb55' },
+    render: { color: '#ffbb00' },
   },
 
   // Phase 12a.2: LightDownGround. Downward tilt (d-tilt). Low, forward
@@ -476,11 +525,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'notGrounded',     to: 'Fall' },
       { when: 'durationElapsed', to: 'Idle' },
     ],
-    render: { color: '#cc8855' },
+    render: { color: '#ffbb00' },
   },
 
   // Phase 12a.3: DashAttack. The forward attack performed out of
@@ -522,6 +572,7 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       // notGrounded handles edge-cancel naturally — sliding off the
       // edge of a platform during DashAttack's recovery routes to
@@ -529,7 +580,7 @@ export const states = {
       { when: 'notGrounded',     to: 'Fall' },
       { when: 'durationElapsed', to: 'Idle' },
     ],
-    render: { color: '#ff7733' },
+    render: { color: '#ffbb00' },
   },
 
   // Phase 12a.4: aerial attack family. Five states — neutral, forward,
@@ -578,11 +629,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',        to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed', to: 'Fall' },
     ],
-    render: { color: '#ddbb55' },
+    render: { color: '#ffd24d' },
   },
 
   LightForwardAir: {
@@ -595,11 +647,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',        to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed', to: 'Fall' },
     ],
-    render: { color: '#ccaa44' },
+    render: { color: '#ffd24d' },
   },
 
   LightBackAir: {
@@ -612,11 +665,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',        to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed', to: 'Fall' },
     ],
-    render: { color: '#aa8844' },
+    render: { color: '#ffd24d' },
   },
 
   LightUpAir: {
@@ -629,11 +683,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',        to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed', to: 'Fall' },
     ],
-    render: { color: '#eecc66' },
+    render: { color: '#ffd24d' },
   },
 
   LightDownAir: {
@@ -646,11 +701,12 @@ export const states = {
       respectPlatforms: true,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'grounded',        to: 'Land', effect: 'resetAirActions' },
       { when: 'durationElapsed', to: 'Fall' },
     ],
-    render: { color: '#bb9955' },
+    render: { color: '#ffd24d' },
   },
 
   // Phase 13 step 4: Hitstun. The destination of the universal
@@ -687,9 +743,10 @@ export const states = {
       respectPlatforms: false,
     },
     transitions: [
+      { when: 'kOd', to: 'Fall', effect: 'respawn' },
       { when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' },
       { when: 'hitstunFinished', to: 'Fall' },
     ],
-    render: { color: '#ff6060' },
+    render: { color: '#ff4d00' },
   },
 };

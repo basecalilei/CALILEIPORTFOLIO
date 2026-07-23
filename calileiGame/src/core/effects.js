@@ -167,4 +167,49 @@ export const effects = {
     fighter.pendingHitstunFrames = hit.hitstun ?? 0;
     fighter.pendingHit = null;
   },
+
+  // Respawn. Consumes pendingKO (written by blastZoneSystem when the
+  // fighter crossed the blast zone) and puts the fighter back at their
+  // original spawn point, airborne, as a fresh fighter. The paired
+  // transition targets Fall: spawn points sit above the stage, so the
+  // fighter drops back in and the ordinary Fall → Land path settles
+  // them — no dedicated respawn state needed until Phase 19 adds
+  // freeze/i-frames, at which point the `to:` target changes and this
+  // substrate stays.
+  //
+  // A composite like applyHitReaction — another decomposition candidate
+  // when 13b's array-of-effects interpreter extension lands.
+  //
+  // What resets and why:
+  //   - x/y from spawnX/spawnY (recorded once by createFighter — the
+  //     "original spawn point" is creation-time truth, not stage data).
+  //   - vx/vy to 0: the killing launch must not follow through death.
+  //   - grounded false: the spawn point is airborne; collision will
+  //     assert the truth on landing.
+  //   - damage to 0 — this is the consumer fighter.js's Phase 13
+  //     step 4 note anticipated ("KO / respawn will be the consumer
+  //     that zeroes it").
+  //   - air actions refilled: a respawned fighter has fresh resources,
+  //     same as a landing.
+  //   - pendingHit null: a hit recorded on the death frame must not
+  //     launch the freshly respawned fighter out of Fall next tick.
+  //   - pendingKO false: the flag this effect consumes.
+  //
+  // Deliberately untouched: facing (no gameplay reason to reset),
+  // pendingHitstunFrames (house convention — stale inspection data,
+  // harmless outside Hitstun), and hitConnected (hit-detection-internal
+  // scratchpad with its own owner; hitDetectionSystem clears it on the
+  // next attack state's entry tick).
+  respawn: (fighter) => {
+    fighter.x = fighter.spawnX;
+    fighter.y = fighter.spawnY;
+    fighter.vx = 0;
+    fighter.vy = 0;
+    fighter.grounded = false;
+    fighter.damage = 0;
+    fighter.airJumpsUsed = 0;
+    fighter.airDodgesUsed = 0;
+    fighter.pendingHit = null;
+    fighter.pendingKO = false;
+  },
 };

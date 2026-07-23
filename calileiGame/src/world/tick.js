@@ -10,7 +10,8 @@
 // results back to the World. Systems do not call into each other; they
 // communicate only through the World.
 //
-// Tick order: input → state → physics → collision → hitDetection.
+// Tick order: input → state → physics → collision → hitDetection →
+// blastZone.
 //
 // - input runs first so the buffer holds the freshest snapshot.
 // - state evaluates transitions against that snapshot and updates
@@ -21,13 +22,17 @@
 // - collision resolves landings and clears grounded for walk-offs.
 // - hitDetection (Phase 13 step 3) tests attacker hitboxes against
 //   victim hurtboxes using the final resolved positions, writing
-//   victim.pendingHit on contact. Runs LAST because it consumes
-//   positions; running it earlier would test against pre-collision
-//   positions and produce edge-case bugs (false negatives on
-//   edge-of-platform contact, false positives mid-clip). The 1-frame
-//   lag between writing pendingHit here and the state machine
-//   consuming it next tick is intentional — see hitDetectionSystem's
-//   header.
+//   victim.pendingHit on contact. Runs after collision because it
+//   consumes positions; running it earlier would test against
+//   pre-collision positions and produce edge-case bugs (false
+//   negatives on edge-of-platform contact, false positives mid-clip).
+//   The 1-frame lag between writing pendingHit here and the state
+//   machine consuming it next tick is intentional — see
+//   hitDetectionSystem's header.
+// - blastZone runs last: KO is the frame's final verdict, judged on
+//   the same final positions. Writes fighter.pendingKO; the kOd
+//   condition consumes it next tick (same flag-then-consume shape as
+//   hitDetection, same intentional 1-frame lag).
 //
 // Phase 13 (step 1, FighterB): the `inputs` parameter became
 // `inputsByFighter`, a positional array — inputsByFighter[i] feeds
@@ -40,6 +45,7 @@ import { stateSystem } from '../systems/stateSystem.js';
 import { physicsSystem } from '../systems/physicsSystem.js';
 import { collisionSystem } from '../systems/collisionSystem.js';
 import { hitDetectionSystem } from '../systems/hitDetectionSystem.js';
+import { blastZoneSystem } from '../systems/blastZoneSystem.js';
 
 export function tick(world, inputsByFighter) {
   world.frame += 1;
@@ -48,4 +54,5 @@ export function tick(world, inputsByFighter) {
   physicsSystem(world);
   collisionSystem(world);
   hitDetectionSystem(world);
+  blastZoneSystem(world);
 }

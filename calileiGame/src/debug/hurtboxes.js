@@ -26,12 +26,19 @@
 // added directly (Y-down — negative is up). The box extends w/2 on
 // each side of its center horizontally, h/2 above and below vertically.
 //
-// Drawn before hitboxes in the overlay so that when an attack lands,
-// the red hitbox sits on top of the green hurtbox in the z-order — the
-// active/temporal thing draws over the always-there thing.
+// Drawn after the renderer's hitboxes (the renderer draws those
+// unconditionally now), so where the two overlap the hurtbox sits on
+// top — the inverse of the Phase 13 order. Both stay translucent.
+//
+// Neutral ink rather than a brand color, deliberately. Green now means
+// "grounded" on the fighter body and blue means "airborne"; a green
+// hurtbox drawn over a green fighter was unreadable, and every brand
+// hue is spoken for (yellow = attacking, red = harm/hitbox). Ink is the
+// one channel left that never collides with a state fill, and it suits
+// a diagnostic overlay: this box is geometry, not a role.
 
-const HURTBOX_FILL    = 'rgba(80, 220, 80, 0.22)';
-const HURTBOX_OUTLINE = 'rgba(80, 220, 80, 0.85)';
+const HURTBOX_FILL    = 'rgba(58, 58, 58, 0.12)';
+const HURTBOX_OUTLINE = 'rgba(58, 58, 58, 0.70)';
 const HURTBOX_LINE_WIDTH = 1.5;
 
 export function drawHurtboxes(world, ctx) {

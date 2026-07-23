@@ -977,9 +977,8 @@ const PANELS = [
 
     { type: "folder", name: "calileiWax", lineColor: "#000000", fillColor: "#ffbb00", 
       contents: [
-
       { type: "video", name: "storeDemo.mp4", src: "assets/videos/texWax/texwaxSiteDemo.mp4", pauseOnMinimize: true, playOnOpen: true, loop: true, },
-      { type: "substrate", name: "texwaxSubstrate", lineColor: "#000000", fillColor: "#00b8e6"},
+      { type: "substrate", name: "substrate", lineColor: "#000000", fillColor: "#00b8e6"},
       { type: "md", name: "texwaxBrand.md", lineColor: "#000000", fillColor: "#ffffff",  src: "assets/md/texWax/texwaxBrand.md" },
       { type: "folder", name: "companyDocs", lineColor: "#000000", fillColor: "#ffffff", 
         contents: [
@@ -998,6 +997,7 @@ const PANELS = [
     { type: "folder", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150", 
       contents: [
       { type: "game", name: "calileiGame", lineColor: "#000000", fillColor: "#00d150" },
+      { type: "video", name: "shmoovin.mp4", src: "assets/videos/calileiGame/shmoovin.mp4", pauseOnMinimize: true, playOnOpen: true, loop: true, },
       { type: "inspector", name: "inspector",   lineColor: "#000000", fillColor: "#ffffff" },
       { type: "folder", name: "gameDocs", lineColor: "#000000", fillColor: "#ffffff", 
         contents: [
