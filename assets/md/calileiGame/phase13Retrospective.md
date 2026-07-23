@@ -2,10 +2,7 @@
 
 ## Overview
 
-Phase 13 is Combat Foundation. Its scope per `secondHalfPlan.md` is "Hit
-Detection + FighterB-as-Dummy + Hitlag." We agreed early on to split it
-into five distinct, verifiable substeps rather than land it as one large
-change:
+Phase 13 is Combat Foundation. Its scope per `secondHalfPlan.md` is "Hit Detection + FighterB-as-Dummy + Hitlag." We agreed early on to split it into five distinct, verifiable substeps rather than land it as one large change:
 
 1. **FighterB** — spawn a second fighter with no input pipeline
 2. **Hurtboxes** — defensive geometry per character, per state
@@ -13,22 +10,13 @@ change:
 4. **Knockback** — the launch formula, damage accumulator, Hitstun stub, universal `hitTaken` transition
 5. **Hitstun** — dynamic Hitstun duration driven by per-hit data
 
-Everything through step 5 is landed and verified. Hitlag and DI — the
-plan's remaining Phase 13 items — are deferred to a Phase 13b; see
-[Deferred](#deferred).
+Everything through step 5 is landed and verified. Hitlag and DI — the plan's remaining Phase 13 items — are deferred to a Phase 13b
 
 The load-bearing framing at the start of the phase was:
 
-> "Substrate has to be designed knowing Phase 17 (grab) and Phase 18
-> (projectiles) will both need their own variants of cross-entity
-> interaction. Whatever shape hurtboxes take should generalize."
+> "Substrate has to be designed knowing Phase 17 (grab) and Phase 18 (projectiles) will both need their own variants of cross-entity interaction. Whatever shape hurtboxes take should generalize."
 
-This shaped several decisions — most notably the choice to keep
-`hitDetectionSystem`'s AABB and world-space-transform logic inline
-rather than extracting shared abstractions prematurely. Each future
-contact-resolution system will own its own flow with different result
-semantics, and abstracting before we know what those need would force
-a shape on them.
+This shaped several decisions — most notably the choice to keep `hitDetectionSystem`'s AABB and world-space-transform logic inline rather than extracting shared abstractions prematurely. Each future contact-resolution system will own its own flow with different result semantics, and abstracting before we know what those need would force a shape on them.
 
 ---
 
@@ -36,8 +24,7 @@ a shape on them.
 
 ### Step 1: FighterB
 
-A second fighter in the world. Not a real opponent yet — a hit target
-that sits in Idle and takes hits without reacting to input.
+A second fighter in the world. Not a real opponent yet — a hit target that sits in Idle and takes hits without reacting to input.
 
 **Files:**
 - **NEW** `src/data/characters/fighterB.js` — a `{...fighterA, name, color}` spread. Shallow copy: `body`, `physics`, `attacks`, and (after step 2) `hurtboxes` share references with fighterA. Documented as intentional until Phase 14c gives fighterB its own moveset.
@@ -47,24 +34,11 @@ that sits in Idle and takes hits without reacting to input.
 - **MODIFIED** `src/main.js` — spawns both fighters, builds `[getCurrentInput(), NEUTRAL_SNAPSHOT]` per rAF.
 - **MODIFIED** `src/debug/history.js` — comment naming `fighters[0]` as intentional diagnostic target.
 
-**What we learned:** the engine was almost entirely N-fighter-clean
-already. Every system that iterates fighters (`inputSystem`,
-`stateSystem`, `physicsSystem`, `collisionSystem`, `renderer`,
-`debug/hitboxes.js`, `debug/liveStats.js`) had been written correctly
-from earlier phases. The only hardcoded `world.fighters[0]` in runtime
-logic was `debug/history.js`, and its choice is defensible (record the
-human's fighter). Phase 4's `inputSystem` comment had explicitly
-predicted: *"When P2 arrives, this is where the controller → fighter
-routing will live"* — this was where we landed, with the small
-refinement that the routing decision itself moved up to main.js
-(composition root) and inputSystem became purely a positional
-dispatcher.
+**What we learned:** the engine was almost entirely N-fighter-clean already. Every system that iterates fighters (`inputSystem`, `stateSystem`, `physicsSystem`, `collisionSystem`, `renderer`, `debug/hitboxes.js`, `debug/liveStats.js`) had been written correctly from earlier phases. The only hardcoded `world.fighters[0]` in runtime logic was `debug/history.js`, and its choice is defensible (record the human's fighter). Phase 4's `inputSystem` comment had explicitly predicted: *"When P2 arrives, this is where the controller → fighter routing will live"* — this was where we landed, with the small refinement that the routing decision itself moved up to main.js (composition root) and inputSystem became purely a positional dispatcher.
 
 ### Step 2: Hurtboxes
 
-Per-character, per-state defensive geometry with a `default` fallback
-for states that don't override. Rendered in green, drawn under (in
-z-order) the red hitboxes.
+Per-character, per-state defensive geometry with a `default` fallback for states that don't override. Rendered in green, drawn under (in z-order) the red hitboxes.
 
 **Files:**
 - **MODIFIED** `src/data/characters/fighterA.js` — added `hurtboxes` sibling to `attacks`. Two entries: `default` (30×60 covering the body exactly) and `Squat` (30×40, top compressed down for the crouch pose). fighterB inherits by spread.
@@ -79,22 +53,13 @@ hurtboxes: {
 }
 ```
 
-Lookup: `hurtboxes[actionState] ?? hurtboxes.default`. Center-anchored
-geometry with `x` mirrored by `fighter.facing` — same convention as
-hitboxes exactly. List-of-entries-per-state (rather than single entry)
-is forward-compat for per-limb hurtboxes later, with zero authoring
-migration.
+Lookup: `hurtboxes[actionState] ?? hurtboxes.default`. Center-anchored geometry with `x` mirrored by `fighter.facing` — same convention as hitboxes exactly. List-of-entries-per-state (rather than single entry) is forward-compat for per-limb hurtboxes later, with zero authoring migration.
 
-**First real consumer of `physics.intangible`.** The flag was a Phase
-11 placeholder ("consumer to arrive with combat phase"). Step 2 gave
-it its first real reader (hurtbox visualization); step 3 added the
-second (hit detection).
+**First real consumer of `physics.intangible`.** The flag was a Phase 11 placeholder ("consumer to arrive with combat phase"). Step 2 gave it its first real reader (hurtbox visualization); step 3 added the second (hit detection).
 
 ### Step 3: HitDetection
 
-A fifth tick stage, `hitDetectionSystem`, slotted after
-`collisionSystem`. Iterates attackers × victims, resolves boxes, writes
-`pendingHit` to the victim on overlap.
+A fifth tick stage, `hitDetectionSystem`, slotted after `collisionSystem`. Iterates attackers × victims, resolves boxes, writes `pendingHit` to the victim on overlap.
 
 **Files:**
 - **NEW** `src/systems/hitDetectionSystem.js` — the new stage. Contains AABB and world-space-transform helpers inline (three-consumer duplication with `debug/hitboxes.js` and `debug/hurtboxes.js`; extraction threshold not reached).
@@ -114,22 +79,13 @@ A fifth tick stage, `hitDetectionSystem`, slotted after
 }
 ```
 
-**hitConnected lifecycle:** cleared inside `hitDetectionSystem` when
-`stateFrame === 0 && attacker has hitboxes for current state`. Never
-touched by state-machine effects.
+**hitConnected lifecycle:** cleared inside `hitDetectionSystem` when `stateFrame === 0 && attacker has hitboxes for current state`. Never touched by state-machine effects.
 
-**Algorithm:** for each attacker, get active hitboxes (filter by
-`stateFrame` against `active: [first, last]`). For each victim ≠
-attacker, skip if intangible or already in attacker's hitConnected.
-For each (hitbox, hurtbox) pair, world-space transform both, AABB
-overlap check. On first overlap: write pendingHit, add to
-hitConnected, break out of the box loops (first-overlap-wins,
-author-orderable priority).
+**Algorithm:** for each attacker, get active hitboxes (filter by `stateFrame` against `active: [first, last]`). For each victim ≠ attacker, skip if intangible or already in attacker's hitConnected. For each (hitbox, hurtbox) pair, world-space transform both, AABB overlap check. On first overlap: write pendingHit, add to hitConnected, break out of the box loops (first-overlap-wins, author-orderable priority).
 
 ### Step 4: Knockback
 
-Hits now cause launch. Fighters accumulate damage. The Hitstun state
-exists as a 1-frame stub. All 24 states route to it on hit.
+Hits now cause launch. Fighters accumulate damage. The Hitstun state exists as a 1-frame stub. All 24 states route to it on hit.
 
 **Files:**
 - **NEW** `src/core/knockback.js` — pure `computeKnockback(hit, victimDamage, victimWeight) → {vx, vy}`. Melee-style formula, `VELOCITY_SCALE = 0.08` conversion to pixel/frame units.
@@ -153,9 +109,7 @@ vx           = speed * cos(angle) * attackerFacing
 vy           = -speed * sin(angle)              // Y-down: up is negative
 ```
 
-Sakurai angle (361°) is treated as a regular angle for now — produces
-near-horizontal launch since cos(361°) ≈ cos(1°). Proper Melee
-"horizontal at low %, vertical at high %" semantics is Phase 14+.
+Sakurai angle (361°) is treated as a regular angle for now — produces near-horizontal launch since cos(361°) ≈ cos(1°). Proper Melee "horizontal at low %, vertical at high %" semantics is Phase 14+.
 
 **applyHitReaction ordering:**
 1. Snapshot pendingHit into a local
@@ -165,17 +119,11 @@ near-horizontal launch since cos(361°) ≈ cos(1°). Proper Melee
 5. Write `pendingHitstunFrames` from `hit.hitstun ?? 0` (added in step 5)
 6. Clear pendingHit
 
-**Universal hitTaken transition wiring.** All 24 states got
-`{ when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' }` as
-their first transition via a single Python regex pass on states.js.
-Priority order chosen: `hitTaken → notGrounded → everything else`.
-Hit reactions preempt every other transition.
+**Universal hitTaken transition wiring.** All 24 states got `{ when: 'hitTaken', to: 'Hitstun', effect: 'applyHitReaction' }` as their first transition via a single Python regex pass on states.js. Priority order chosen: `hitTaken → notGrounded → everything else`. Hit reactions preempt every other transition.
 
 ### Step 5: Hitstun
 
-Hitstun becomes duration-dynamic. Per-hit hitstun values (already
-carried through `pendingHit` since step 3) finally get consumed. Combos
-become possible.
+Hitstun becomes duration-dynamic. Per-hit hitstun values (already carried through `pendingHit` since step 3) finally get consumed. Combos become possible.
 
 **Files:**
 - **MODIFIED** `src/entities/fighter.js` — added `pendingHitstunFrames: 0`.
@@ -183,17 +131,9 @@ become possible.
 - **MODIFIED** `src/core/conditions.js` — added `hitstunFinished` condition (`stateFrame >= pendingHitstunFrames`).
 - **MODIFIED** `src/data/states/states.js` — Hitstun's `duration: 1` removed; `durationElapsed → Fall` swapped for `hitstunFinished → Fall`.
 
-**Re-hit semantics:** the `hitTaken` self-transition in Hitstun's
-transitions list works for free. A hit during Hitstun re-fires
-`applyHitReaction`, which overwrites `pendingHitstunFrames`. The state
-machine resets `stateFrame` to 0 on the Hitstun → Hitstun transition.
-Fresh launch, fresh timer.
+**Re-hit semantics:** the `hitTaken` self-transition in Hitstun's transitions list works for free. A hit during Hitstun re-fires `applyHitReaction`, which overwrites `pendingHitstunFrames`. The state machine resets `stateFrame` to 0 on the Hitstun → Hitstun transition. Fresh launch, fresh timer.
 
-**Defensive `?? 0` in `applyHitReaction`:** an attack authored without
-a `hitstun` field would produce `undefined` in the
-`stateFrame >= undefined` comparison, which is always false →
-permanent paralysis. The 4-character insurance produces "0-frame
-hitstun" (immediate Fall transition) as the graceful failure mode.
+**Defensive `?? 0` in `applyHitReaction`:** an attack authored without a `hitstun` field would produce `undefined` in the `stateFrame >= undefined` comparison, which is always false → permanent paralysis. The 4-character insurance produces "0-frame hitstun" (immediate Fall transition) as the graceful failure mode.
 
 ---
 
@@ -201,126 +141,63 @@ hitstun" (immediate Fall transition) as the graceful failure mode.
 
 ### Positional-array tick signature (step 1)
 
-Chose `tick(world, inputsByFighter)` — main.js builds the positional
-array — over adding an `inputSource` field to fighter runtime.
-Composition-root ownership: "who feeds whom" is a main.js concern, not
-distributed across systems. The change touched three files
-(`tick.js`, `inputSystem.js`, `main.js`) and preserved every system's
-generic-iteration pattern.
+Chose `tick(world, inputsByFighter)` — main.js builds the positional array — over adding an `inputSource` field to fighter runtime. Composition-root ownership: "who feeds whom" is a main.js concern, not distributed across systems. The change touched three files (`tick.js`, `inputSystem.js`, `main.js`) and preserved every system's generic-iteration pattern.
 
-The alternative (fighter has `inputSource: 'keyboard' | 'stub'`,
-inputSystem dispatches via registry) would have introduced a
-stringly-typed enum and required the input system to know about source
-types. Rejected.
+The alternative (fighter has `inputSource: 'keyboard' | 'stub'`, inputSystem dispatches via registry) would have introduced a stringly-typed enum and required the input system to know about source types. Rejected.
 
 ### Hurtboxes as list-of-entries even when length=1 (step 2)
 
-Same Phase 12 hitbox precedent applied prospectively. Every current
-state has exactly one hurtbox; the shape is `[{...}]` anyway so
-per-limb arrays drop in later as
-`[{shape: arm}, {shape: leg}, {shape: body}]` with zero authoring
-migration.
+Same Phase 12 hitbox precedent applied prospectively. Every current state has exactly one hurtbox; the shape is `[{...}]` anyway so per-limb arrays drop in later as `[{shape: arm}, {shape: leg}, {shape: body}]` with zero authoring migration.
 
 ### Character-keyed hurtboxes with 'default' fallback (step 2)
 
-User's articulated requirement: "unique to each fighter — different
-fighters will be different sizes." State-level hurtbox data would have
-been universal-across-characters (a hypothetical Bowser's Squat would
-share geometry with fighterA's Squat). Character-level is the only
-correct layer for this data.
+User's articulated requirement: "unique to each fighter — different fighters will be different sizes." State-level hurtbox data would have been universal-across-characters (a hypothetical Bowser's Squat would share geometry with fighterA's Squat). Character-level is the only correct layer for this data.
 
 ### hitConnected as hit-detection-internal scratchpad (step 3)
 
-Chose internal reset (`stateFrame === 0 && has hitboxes`, checked at
-top of each attacker's iteration in `hitDetectionSystem`) over adding
-`resetHitConnected` as an effect on ~20 attack-entry transitions.
+Chose internal reset (`stateFrame === 0 && has hitboxes`, checked at top of each attacker's iteration in `hitDetectionSystem`) over adding `resetHitConnected` as an effect on ~20 attack-entry transitions.
 
-Justification: `hitConnected` is never read by any condition. Compare
-to `airJumpsUsed` — that field IS read by the `canAirJump` condition,
-so its reset must be visible to the state machine via an effect.
-`hitConnected` has no such consumer; the state machine never needs to
-see it. The system that owns a field owns its lifecycle.
+Justification: `hitConnected` is never read by any condition. Compare to `airJumpsUsed` — that field IS read by the `canAirJump` condition, so its reset must be visible to the state machine via an effect. `hitConnected` has no such consumer; the state machine never needs to see it. The system that owns a field owns its lifecycle.
 
-Trade-off accepted: reset behavior isn't declared in state data. A
-reader of `states.js` can't see it. Mitigation is documentation in
-`hitDetectionSystem.js` — the header comment explains the semantics.
+Trade-off accepted: reset behavior isn't declared in state data. A reader of `states.js` can't see it. Mitigation is documentation in `hitDetectionSystem.js` — the header comment explains the semantics.
 
 ### pendingHit as self-contained snapshot (step 3)
 
-Not a reference to the live hitbox object. Fields are copied at hit
-time. Rationale: (a) character config is read-only-by-convention,
-while pendingHit is a moment-in-time event with its own lifetime;
-(b) decouples the lifetime of pendingHit from the lifetime of the
-attack's active window — the attacker can transition out of the attack
-state before the victim's state machine consumes pendingHit, and the
-data stays valid.
+Not a reference to the live hitbox object. Fields are copied at hit time. Rationale: (a) character config is read-only-by-convention, while pendingHit is a moment-in-time event with its own lifetime; (b) decouples the lifetime of pendingHit from the lifetime of the attack's active window — the attacker can transition out of the attack state before the victim's state machine consumes pendingHit, and the data stays valid.
 
 ### attackerFacing in pendingHit (step 4)
 
 Snapshot at hit time. Chose over live-lookup via `attackerIndex`.
 
-Rationale: (a) kept effects single-argument (matching every other
-effect), no world access needed; (b) semantically stable — the hit's
-direction is settled when contact occurs; if the attacker pivots
-between write and consume, the launch direction shouldn't distort.
+Rationale: (a) kept effects single-argument (matching every other effect), no world access needed; (b) semantically stable — the hit's direction is settled when contact occurs; if the attacker pivots between write and consume, the launch direction shouldn't distort.
 
 ### Stub Hitstun in step 4 vs stateless velocity-applier
 
-Chose the stub. Hitstun exists as a real state in step 4 with
-`duration: 1`; step 5 only had to swap `duration`/exit-condition and
-add the field-write in `applyHitReaction`.
+Chose the stub. Hitstun exists as a real state in step 4 with `duration: 1`; step 5 only had to swap `duration`/exit-condition and add the field-write in `applyHitReaction`.
 
-The alternative was: ship knockback in step 4 as a system or effect
-that sets velocity WITHOUT a state transition (no Hitstun state at
-all), then introduce Hitstun as a state in step 5 with all 24
-`hitTaken` transitions authored fresh.
+The alternative was: ship knockback in step 4 as a system or effect that sets velocity WITHOUT a state transition (no Hitstun state at all), then introduce Hitstun as a state in step 5 with all 24 `hitTaken` transitions authored fresh.
 
-The stub was cleaner because the 24 `hitTaken` transition inserts are
-the biggest authoring chunk in the phase — landing that wiring in
-step 4 and never touching it again beat authoring throwaway
-velocity-applier logic in step 4 and retiring it in step 5.
+The stub was cleaner because the 24 `hitTaken` transition inserts are the biggest authoring chunk in the phase — landing that wiring in step 4 and never touching it again beat authoring throwaway velocity-applier logic in step 4 and retiring it in step 5.
 
 ### Composite `applyHitReaction` over array-of-effects extension (step 4)
 
-Deferred the state-machine substrate change. `applyHitReaction`
-handles knockback + damage-accumulate + `pendingHitstunFrames`-write
-as one atomic effect.
+Deferred the state-machine substrate change. `applyHitReaction` handles knockback + damage-accumulate + `pendingHitstunFrames`-write as one atomic effect.
 
-`core/effects.js` has a comment on `resetAirActions` noting this same
-tension: *"The state machine supports one effect per transition;
-composing multiple resets into one effect is the cheapest factoring
-while only two counters need it."* Phase 13a didn't force the
-extension — the composite worked. Hitlag (deferred to 13b) will likely
-be the trigger, since freezing both fighters is a distinct enough
-action from applying knockback that composing them into one effect
-starts to feel wrong.
+`core/effects.js` has a comment on `resetAirActions` noting this same tension: *"The state machine supports one effect per transition; composing multiple resets into one effect is the cheapest factoring while only two counters need it."* Phase 13a didn't force the extension — the composite worked. Hitlag (deferred to 13b) will likely be the trigger, since freezing both fighters is a distinct enough action from applying knockback that composing them into one effect starts to feel wrong.
 
 ### `hitstunFinished` as sibling condition to `durationElapsed` (step 5)
 
-Chose a new condition that reads a fighter-runtime field
-(`pendingHitstunFrames`) over extending `durationElapsed` to also
-check runtime fields.
+Chose a new condition that reads a fighter-runtime field (`pendingHitstunFrames`) over extending `durationElapsed` to also check runtime fields.
 
-`durationElapsed` reads a state-data field (`state.duration`). Its
-semantics ("this state's fixed duration has elapsed") stayed intact
-for fixed-duration states. `hitstunFinished` has different semantics
-("this dynamic per-hit duration has elapsed") and gets its own name.
+`durationElapsed` reads a state-data field (`state.duration`). Its semantics ("this state's fixed duration has elapsed") stayed intact for fixed-duration states. `hitstunFinished` has different semantics ("this dynamic per-hit duration has elapsed") and gets its own name.
 
 ### Universal `hitTaken` as first transition in every state (step 4)
 
-Chose explicit-in-data over interpreter-magic (a state-machine
-extension that automatically checks `pendingHit` before consulting
-per-state transitions).
+Chose explicit-in-data over interpreter-magic (a state-machine extension that automatically checks `pendingHit` before consulting per-state transitions).
 
-Rationale: (a) declarative — a reader of `states.js` sees that hit
-can happen; (b) per-state override remains possible if needed later;
-(c) a mechanical 24-place edit via a Python regex pass is safer than
-trusting a single interpreter change.
+Rationale: (a) declarative — a reader of `states.js` sees that hit can happen; (b) per-state override remains possible if needed later; (c) a mechanical 24-place edit via a Python regex pass is safer than trusting a single interpreter change.
 
-Priority order chosen: `hitTaken → notGrounded → everything else`.
-Every state gets `hitTaken` first, including states like AirDodge —
-redundant since `intangible` blocks pendingHit-writes there, but
-harmless and defensive.
+Priority order chosen: `hitTaken → notGrounded → everything else`. Every state gets `hitTaken` first, including states like AirDodge — redundant since `intangible` blocks pendingHit-writes there, but harmless and defensive.
 
 ---
 
@@ -328,57 +205,31 @@ harmless and defensive.
 
 ### `Fall.fallSpeedMax` masks knockback
 
-Terminal velocity in Fall is 6.0. Knockback at low damage produces
-launch vy well below that. During the step-4 1-frame Hitstun stub,
-this made spikes look completely broken.
+Terminal velocity in Fall is 6.0. Knockback at low damage produces launch vy well below that. During the step-4 1-frame Hitstun stub, this made spikes look completely broken.
 
-Discovery: user observed down-air after a combo (B at ~6% damage). The
-dair produced vy = 5.09 — literally BELOW the terminal velocity B was
-already at. The spike appeared to do nothing.
+Discovery: user observed down-air after a combo (B at ~6% damage). The dair produced vy = 5.09 — literally BELOW the terminal velocity B was already at. The spike appeared to do nothing.
 
-The immediate fix was step 5 (longer Hitstun that keeps the launched
-fighter uncapped during the launch window). But even step 5 doesn't
-fully solve this: after hitstun ends, Fall's cap kicks back in, so
-post-hitstun motion always reads as terminal-velocity falling
-regardless of how hard the spike was.
+The immediate fix was step 5 (longer Hitstun that keeps the launched fighter uncapped during the launch window). But even step 5 doesn't fully solve this: after hitstun ends, Fall's cap kicks back in, so post-hitstun motion always reads as terminal-velocity falling regardless of how hard the spike was.
 
-The proper fix is a **Tumble** state (Melee's name) between Hitstun
-and Fall — uncapped fall with its own recovery behavior. Phase 14+.
+The proper fix is a **Tumble** state (Melee's name) between Hitstun and Fall — uncapped fall with its own recovery behavior. Phase 14+.
 
 ### Shallow-spread inheritance for fighterB is load-bearing
 
-`fighterB = {...fighterA, name, color}` means `fighterB.hurtboxes`
-(added in step 2) is the same object reference as `fighterA.hurtboxes`.
-Works today because nothing mutates config. Load-bearing when
-fighterA's hurtboxes get tuned — B's hurtboxes move with A's.
+`fighterB = {...fighterA, name, color}` means `fighterB.hurtboxes` (added in step 2) is the same object reference as `fighterA.hurtboxes`. Works today because nothing mutates config. Load-bearing when fighterA's hurtboxes get tuned — B's hurtboxes move with A's.
 
-Documented as intentional-until-14c-forces-divergence. When Phase 14c
-gives fighterB its own moveset, the file becomes a proper standalone
-character config and the shared references go away. The reason to keep
-the spread now is that authoring one hurtbox and getting two is
-strictly less work than authoring two identical hurtboxes.
+Documented as intentional-until-14c-forces-divergence. When Phase 14c gives fighterB its own moveset, the file becomes a proper standalone character config and the shared references go away. The reason to keep the spread now is that authoring one hurtbox and getting two is strictly less work than authoring two identical hurtboxes.
 
 ### Sakurai angle (361°) not properly handled
 
-The formula treats 361° as a regular angle → cos(361°) ≈ cos(1°) →
-near-horizontal launch. Melee's Sakurai-angle semantics ("horizontal
-at low %, vertical at high %") is not implemented. Whether it matters
-depends on whether fighterA's authored attacks use 361° meaningfully.
-Deferred to Phase 14+.
+The formula treats 361° as a regular angle → cos(361°) ≈ cos(1°) → near-horizontal launch. Melee's Sakurai-angle semantics ("horizontal at low %, vertical at high %") is not implemented. Whether it matters depends on whether fighterA's authored attacks use 361° meaningfully. Deferred to Phase 14+.
 
 ### `?? 0` defensive default in `pendingHitstunFrames`
 
-`fighter.stateFrame >= undefined` is always false → permanent
-paralysis if any attack is ever authored without a `hitstun` field.
-The 4-character insurance produces "0-frame hitstun" (immediate Fall
-transition) as graceful failure. Cheap.
+`fighter.stateFrame >= undefined` is always false → permanent paralysis if any attack is ever authored without a `hitstun` field. The 4-character insurance produces "0-frame hitstun" (immediate Fall transition) as graceful failure. Cheap.
 
 ### Effect ordering inside `applyHitReaction`
 
-`damage` must be incremented AFTER `computeKnockback` — the formula
-uses the pre-hit damage as input, and internally computes
-`total = victim + move`. Pre-incrementing would double-count the
-hit's contribution.
+`damage` must be incremented AFTER `computeKnockback` — the formula uses the pre-hit damage as input, and internally computes `total = victim + move`. Pre-incrementing would double-count the hit's contribution.
 
 ### VELOCITY_SCALE — global scale vs per-attack tuning
 
@@ -387,13 +238,9 @@ Decision tree that emerged from a user question about tunables:
 - "This character feels too light/heavy" → `physics.weight`
 - "Every hit feels too punchy / too floaty" → `VELOCITY_SCALE`
 
-Worth capturing because the temptation with a wrong-feeling move is
-to reach for `VELOCITY_SCALE`. Almost always wrong — it globally
-shifts every attack across every character.
+Worth capturing because the temptation with a wrong-feeling move is to reach for `VELOCITY_SCALE`. Almost always wrong — it globally shifts every attack across every character.
 
-`VELOCITY_SCALE` was set to 0.08 at initial write. May need retuning
-now that step 5 makes launches visible for many frames instead of
-one. Feel-test after step 5 has settled.
+`VELOCITY_SCALE` was set to 0.08 at initial write. May need retuning now that step 5 makes launches visible for many frames instead of one. Feel-test after step 5 has settled.
 
 ---
 

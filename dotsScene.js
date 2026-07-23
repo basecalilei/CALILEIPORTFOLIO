@@ -235,8 +235,8 @@ const CONFIG = {
   color: {
     palette: ["#ff5e2e", "#00d9ff", "#00eb14", "#ffd000", 
       "#e5eaec", "#e4dddd", "#e9e9e9", "#a8a8a8", 
-      "#c2c2c2", "#e4dddd", "#e9eeec", "#bec0c2", 
-      "#d9dbe0", "#b8b8b8", "#bebebe", "#838383", 
+  //    "#c2c2c2", "#e4dddd", "#e9eeec", "#bec0c2", 
+  //    "#d9dbe0", "#b8b8b8", "#bebebe", "#838383", 
     ],
   },
 

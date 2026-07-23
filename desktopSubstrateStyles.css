@@ -1,0 +1,513 @@
+/* ==========================================================================
+   desktopSubstrateStyles.css — the substrate window (desktopPanel family)
+
+   Ported from the standalone project's sphereStyles.css: the white
+   stage untouched, the dark instrument sidecar beside it, every
+   control hard-edged (radius 0), each pool section inked by its own
+   liquid color through --accent set inline from JS.
+
+   Port deltas, all structural:
+     - Everything is SCOPED under .desktop-substrate — the source's
+       :root vars, `html, body`, and `*` rules would leak site-wide.
+       Custom-property NAMES are kept for diffability; scoping makes
+       them shadow, not collide. --accent is explicitly re-grounded
+       below: the site's :root sets it to brand red, and without the
+       re-ground every slider OUTSIDE a pool section would inherit it.
+     - IBM Plex Mono → the site's Glitched family: "Glitched" for
+       display (masthead, block titles, names, buttons), "Glitched
+       Book" for labels and readouts. Plex's tabular-nums kept the
+       readouts from jittering; Glitched has no tabular figures, so
+       .val gets a fixed right-aligned slot instead.
+     - The 760px viewport media query → a container query: the window
+       resizes by drag, not with the viewport (container-type sizing
+       per the desktopAudio precedent). The query restyles an inner
+       .substrate-frame because a container cannot restyle itself.
+     - The hint chip (CLICK TO RESUME) is new — pure CSS off
+       :focus-within, desktopGame's hint adapted to focus-within
+       liveness and to a white stage. The appear delay swallows the
+       one-frame gap between window insertion and the deferred
+       auto-focus landing.
+   ========================================================================== */
+
+.desktop-substrate {
+  /* ------------------------------------------------ instrument palette */
+  --panel: #161619;
+  --panel-2: #1d1d21;
+  --line: #2b2b31;
+  --text: #eceae4;
+  --dim: #8d8d95;
+  --stage: #ffffff;
+  --panel-w: 300px;
+  --pad-x: 16px;
+
+  /* The site's :root sets --accent to brand red; inside this window
+     the property belongs to the pool sections (set inline from JS).
+     Re-ground it so controls outside a pool fall back to the panel
+     ink, exactly as the standalone (no --accent at all) behaved. */
+  --accent: var(--text);
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  container-type: size;
+  container-name: substrate;
+  outline: none;              /* the root is a focus anchor, not a control */
+  background: var(--stage);
+  color: var(--text);
+  font-family: "Glitched Book", ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.desktop-substrate,
+.desktop-substrate * {
+  box-sizing: border-box;
+}
+
+.substrate-frame {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+/* --------------------------------------------------------------- layout */
+
+.desktop-substrate-panel {
+  width: var(--panel-w);
+  flex: none;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain; /* tweak past the end without the page moving */
+  background: var(--panel);
+  border-right: 1px solid #000;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) var(--panel);
+}
+
+.desktop-substrate-panel::-webkit-scrollbar { width: 8px; }
+.desktop-substrate-panel::-webkit-scrollbar-track { background: var(--panel); }
+.desktop-substrate-panel::-webkit-scrollbar-thumb { background: var(--line); }
+
+.desktop-substrate-stage {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: var(--stage);
+}
+
+.desktop-substrate-stage canvas {
+  display: block;
+}
+
+.desktop-substrate .stage-error {
+  margin: 0;
+  padding: 40px;
+  color: #999999;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ------------------------------------------------------------- the hint */
+
+/* CLICK TO RESUME — visible whenever focus is elsewhere. Liveness IS
+   focus-within, so this reads the same truth the rAF loop does. */
+.desktop-substrate-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 1;
+  transition: opacity 160ms var(--ease, ease-out);
+  transition-delay: 120ms;    /* swallows the boot flash before auto-focus */
+}
+
+.desktop-substrate:focus-within .desktop-substrate-hint {
+  opacity: 0;
+  transition-delay: 0ms;
+}
+
+.desktop-substrate-hint span {
+  padding: 7px 14px;
+  font-family: "Hornet Display", ui-monospace, monospace; /* game-hint parity */
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--brand-green, #00d150);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+/* ------------------------------------------------------------- masthead */
+
+.substrate-masthead {
+  padding: 20px var(--pad-x) 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.substrate-title {
+  margin: 0 0 10px;
+  font-family: "Glitched", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.substrate-masthead p {
+  margin: 0 0 6px;
+  padding-left: 12px;
+  position: relative;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--dim);
+}
+
+.substrate-masthead p::before {
+  content: ">";
+  position: absolute;
+  left: 0;
+}
+
+/* --------------------------------------------------------------- blocks */
+
+.substrate-block {
+  padding: 14px var(--pad-x) 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.substrate-block-title {
+  margin: 0 0 6px;
+  font-family: "Glitched", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* ----------------------------------------------------------- slider rows */
+
+.desktop-substrate .row {
+  margin: 12px 0 2px;
+}
+
+.desktop-substrate .row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* Glitched has no tabular figures — a fixed right-aligned slot keeps
+   the readout (and everything left of it) still while digits roll. */
+.desktop-substrate .row-head .val {
+  color: var(--dim);
+  min-width: 5ch;
+  text-align: right;
+}
+
+.desktop-substrate input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 18px;
+  margin: 2px 0 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.desktop-substrate input[type="range"]::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--line);
+}
+
+.desktop-substrate input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -4px;
+  border-radius: 0;
+  background: var(--accent, var(--text));
+  border: none;
+}
+
+.desktop-substrate input[type="range"]::-moz-range-track {
+  height: 2px;
+  background: var(--line);
+}
+
+.desktop-substrate input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border-radius: 0;
+  background: var(--accent, var(--text));
+  border: none;
+}
+
+.desktop-substrate input[type="range"]:focus-visible {
+  outline: 1px solid var(--accent, var(--text));
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ color input */
+
+.desktop-substrate .color-row {
+  margin-top: 4px;
+}
+
+.desktop-substrate input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 44px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.desktop-substrate input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.desktop-substrate input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0;
+}
+
+.desktop-substrate input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 0;
+}
+
+/* -------------------------------------------------------------- buttons */
+
+.desktop-substrate .btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.desktop-substrate .btns + .btns {
+  margin-top: 8px;
+}
+
+.desktop-substrate button {
+  flex: 1;
+  padding: 8px 6px;
+  font-family: "Glitched", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.desktop-substrate button:hover {
+  border-color: var(--dim);
+}
+
+.desktop-substrate button:focus-visible {
+  outline: 1px solid var(--accent, var(--text));
+  outline-offset: 2px;
+}
+
+.desktop-substrate button:disabled {
+  opacity: 0.35;
+  cursor: default;
+  border-color: var(--line);
+}
+
+.desktop-substrate button.danger:hover {
+  border-color: #b3564d;
+  color: #d99a94;
+}
+
+/* ------------------------------------------------------------ comps grid */
+
+.substrate-comps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* --------------------------------------------------------- sphere blocks */
+
+.desktop-substrate .sphere {
+  border-bottom: 1px solid var(--line);
+}
+
+.desktop-substrate .sphere > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px var(--pad-x);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.desktop-substrate .sphere > summary::-webkit-details-marker {
+  display: none;
+}
+
+.desktop-substrate .sphere-name {
+  flex: 1;
+  font-family: "Glitched", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.desktop-substrate .sphere-body {
+  padding: 0 var(--pad-x) 18px;
+}
+
+.desktop-substrate .sphere-rows {
+  margin-top: -6px;
+}
+
+.desktop-substrate .sphere-btns {
+  align-items: center;
+}
+
+.desktop-substrate .count {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+
+/* ----------------------------------------------------------- pool blocks */
+
+.desktop-substrate .pools {
+  margin-top: 14px;
+}
+
+.desktop-substrate .pool {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent, var(--line));
+  background: var(--panel-2);
+  margin-bottom: 10px;
+}
+
+.desktop-substrate .pool > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px calc(var(--pad-x) - 3px);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+.desktop-substrate .pool > summary::-webkit-details-marker {
+  display: none;
+}
+
+.desktop-substrate .dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  background: var(--accent, var(--text));
+}
+
+.desktop-substrate .pool-name {
+  flex: 1;
+  font-family: "Glitched", ui-monospace, monospace;
+  font-weight: 500;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.desktop-substrate .vis {
+  flex: none;
+  padding: 3px 8px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+}
+
+.desktop-substrate .pool.is-hidden {
+  opacity: 0.55;
+}
+
+.desktop-substrate .pool.is-hidden .dot {
+  background: var(--dim);
+}
+
+.desktop-substrate .pool-body {
+  padding: 2px calc(var(--pad-x) - 3px) 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------------------------------------------------- disclosure marker */
+
+.desktop-substrate .marker {
+  flex: none;
+  color: var(--dim);
+  font-size: 11px;
+}
+
+.desktop-substrate .marker::before {
+  content: "\2212"; /* − while open */
+}
+
+.desktop-substrate details:not([open]) > summary .marker::before {
+  content: "+";
+}
+
+/* --------------------------------------------------------------- footer */
+
+.substrate-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px var(--pad-x) 24px;
+}
+
+/* ----------------------------------------------------------- icon glyph */
+
+.desktop-substrate-glyph {
+  width: 36px;
+  height: 36px;
+}
+
+/* -------------------------------------------------------- narrow windows */
+
+/* The source's 760px viewport breakpoint, re-read against the WINDOW:
+   below 620px of container width the sidecar stacks under the stage,
+   mirroring the standalone's column layout. */
+@container substrate (max-width: 620px) {
+  .substrate-frame {
+    flex-direction: column;
+  }
+
+  .desktop-substrate-stage {
+    order: 1;
+    width: 100%;
+    height: 52%;
+    flex: none;
+  }
+
+  .desktop-substrate-panel {
+    order: 2;
+    width: 100%;
+    height: 48%;
+    border-right: 0;
+    border-top: 1px solid #000;
+  }
+}
