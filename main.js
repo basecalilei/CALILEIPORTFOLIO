@@ -1036,7 +1036,7 @@ const PANELS = [
       locked: true, password: "opensesame" 
     },
 
-    { type: "folder", name: "moodBoard", lineColor: "#000000", fillColor: "#dadada", contents: [], 
+    { type: "folder", name: "calileiMood", lineColor: "#000000", fillColor: "#dadada", contents: [], 
       locked: true, password: "opensesame" 
     },
 
