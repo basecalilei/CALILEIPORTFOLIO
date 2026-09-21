@@ -115,14 +115,14 @@ const PROJECTS = [
   date:  "09-20-26",
   type:  "APPAREL DESIGN",
   tools: ["Blender", "CLO3D", "Illustrator", "Photoshop", "Lightroom"],
-  note:  "A small capsule collection I designed and patterned to present during my round 1 interview for Nike Field Sports: Teams.",
+  note:  "A small capsule collection I designed and patterned to present during my round 1 interview for Nike Field Sports",
   thumb: "images/projects/broncosCapsule/thumb/1thumb.webp",
   media: `
     <h3>NK_FS_RND01 — DENVER BRONCOS</h3>
     <p>// The brief I gave myself: <strong>build the capsule out of what Denver already owns</strong>
        <br>
        <br>
-       > Round one for Nike Field Sports: Teams. Rather than invent a new language for the club, I went looking for the marks and motifs the Broncos have already earned, and let those draw the patterns.
+       > Round one interview for Nike Field Sports. Rather than invent a new language for the club, I went looking for the marks and motifs the Broncos have already earned, and let those draw the patterns.
        <br>
        <br>
        > Two motifs carry the whole collection:
