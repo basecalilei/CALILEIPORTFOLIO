@@ -178,7 +178,7 @@ const PROJECTS = [
        <br>
        - I started where I usually start: pushing on the mark itself.
        <br>
-       - Dozens of directions in, the conclusion was that the Broncos' mark is already really good.
+       - After some exploration, my conclusion was that the Broncos' mark is already really good.
        <br>
        - So the identity work stopped here and the design moved to the garments.
        <br>
@@ -297,12 +297,13 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/16full.webp" alt="Full-body horse marks" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/16bfull.webp" alt="Full-body horse marks" loading="lazy" decoding="async">
     <p>// <strong>THE HORSE</strong>
        <br>
        <br>
-       - Three full-body marks drawn to sit at back-panel scale.
+       - Full-body horse marks to sit at back-panel scale.
        <br>
-       - Rearing, galloping, bucking; the bomber takes the third.
+       - More modern marks, rearing, galloping, and bucking. As well as the marks of the 1960-1961 and 1962-1964 Broncos, and one more inspired by them.
        <br>
        <br>
        --------------------------------------
@@ -447,7 +448,6 @@ const PROJECTS = [
     <p>// <strong>SLING — NEST</strong>
        <br>
        <br>
-       - The last nest: body panels, gusset, pocket, piping and the strap run out flat.</p>
   `,
 },
 

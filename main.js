@@ -948,7 +948,7 @@ const PANELS = [
     // infiniteStyles.css :root). contents: [] authored explicitly so
     // filling them later is an edit, not a structural addition.
 
-    { type: "folder", name: "calileiMusic", lineColor: "#000000", fillColor: "#ff4d00", 
+    { type: "folder", name: "calileiMusic", lineColor: "#000000", fillColor: "#ff4d00", locked: true, password: "opensesame",
       contents: 
       [
       { type: "folder", name: "demos", lineColor: "#000000", fillColor: "#ff4d00", locked: true, password: "opensesame", contents: [] },
