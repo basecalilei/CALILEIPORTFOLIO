@@ -448,6 +448,17 @@ const PROJECTS = [
     <p>// <strong>SLING — NEST</strong>
        <br>
        <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/2full.webp" alt="The full collection" loading="lazy" decoding="async">
+    <p>// <strong>THE COLLECTION</strong>
+       <br>
+       <br>
+       - The full capsule collection and all 3 colorways.
+       <br>
+       </p>
   `,
 },
 
