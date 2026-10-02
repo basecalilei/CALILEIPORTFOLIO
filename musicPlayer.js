@@ -4,8 +4,8 @@
    A persistent bottom-right audio player for an AUTHORED TRACK LIST: a
    circular cover-art disc that spins while music plays, a prev / play-pause
    / next transport, and a Hornet instrument readout (state announcement +
-   track title). Autoplays on page load where the browser permits; degrades
-   honestly where it doesn't (see AUTOPLAY). Tracks cycle: each 'ended'
+   track title). Never autoplays: the visitor starts the music with the
+   play button (see NO AUTOPLAY). Tracks cycle: each 'ended'
    advances to the next, wrapping per the `loop` option.
 
    Like scrollIndicator and cursor it is persistent, eagerly-mounted UI that
@@ -51,23 +51,17 @@
      assumption at the call sites. Anything that pauses the audio — the
      transport, a future module, devtools — keeps the UI honest for free.
 
-   AUTOPLAY (the honest version)
-     Browsers block unmuted audio autoplay until the user has interacted
-     with the page (Chrome's autoplay policy; no module can bypass it). So
-     init ATTEMPTS play() via attemptPlay(), which branches on the promise:
-       - resolved → the 'play' event fires and the UI enters `playing`.
-       - rejected → enter `standby` (/ TAP.TO.START, blue = awaiting input)
-         and arm listeners that resume on the first pointerdown or keydown
-         anywhere on the page — usually within a couple of seconds of
-         arrival, which is as close to "autoplay" as the platform allows.
-     The gesture listeners ignore events originating inside the widget
-     (pointer target, or keyboard focus, within root) so a first gesture
-     that IS a transport button doesn't double-fire — the buttons own their
-     own gestures. The 'play' handler disarms them regardless of which path
-     started playback. Every programmatic start goes through attemptPlay()
-     so the blocked fallback is uniform (init, error-skip, track advance —
-     though advances after a first interaction always succeed: the
-     interaction flag is page-sticky for the session).
+   NO AUTOPLAY
+     The widget loads in `standby` (/ TAP.TO.START) and stays silent until
+     the visitor presses one of its own buttons. Earlier it attempted
+     play() at load and, when the browser's autoplay policy blocked that,
+     armed page-wide pointerdown/keydown listeners so the FIRST click
+     anywhere on the site started the music. That was removed: a visitor
+     clicking a project thumbnail shouldn't be ambushed by audio. The
+     transport buttons are real user gestures, so their play() calls
+     always clear the policy. Every programmatic start still goes through
+     attemptPlay() so a rejected play() (rare: a track advance in a
+     backgrounded tab) lands the UI honestly in standby.
 
    THE TRANSPORT
      prev / play-pause / next, in one hairline-segmented cluster. Glyphs
@@ -140,8 +134,8 @@
    cycle (manual skips always wrap regardless).
    ========================================================================== */
 const TRACKS = [
-  { src: "assets/tracks/NUCLEAR.mp3", title: "CALILEI.mp3" },
-  { src: "assets/tracks/SO LOW.mp3", title: "SO LOW.mp3" },
+  { src: "assets/tracks/SO LOW.mp3", title: "CALILEI.mp3" },
+  { src: "assets/tracks/NUCLEAR.mp3", title: "NUCLEAR.mp3" },
   { src: "assets/tracks/EXODUS.mp3", title: "EXODUS.mp3" },
   { src: "assets/tracks/WINGS.mp3",  title: "WINGS.mp3" },
   { src: "assets/tracks/2055.mp3", title: "2055.mp3" },
@@ -212,7 +206,7 @@ export function initMusicPlayer({
      --------------------------------------------------------------------------- */
   const root = document.createElement("div");
   root.className = "music-player";
-  root.dataset.state = "standby";   // resolved within ms by the play() attempt
+  root.dataset.state = "standby";   // until the visitor presses play — see NO AUTOPLAY
 
   const disc = document.createElement("div");
   disc.className = "mp-disc";
@@ -319,42 +313,19 @@ export function initMusicPlayer({
     if (andPlay) attemptPlay();
   }
 
-  /** Every programmatic start goes through here so the autoplay-blocked
-      fallback is uniform: on rejection, announce standby and arm the
-      first-gesture resume. (armGesture is idempotent — re-adding the same
-      listener refs is a no-op.) */
+  /** Every programmatic start goes through here so a rejected play() is
+      handled uniformly: announce standby and wait for the play button.
+      No page-wide resume — see NO AUTOPLAY in the header. */
   function attemptPlay() {
     audio.play().catch(() => {
       if (root.dataset.state !== "error") setState("standby", "/ TAP.TO.START", "Play");
-      armGesture();
     });
-  }
-
-  /* ---------------------------------------------------------------------------
-     FIRST-GESTURE RESUME — see AUTOPLAY in the header.
-     --------------------------------------------------------------------------- */
-  const onFirstPointer = (e) => {
-    if (root.contains(e.target)) return;                 // the transport owns its own gestures
-    audio.play().catch(() => {});
-  };
-  const onFirstKey = () => {
-    if (root.contains(document.activeElement)) return;   // Enter on a button = that button's job
-    audio.play().catch(() => {});
-  };
-  function armGesture() {
-    window.addEventListener("pointerdown", onFirstPointer);
-    window.addEventListener("keydown", onFirstKey);
-  }
-  function disarmGesture() {
-    window.removeEventListener("pointerdown", onFirstPointer);
-    window.removeEventListener("keydown", onFirstKey);
   }
 
   /* ---------------------------------------------------------------------------
      AUDIO EVENTS — the element is the single source of truth for the UI.
      --------------------------------------------------------------------------- */
   audio.addEventListener("play", () => {
-    disarmGesture();   // whatever started playback, the first-gesture arm is done
     setState("playing", "/ NOW.PLAYING", "Pause");
   });
 
@@ -379,7 +350,6 @@ export function initMusicPlayer({
       // Every track in the list has failed consecutively — stop skipping
       // and say so. Warn red is sanctioned here: this component uses red
       // for nothing else, and a fully dead list is a genuine failure.
-      disarmGesture();
       setState("error", "/ NO.SIGNAL", "Play");
       return;
     }
@@ -408,9 +378,9 @@ export function initMusicPlayer({
   nextBtn.addEventListener("click", () => loadTrack(index + 1, true));
 
   /* ---------------------------------------------------------------------------
-     KICKOFF — point at track 0, then attempt autoplay; attemptPlay owns the
-     blocked fallback.
+     KICKOFF — point at track 0 and wait in standby. Playback starts only
+     from the transport buttons (see NO AUTOPLAY).
      --------------------------------------------------------------------------- */
   loadTrack(0, false);
-  attemptPlay();
+  setState("standby", "/ TAP.TO.START", "Play");
 }

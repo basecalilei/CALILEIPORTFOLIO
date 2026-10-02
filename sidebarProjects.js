@@ -102,6 +102,9 @@ const HOVER_WAVE_RADIUS = 5;
              editor can highlight, not stringified objects. The modal's
              stylesheet applies default sizing to direct children
              (full-width img/video, readable-column p, etc.).
+             A `<div class="moodboard" data-moodboard="dir" data-count="N">`
+             placeholder becomes an interactive moodboard canvas when the
+             modal mounts it — see moodboard.js for the attributes.
 
    Only title / date / type / thumb are required; tools / note / media are
    optional. If a project has no media, the modal just shows the title +
@@ -115,7 +118,7 @@ const PROJECTS = [
   date:  "09-20-26",
   type:  "APPAREL DESIGN",
   tools: ["Blender", "CLO3D", "Illustrator", "Photoshop", "Lightroom"],
-  note:  "A small capsule collection I designed and patterned to present during my round 1 interview for Nike Field Sports",
+  note:  "A capsule of 14 pieces designed and patterned in 4 days for my round one interview with Nike Field Sports",
   thumb: "images/projects/broncosCapsule/thumb/1thumb.webp",
   media: `
     <h3>NK_FS_RND01 — DENVER BRONCOS</h3>
@@ -125,12 +128,15 @@ const PROJECTS = [
        > Round one interview for Nike Field Sports. Rather than invent a new language for the club, I went looking for the marks and motifs the Broncos have already earned, and let those draw the patterns.
        <br>
        <br>
-       > Two motifs carry the whole collection:
+       > Two motifs carry the first half of the collection:
        <br>
        <br>
        - <strong>the spike</strong>: the wedge panel that ran down the 1997–2023 uniform
        <br>
        - <strong>the horizontal stripe</strong>: the chest bar that runs through decades of Broncos merch
+       <br>
+       <br>
+       > The second half was freestyled: no motif to carry. A reference board where a piece needed one, nothing where it didn't.
        <br>
        <br>
        > Every piece is a real drafted-and-simulated pattern.
@@ -143,7 +149,7 @@ const PROJECTS = [
        - Lit and rendered in Blender, graded in Lightroom
        <br>
        <br>
-       > Each block is shown as the garment, its colorways, and its flattened pattern nest.
+       > Each block is shown as the garment, its colorways, and its flattened pattern nest. Four of the tops also get a turnaround of their <strong>ZeroForm</strong>: the seam lines and paneling on their own.
        <br>
        <br>
        --------------------------------------
@@ -161,11 +167,11 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/2full.webp" alt="The capsule at a glance" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/2full.webp" alt="The capsule lineup" loading="lazy" decoding="async">
     <p>// <strong>THE CAPSULE</strong>
        <br>
        <br>
-       - Track jacket, pant, hoodie, tech fleece, bomber, crewneck, graphic tee, sling bag.
+       - The full capsule, 14 pieces designed and patterned over 4 days.
        <br>
        <br>
        --------------------------------------
@@ -187,7 +193,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/4full.webp" alt="1997–2023 Broncos uniform reference" loading="lazy" decoding="async">
+    <div class="moodboard" data-moodboard="images/projects/broncosCapsule/moodboards/spike" data-count="12" data-hero="1" aria-label="1997–2023 Broncos uniform reference"></div>
     <p>// <strong>THE SPIKE — REFERENCE</strong>
        <br>
        <br>
@@ -198,11 +204,22 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/5full.webp" alt="Track jacket, detail views" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/5full.webp" alt="Track jacket, three colorways" loading="lazy" decoding="async">
     <p>// <strong>TRACK JACKET</strong>
        <br>
        <br>
-       - The spike redrawn as a side panel.
+       - The spike redrawn as a side panel, dropping from a curved chest yoke to the hem.
+       <br>
+       - Navy, white and orange; the panel rotates through the other two colors each time.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/6full.webp" alt="Track jacket, closed and open" loading="lazy" decoding="async">
+    <p>// <strong>TRACK JACKET — OPEN</strong>
+       <br>
        <br>
        - Contrast collar carried to the inside face so the orange reads when it is open.
        <br>
@@ -211,18 +228,18 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/6full.webp" alt="Track jacket, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>TRACK JACKET — COLORWAYS</strong>
+    <img src="images/projects/broncosCapsule/full/7full.webp" alt="Track jacket, front" loading="lazy" decoding="async">
+    <p>// <strong>TRACK JACKET — FRONT</strong>
        <br>
        <br>
-       - Navy, white and orange; the panel and the sleeve trade places each time.
+       - The yoke dips to a point at the zip; swoosh and mark set either side of it.
        <br>
        <br>
        --------------------------------------
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/7full.webp" alt="Track jacket pattern nest" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/8full.webp" alt="Track jacket pattern nest" loading="lazy" decoding="async">
     <p>// <strong>TRACK JACKET — NEST</strong>
        <br>
        <br>
@@ -230,7 +247,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/8full.webp" alt="Pant, three colorways" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/9full.webp" alt="Pant, three colorways" loading="lazy" decoding="async">
     <p>// <strong>PANT</strong>
        <br>
        <br>
@@ -241,7 +258,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/9full.webp" alt="Pant pattern nest" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/10full.webp" alt="Pant pattern nest" loading="lazy" decoding="async">
     <p>// <strong>PANT — NEST</strong>
        <br>
        <br>
@@ -249,7 +266,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/10full.webp" alt="Hoodie, three colorways" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/11full.webp" alt="Hoodie, three colorways" loading="lazy" decoding="async">
     <p>// <strong>HOODIE</strong>
        <br>
        <br>
@@ -262,7 +279,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/13full.webp" alt="Hoodie pattern nest" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/12full.webp" alt="Hoodie pattern nest" loading="lazy" decoding="async">
     <p>// <strong>HOODIE — NEST</strong>
        <br>
        <br>
@@ -270,11 +287,11 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/14full.webp" alt="Oversized zip jacket, three colorways" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/13full.webp" alt="Bomber, three colorways" loading="lazy" decoding="async">
     <p>// <strong>BOMBER</strong>
        <br>
        <br>
-       - A wider, longer block; the spike thinned to a fine line so the volume stays clean.
+       - A wider, longer block; the spike thinned to a narrow panel so the volume stays clean.
        <br>
        - DENVER set small at the chest in place of a full lockup.
        <br>
@@ -283,8 +300,8 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/15full.webp" alt="Bomber, front and back" loading="lazy" decoding="async">
-    <p>// <strong>BOMBER</strong>
+    <img src="images/projects/broncosCapsule/full/14full.webp" alt="Bomber, front and back" loading="lazy" decoding="async">
+    <p>// <strong>BOMBER — BACK</strong>
        <br>
        <br>
        - The piece that carries a full graphic: the horse at scale across the back.
@@ -296,21 +313,7 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/16full.webp" alt="Full-body horse marks" loading="lazy" decoding="async">
-    <img src="images/projects/broncosCapsule/full/16bfull.webp" alt="Full-body horse marks" loading="lazy" decoding="async">
-    <p>// <strong>THE HORSE</strong>
-       <br>
-       <br>
-       - Full-body horse marks to sit at back-panel scale.
-       <br>
-       - More modern marks, rearing, galloping, and bucking. As well as the marks of the 1960-1961 and 1962-1964 Broncos, and one more inspired by them.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/17full.webp" alt="Bomber pattern nest" loading="lazy" decoding="async">
+    <img src="images/projects/broncosCapsule/full/15full.webp" alt="Bomber pattern nest" loading="lazy" decoding="async">
     <p>// <strong>BOMBER — NEST</strong>
        <br>
        <br>
@@ -318,105 +321,20 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/18full.webp" alt="Vintage Broncos merch reference" loading="lazy" decoding="async">
-    <p>// <strong>THE STRIPE — REFERENCE</strong>
+    <img src="images/projects/broncosCapsule/full/16full.webp" alt="Full-body horse marks" loading="lazy" decoding="async">
+    <p>// <strong>THE HORSE</strong>
        <br>
        <br>
-       - Another motif Denver owns: a horizontal bar across the chest.
+       - Full-body horse marks to sit at back-panel scale.
        <br>
-       - It runs through decades of Broncos and wider NFL merch, mostly untouched.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/19full.webp" alt="Crewneck, front" loading="lazy" decoding="async">
-    <p>// <strong>CREWNECK</strong>
-       <br>
-       <br>
-       - The bar rebuilt as a pieced band: orange over white, BRONCOS and DENVER set into it.
-       <br>
-       - The band repeats at the sleeve, mark on one arm and swoosh on the other.
+       - The 1960–1961 and 1962–1964 Broncos marks, then modern ones — bucking, rearing and galloping — and one more inspired by them.
        <br>
        <br>
        --------------------------------------
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/20full.webp" alt="Crewneck, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>CREWNECK — COLORWAYS</strong>
-       <br>
-       <br>
-       - Navy, white and orange, with the band inverting to hold contrast in each.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/21full.webp" alt="Crewneck pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>CREWNECK — NEST</strong>
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/22full.webp" alt="Hooded zip jacket, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>TECH FLEECE</strong>
-       <br>
-       <br>
-       - The stripe broken at the zip and angled down into a chevron.
-       <br>
-       - Three-line bar in team colors, with the side panel carrying the contrast.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/23full.webp" alt="Hooded jacket pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>TECH FLEECE — NEST</strong>
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/24full.webp" alt="Graphic crewneck, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>GRAPHIC TEE</strong>
-       <br>
-       <br>
-       - The graphic piece: D-lockups stacked down the full length of the sleeve.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/25full.webp" alt="D-lockup explorations" loading="lazy" decoding="async">
-    <p>// <strong>THE D</strong>
-       <br>
-       <br>
-       - Ten lockups built from the one place the mark and the city meet: the letter.
-       <br>
-       - The sleeve run is drawn from this set.
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/26full.webp" alt="Graphic crew pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>GRAPHIC TEE — NEST</strong>
-       <br>
-       <br>
-       --------------------------------------
-       <br>
-       </p>
-
-    <img src="images/projects/broncosCapsule/full/27full.webp" alt="Sling bag reference board" loading="lazy" decoding="async">
+    <div class="moodboard" data-moodboard="images/projects/broncosCapsule/moodboards/slingbag" data-count="15" data-hero="3" aria-label="Sling bag reference board"></div>
     <p>// <strong>SLING — REFERENCE</strong>
        <br>
        <br>
@@ -452,11 +370,336 @@ const PROJECTS = [
        <br>
        </p>
 
-    <img src="images/projects/broncosCapsule/full/2full.webp" alt="The full collection" loading="lazy" decoding="async">
+    <div class="moodboard" data-moodboard="images/projects/broncosCapsule/moodboards/stripe" data-count="18" data-hero="2" aria-label="Vintage Broncos merch reference"></div>
+    <p>// <strong>THE STRIPE — REFERENCE</strong>
+       <br>
+       <br>
+       - Another motif Denver owns: a horizontal bar across the chest.
+       <br>
+       - It runs through decades of Broncos and wider NFL merch, mostly untouched.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/18full.webp" alt="Crewneck, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>CREWNECK</strong>
+       <br>
+       <br>
+       - The bar rebuilt as a pieced band, BRONCOS and DENVER set into it.
+       <br>
+       - Navy, white and orange, with the band inverting to hold contrast in each.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/19full.webp" alt="Crewneck, front" loading="lazy" decoding="async">
+    <p>// <strong>CREWNECK — FRONT</strong>
+       <br>
+       <br>
+       - The band repeats at the sleeve, mark on one arm and swoosh on the other.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/20full.webp" alt="Crewneck pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>CREWNECK — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/21full.webp" alt="Tech fleece, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>TECH FLEECE</strong>
+       <br>
+       <br>
+       - The stripe broken at the zip and angled down into a chevron.
+       <br>
+       - Three-line bar in team colors, with the side panel carrying the contrast.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/22full.webp" alt="Tech fleece, open and with the hood up" loading="lazy" decoding="async">
+    <p>// <strong>TECH FLEECE — HOOD</strong>
+       <br>
+       <br>
+       - Worn open and zipped with the hood up; a sleeve pocket zip in the contrast color.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/23full.webp" alt="Tech fleece pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>TECH FLEECE — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/24full.webp" alt="Graphic long sleeve, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>GRAPHIC LONG SLEEVE</strong>
+       <br>
+       <br>
+       - The graphic piece: D-lockups stacked down the full length of the sleeve.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/25full.webp" alt="Graphic long sleeve pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>GRAPHIC LONG SLEEVE — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/26full.webp" alt="D-lockup explorations" loading="lazy" decoding="async">
+    <p>// <strong>THE D</strong>
+       <br>
+       <br>
+       - Ten lockups built from the one place the mark and the city meet, the letter D — inspired by the 1970–1996 Broncos logo.
+       <br>
+       - The sleeve run is drawn from this set.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <h3>THE SECOND HALF — NO MOTIF</h3>
+
+    <img src="images/projects/broncosCapsule/full/30full.webp" alt="Modular jacket, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>MODULAR JACKET</strong>
+       <br>
+       <br>
+       - Piping traces the yoke, the zip and the hem; the spike cut in small at the armhole.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/31full.webp" alt="Modular jacket as jacket, vest, and hood-and-sleeve shrug" loading="lazy" decoding="async">
+    <p>// <strong>MODULAR JACKET — BROKEN DOWN</strong>
+       <br>
+       <br>
+       - The hood and sleeves come off as one piece, leaving a vest and a shrug.
+       <br>
+       - The parts swap across colorways: here a navy hood and sleeves on a white body.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/32full.webp" alt="Modular jacket pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>MODULAR JACKET — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/33full.webp" alt="Yoke long sleeve, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>LONG SLEEVE — YOKE</strong>
+       <br>
+       <br>
+       - A curved chest yoke; the panel economy is built around cross-armpit panels that could use a high-stretch material to accommodate more range of motion.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/34full.webp" alt="Yoke long sleeve pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>LONG SLEEVE — YOKE — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <video src="images/projects/broncosCapsule/full/35full.mp4" autoplay muted loop playsinline></video>
+    <p>// <strong>LONG SLEEVE — YOKE — ZEROFORM</strong>
+       <br>
+       <br>
+       - The garment with its surface stripped: seam lines and paneling only.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/36full.webp" alt="Yoke long sleeve, four blocking studies in greyscale" loading="lazy" decoding="async">
+    <p>// <strong>LONG SLEEVE — YOKE — BLOCKING</strong>
+       <br>
+       <br>
+       - Exploring the same panels in greyscale, four ways of color blocking.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/37full.webp" alt="Raglan long sleeve, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>LONG SLEEVE — RAGLAN</strong>
+       <br>
+       <br>
+       - I wanted to revisit the armpit panel; here it is much simpler.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/38full.webp" alt="Raglan long sleeve pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>LONG SLEEVE — RAGLAN — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <video src="images/projects/broncosCapsule/full/39full.mp4" autoplay muted loop playsinline></video>
+    <p>// <strong>LONG SLEEVE — RAGLAN — ZEROFORM</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <div class="moodboard" data-moodboard="images/projects/broncosCapsule/moodboards/armorshirt" data-count="12" data-hero="3" aria-label="Armor shirt reference board"></div>
+    <p>// <strong>ARMOR SHIRT — REFERENCE</strong>
+       <br>
+       <br>
+       - What's on the market: pads glued onto compression tops.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/41full.webp" alt="Armor shirt, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>ARMOR SHIRT</strong>
+       <br>
+       <br>
+       - A padded base layer: shoulder caps and stacked rib pads set into a sleeveless compression block.
+       <br>
+       - I chose to build sewn pad pockets into the pattern rather than using adhesive pads, for a more cohesive look.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/42full.webp" alt="Armor shirt pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>ARMOR SHIRT — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/43full.webp" alt="Tee, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>TEE</strong>
+       <br>
+       <br>
+       - A paneling exploration for a baggy tee: sleeve and side panel cut as one piece, wrapping under the arm.
+       <br>
+       - DENVER spaced out over the swoosh at the chest.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/44full.webp" alt="Tee pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>TEE — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <video src="images/projects/broncosCapsule/full/45full.mp4" autoplay muted loop playsinline></video>
+    <p>// <strong>TEE — ZEROFORM</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/46full.webp" alt="Armor shirt, tee and jersey side by side" loading="lazy" decoding="async">
+    <p>// <strong>THE SILHOUETTE</strong>
+       <br>
+       <br>
+       - The armor shirt and the tee are both designed after the silhouette of classic football uniforms over pads.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/47full.webp" alt="Mock neck, three colorways" loading="lazy" decoding="async">
+    <p>// <strong>MOCK NECK</strong>
+       <br>
+       <br>
+       - Tonal: no contrast panel, the spike carried by the seam line alone.
+       <br>
+       - A half-raglan sleeve, broken again at the forearm.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/48full.webp" alt="Mock neck, front and back" loading="lazy" decoding="async">
+    <p>// <strong>MOCK NECK — FRONT AND BACK</strong>
+       <br>
+       <br>
+       - On the back, two seams run from the collar down into a pointed yoke.
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/49full.webp" alt="Mock neck pattern nest" loading="lazy" decoding="async">
+    <p>// <strong>MOCK NECK — NEST</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <video src="images/projects/broncosCapsule/full/50full.mp4" autoplay muted loop playsinline></video>
+    <p>// <strong>MOCK NECK — ZEROFORM</strong>
+       <br>
+       <br>
+       --------------------------------------
+       <br>
+       </p>
+
+    <img src="images/projects/broncosCapsule/full/51full.webp" alt="The full collection" loading="lazy" decoding="async">
     <p>// <strong>THE COLLECTION</strong>
        <br>
        <br>
-       - The full capsule collection and all 3 colorways.
+       - The full capsule collection and all three colorways.
+       <br>
+       - Fourteen pieces, three colorways, four days.
        <br>
        </p>
   `,

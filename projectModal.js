@@ -71,6 +71,10 @@
        .project-modal-media.
      - cancels.js: provides createCancelGroup() for the title scramble.
      - textScramble.js: provides startScramble for the title.
+     - moodboard.js: mountMoodboards / unmountMoodboards — a project's media
+       HTML may hold `[data-moodboard]` placeholders; populate() mounts them
+       after injecting the media and unmounts them before the next
+       injection, and close unmounts once the sheet is hidden.
      - sidebarProjects.js: the caller — imports openProjectModal and invokes
        it from its thumbnail click handler with the whole PROJECTS list plus
        the clicked index; the modal's prev/next cycle that list internally.
@@ -78,6 +82,7 @@
 
 import { startScramble }     from "./textScramble.js";
 import { createCancelGroup } from "./cancels.js";
+import { mountMoodboards, unmountMoodboards } from "./moodboard.js";
 
 /* -----------------------------------------------------------------------------
    TUNABLES
@@ -234,10 +239,14 @@ function populate(index) {
 
   // Populate content fresh. Replacing innerHTML wipes previously injected
   // media (<img>/<video> elements + listeners). For videos that were
-  // autoplaying, this releases their decode resources.
+  // autoplaying, this releases their decode resources. Moodboards run
+  // their own frame loops and observers, so they're stopped explicitly
+  // before their DOM goes, and mounted again on the new media.
+  unmountMoodboards();
   titleEl.textContent = project.title || "";
   dataEl.innerHTML    = renderDataRows(project);
   mediaEl.innerHTML   = project.media || "";
+  mountMoodboards(mediaEl);
 
   // Reset the content scroll position — every project starts at the top,
   // whether arrived at by open or by cycling, never at the offset the
@@ -318,6 +327,9 @@ function closeProjectModal() {
     sheet.style.transform = "";
     originEl = null;
     closeTimer = null;
+    // Moodboards keep drifting through the close motion (they're still
+    // visible); stop them only once the sheet is actually hidden.
+    unmountMoodboards();
   }, MODAL_ANIM_MS + 20);
 }
 

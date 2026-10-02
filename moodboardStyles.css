@@ -1,0 +1,86 @@
+/* =============================================================================
+   moodboardStyles.css — the interactive moodboard canvas
+   -----------------------------------------------------------------------------
+   Styles for moodboard.js. The canvas is a full-width landscape box inside
+   a project's media stack; the tiles are absolutely positioned squares that
+   JS moves (transform) and sizes (width/height) every frame it needs to.
+
+   WHO OWNS WHAT
+     CSS owns the canvas's ASPECT RATIO. JS reads the box the canvas ends up
+     with and derives its unit grid from it, so changing the aspect here
+     (including at the narrow breakpoint) re-lays the board out without a
+     JS change. JS owns every tile's position and size; nothing here should
+     set a tile's transform, width or height.
+
+   Tokens (--sheet-bg, --line, --accent, --ease) come from infiniteStyles.css.
+   ========================================================================== */
+
+.moodboard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+
+  background: var(--sheet-bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+/* Until JS mounts it (or if it never does), the placeholder is just an empty
+   frame — better than a collapsed 0-height div, which would leave the media
+   stack's rhythm with an unexplained double gap. */
+.moodboard:not(.is-mounted) {
+  min-height: 6rem;
+}
+
+.moodboard-tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* width/height set per tile by JS; these are the pre-measure fallback. */
+  width: 20%;
+  height: 20%;
+
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+
+  transform-origin: 0 0;
+  will-change: transform;
+
+  /* Fade in on image load — see makeTile() in moodboard.js. */
+  opacity: 0;
+  transition: opacity 0.6s var(--ease);
+}
+.moodboard-tile.is-loaded {
+  opacity: 1;
+}
+
+/* The hero is already the largest; clicking it does nothing. */
+.moodboard-tile.is-hero {
+  cursor: default;
+}
+
+.moodboard-tile:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.moodboard-tile > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;             /* the button is the click target */
+}
+
+/* Narrow sheets: a 16:9 canvas would make the small rungs unreadably tiny.
+   A squarer box gives the same grid more rows to spread into. */
+@media (max-width: 640px) {
+  .moodboard {
+    aspect-ratio: 4 / 3;
+  }
+}
