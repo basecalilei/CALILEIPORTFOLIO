@@ -514,7 +514,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/33full.webp" alt="Yoke long sleeve, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>LONG SLEEVE — YOKE</strong>
+    <p>// <strong>LONG SLEEVE TEE</strong>
        <br>
        <br>
        - A curved chest yoke; the panel economy is built around cross-armpit panels that could use a high-stretch material to accommodate more range of motion.
@@ -525,7 +525,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/34full.webp" alt="Yoke long sleeve pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>LONG SLEEVE — YOKE — NEST</strong>
+    <p>// <strong>LONG SLEEVE TEE — NEST</strong>
        <br>
        <br>
        --------------------------------------
@@ -533,7 +533,7 @@ const PROJECTS = [
        </p>
 
     <video src="images/projects/broncosCapsule/full/35full.mp4" autoplay muted loop playsinline></video>
-    <p>// <strong>LONG SLEEVE — YOKE — ZEROFORM</strong>
+    <p>// <strong>LONG SLEEVE TEE — ZEROFORM</strong>
        <br>
        <br>
        - The garment with its surface stripped: seam lines and paneling only.
@@ -544,7 +544,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/36full.webp" alt="Yoke long sleeve, four blocking studies in greyscale" loading="lazy" decoding="async">
-    <p>// <strong>LONG SLEEVE — YOKE — BLOCKING</strong>
+    <p>// <strong>LONG SLEEVE TEE — BLOCKING</strong>
        <br>
        <br>
        - Exploring the same panels in greyscale, four ways of color blocking.
@@ -555,7 +555,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/37full.webp" alt="Raglan long sleeve, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>LONG SLEEVE — RAGLAN</strong>
+    <p>// <strong>LONG SLEEVE TEE</strong>
        <br>
        <br>
        - I wanted to revisit the armpit panel; here it is much simpler.
@@ -566,7 +566,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/38full.webp" alt="Raglan long sleeve pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>LONG SLEEVE — RAGLAN — NEST</strong>
+    <p>// <strong>LONG SLEEVE TEE — NEST</strong>
        <br>
        <br>
        --------------------------------------
@@ -574,7 +574,7 @@ const PROJECTS = [
        </p>
 
     <video src="images/projects/broncosCapsule/full/39full.mp4" autoplay muted loop playsinline></video>
-    <p>// <strong>LONG SLEEVE — RAGLAN — ZEROFORM</strong>
+    <p>// <strong>LONG SLEEVE TEE — ZEROFORM</strong>
        <br>
        <br>
        --------------------------------------
@@ -614,7 +614,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/43full.webp" alt="Tee, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>TEE</strong>
+    <p>// <strong>SHORT SLEEVE TEE</strong>
        <br>
        <br>
        - A paneling exploration for a baggy tee: sleeve and side panel cut as one piece, wrapping under the arm.
@@ -627,7 +627,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/44full.webp" alt="Tee pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>TEE — NEST</strong>
+    <p>// <strong>SHORT SLEEVE TEE — NEST</strong>
        <br>
        <br>
        --------------------------------------
@@ -635,7 +635,7 @@ const PROJECTS = [
        </p>
 
     <video src="images/projects/broncosCapsule/full/45full.mp4" autoplay muted loop playsinline></video>
-    <p>// <strong>TEE — ZEROFORM</strong>
+    <p>// <strong>SHORT SLEEVE TEE — ZEROFORM</strong>
        <br>
        <br>
        --------------------------------------
@@ -654,7 +654,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/47full.webp" alt="Mock neck, three colorways" loading="lazy" decoding="async">
-    <p>// <strong>MOCK NECK</strong>
+    <p>// <strong>MOCK NECK TEE</strong>
        <br>
        <br>
        - Tonal: no contrast panel, the spike carried by the seam line alone.
@@ -667,7 +667,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/48full.webp" alt="Mock neck, front and back" loading="lazy" decoding="async">
-    <p>// <strong>MOCK NECK — FRONT AND BACK</strong>
+    <p>// <strong>MOCK NECK TEE — FRONT AND BACK</strong>
        <br>
        <br>
        - On the back, two seams run from the collar down into a pointed yoke.
@@ -678,7 +678,7 @@ const PROJECTS = [
        </p>
 
     <img src="images/projects/broncosCapsule/full/49full.webp" alt="Mock neck pattern nest" loading="lazy" decoding="async">
-    <p>// <strong>MOCK NECK — NEST</strong>
+    <p>// <strong>MOCK NECK TEE — NEST</strong>
        <br>
        <br>
        --------------------------------------
@@ -686,7 +686,7 @@ const PROJECTS = [
        </p>
 
     <video src="images/projects/broncosCapsule/full/50full.mp4" autoplay muted loop playsinline></video>
-    <p>// <strong>MOCK NECK — ZEROFORM</strong>
+    <p>// <strong>MOCK NECK TEE — ZEROFORM</strong>
        <br>
        <br>
        --------------------------------------
@@ -697,9 +697,9 @@ const PROJECTS = [
     <p>// <strong>THE COLLECTION</strong>
        <br>
        <br>
-       - The full capsule collection and all three colorways.
+       - The full capsule collection.
        <br>
-       - Fourteen pieces, three colorways, four days.
+       - Fourteen pieces, three colorways.
        <br>
        </p>
   `,
